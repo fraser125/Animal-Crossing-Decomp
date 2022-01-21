@@ -1,0 +1,61 @@
+.include "macros.inc"
+
+.section .text
+
+.org 0x8005CC14
+
+.global fatan2
+fatan2:
+/* 8005CC14 00059B74  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 8005CC18 00059B78  7C 08 02 A6 */	mflr r0
+/* 8005CC1C 00059B7C  90 01 00 14 */	stw r0, 0x14(r1)
+/* 8005CC20 00059B80  48 04 53 B5 */	bl atan2
+/* 8005CC24 00059B84  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 8005CC28 00059B88  FC 20 08 18 */	frsp f1, f1
+/* 8005CC2C 00059B8C  7C 08 03 A6 */	mtlr r0
+/* 8005CC30 00059B90  38 21 00 10 */	addi r1, r1, 0x10
+/* 8005CC34 00059B94  4E 80 00 20 */	blr 
+
+.global fsqrt
+fsqrt:
+/* 8005CC38 00059B98  C0 02 85 38 */	lfs f0, @283-_SDA2_BASE_(r2)
+/* 8005CC3C 00059B9C  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 8005CC40 00059BA0  FC 01 00 40 */	fcmpo cr0, f1, f0
+/* 8005CC44 00059BA4  40 81 00 5C */	ble lbl_8005CCA0
+/* 8005CC48 00059BA8  FC 40 08 34 */	frsqrte f2, f1
+/* 8005CC4C 00059BAC  C8 82 85 40 */	lfd f4, @284-_SDA2_BASE_(r2)
+/* 8005CC50 00059BB0  C8 62 85 48 */	lfd f3, @285-_SDA2_BASE_(r2)
+/* 8005CC54 00059BB4  FC 02 00 B2 */	fmul f0, f2, f2
+/* 8005CC58 00059BB8  FC 44 00 B2 */	fmul f2, f4, f2
+/* 8005CC5C 00059BBC  FC 01 00 32 */	fmul f0, f1, f0
+/* 8005CC60 00059BC0  FC 03 00 28 */	fsub f0, f3, f0
+/* 8005CC64 00059BC4  FC 42 00 32 */	fmul f2, f2, f0
+/* 8005CC68 00059BC8  FC 02 00 B2 */	fmul f0, f2, f2
+/* 8005CC6C 00059BCC  FC 44 00 B2 */	fmul f2, f4, f2
+/* 8005CC70 00059BD0  FC 01 00 32 */	fmul f0, f1, f0
+/* 8005CC74 00059BD4  FC 03 00 28 */	fsub f0, f3, f0
+/* 8005CC78 00059BD8  FC 42 00 32 */	fmul f2, f2, f0
+/* 8005CC7C 00059BDC  FC 02 00 B2 */	fmul f0, f2, f2
+/* 8005CC80 00059BE0  FC 44 00 B2 */	fmul f2, f4, f2
+/* 8005CC84 00059BE4  FC 01 00 32 */	fmul f0, f1, f0
+/* 8005CC88 00059BE8  FC 03 00 28 */	fsub f0, f3, f0
+/* 8005CC8C 00059BEC  FC 02 00 32 */	fmul f0, f2, f0
+/* 8005CC90 00059BF0  FC 01 00 32 */	fmul f0, f1, f0
+/* 8005CC94 00059BF4  FC 00 00 18 */	frsp f0, f0
+/* 8005CC98 00059BF8  D0 01 00 08 */	stfs f0, 8(r1)
+/* 8005CC9C 00059BFC  C0 21 00 08 */	lfs f1, 8(r1)
+lbl_8005CCA0:
+/* 8005CCA0 00059C00  38 21 00 10 */	addi r1, r1, 0x10
+/* 8005CCA4 00059C04  4E 80 00 20 */	blr 
+
+.global facos
+facos:
+/* 8005CCA8 00059C08  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 8005CCAC 00059C0C  7C 08 02 A6 */	mflr r0
+/* 8005CCB0 00059C10  90 01 00 14 */	stw r0, 0x14(r1)
+/* 8005CCB4 00059C14  48 04 53 01 */	bl acos
+/* 8005CCB8 00059C18  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 8005CCBC 00059C1C  FC 20 08 18 */	frsp f1, f1
+/* 8005CCC0 00059C20  7C 08 03 A6 */	mtlr r0
+/* 8005CCC4 00059C24  38 21 00 10 */	addi r1, r1, 0x10
+/* 8005CCC8 00059C28  4E 80 00 20 */	blr 

@@ -1,0 +1,56 @@
+.include "macros.inc"
+
+.section .text
+
+.org 0x8005E15C
+
+.global guNormalize
+guNormalize:
+/* 8005E15C 0005B0BC  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 8005E160 0005B0C0  C0 23 00 00 */	lfs f1, 0(r3)
+/* 8005E164 0005B0C4  C0 04 00 00 */	lfs f0, 0(r4)
+/* 8005E168 0005B0C8  EC 41 00 72 */	fmuls f2, f1, f1
+/* 8005E16C 0005B0CC  C0 65 00 00 */	lfs f3, 0(r5)
+/* 8005E170 0005B0D0  EC 20 00 32 */	fmuls f1, f0, f0
+/* 8005E174 0005B0D4  C0 02 85 C8 */	lfs f0, @271-_SDA2_BASE_(r2)
+/* 8005E178 0005B0D8  EC 63 00 F2 */	fmuls f3, f3, f3
+/* 8005E17C 0005B0DC  EC 22 08 2A */	fadds f1, f2, f1
+/* 8005E180 0005B0E0  EC 83 08 2A */	fadds f4, f3, f1
+/* 8005E184 0005B0E4  FC 04 00 40 */	fcmpo cr0, f4, f0
+/* 8005E188 0005B0E8  40 81 00 5C */	ble lbl_8005E1E4
+/* 8005E18C 0005B0EC  FC 20 20 34 */	frsqrte f1, f4
+/* 8005E190 0005B0F0  C8 62 85 D0 */	lfd f3, @272-_SDA2_BASE_(r2)
+/* 8005E194 0005B0F4  C8 42 85 D8 */	lfd f2, @273-_SDA2_BASE_(r2)
+/* 8005E198 0005B0F8  FC 01 00 72 */	fmul f0, f1, f1
+/* 8005E19C 0005B0FC  FC 23 00 72 */	fmul f1, f3, f1
+/* 8005E1A0 0005B100  FC 04 00 32 */	fmul f0, f4, f0
+/* 8005E1A4 0005B104  FC 02 00 28 */	fsub f0, f2, f0
+/* 8005E1A8 0005B108  FC 21 00 32 */	fmul f1, f1, f0
+/* 8005E1AC 0005B10C  FC 01 00 72 */	fmul f0, f1, f1
+/* 8005E1B0 0005B110  FC 23 00 72 */	fmul f1, f3, f1
+/* 8005E1B4 0005B114  FC 04 00 32 */	fmul f0, f4, f0
+/* 8005E1B8 0005B118  FC 02 00 28 */	fsub f0, f2, f0
+/* 8005E1BC 0005B11C  FC 21 00 32 */	fmul f1, f1, f0
+/* 8005E1C0 0005B120  FC 01 00 72 */	fmul f0, f1, f1
+/* 8005E1C4 0005B124  FC 23 00 72 */	fmul f1, f3, f1
+/* 8005E1C8 0005B128  FC 04 00 32 */	fmul f0, f4, f0
+/* 8005E1CC 0005B12C  FC 02 00 28 */	fsub f0, f2, f0
+/* 8005E1D0 0005B130  FC 01 00 32 */	fmul f0, f1, f0
+/* 8005E1D4 0005B134  FC 04 00 32 */	fmul f0, f4, f0
+/* 8005E1D8 0005B138  FC 00 00 18 */	frsp f0, f0
+/* 8005E1DC 0005B13C  D0 01 00 08 */	stfs f0, 8(r1)
+/* 8005E1E0 0005B140  C0 81 00 08 */	lfs f4, 8(r1)
+lbl_8005E1E4:
+/* 8005E1E4 0005B144  C0 22 85 E0 */	lfs f1, @274-_SDA2_BASE_(r2)
+/* 8005E1E8 0005B148  C0 03 00 00 */	lfs f0, 0(r3)
+/* 8005E1EC 0005B14C  EC 21 20 24 */	fdivs f1, f1, f4
+/* 8005E1F0 0005B150  EC 00 00 72 */	fmuls f0, f0, f1
+/* 8005E1F4 0005B154  D0 03 00 00 */	stfs f0, 0(r3)
+/* 8005E1F8 0005B158  C0 04 00 00 */	lfs f0, 0(r4)
+/* 8005E1FC 0005B15C  EC 00 00 72 */	fmuls f0, f0, f1
+/* 8005E200 0005B160  D0 04 00 00 */	stfs f0, 0(r4)
+/* 8005E204 0005B164  C0 05 00 00 */	lfs f0, 0(r5)
+/* 8005E208 0005B168  EC 00 00 72 */	fmuls f0, f0, f1
+/* 8005E20C 0005B16C  D0 05 00 00 */	stfs f0, 0(r5)
+/* 8005E210 0005B170  38 21 00 10 */	addi r1, r1, 0x10
+/* 8005E214 0005B174  4E 80 00 20 */	blr 

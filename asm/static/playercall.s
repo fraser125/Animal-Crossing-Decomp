@@ -1,0 +1,229 @@
+.include "macros.inc"
+
+.section .text
+
+.org 0x80019DC0
+
+.global ResetPlayerCallback
+ResetPlayerCallback:
+/* 80019DC0 00016D20  38 60 00 00 */	li r3, 0
+/* 80019DC4 00016D24  3C 80 80 18 */	lis r4, PLAYER_CALLLIST@ha
+/* 80019DC8 00016D28  38 00 00 10 */	li r0, 0x10
+/* 80019DCC 00016D2C  7C 65 1B 78 */	mr r5, r3
+/* 80019DD0 00016D30  38 84 64 D0 */	addi r4, r4, PLAYER_CALLLIST@l
+/* 80019DD4 00016D34  7C 09 03 A6 */	mtctr r0
+lbl_80019DD8:
+/* 80019DD8 00016D38  7C A4 19 2E */	stwx r5, r4, r3
+/* 80019DDC 00016D3C  38 63 00 0C */	addi r3, r3, 0xc
+/* 80019DE0 00016D40  42 00 FF F8 */	bdnz lbl_80019DD8
+/* 80019DE4 00016D44  4E 80 00 20 */	blr 
+/* 80019DE8 00016D48  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 80019DEC 00016D4C  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 80019DF0 00016D50  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 80019DF4 00016D54  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 80019DF8 00016D58  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 80019DFC 00016D5C  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+
+.global Jac_CheckPlayerCallback__FPFPv_lPv
+Jac_CheckPlayerCallback__FPFPv_lPv:
+/* 80019E00 00016D60  3C A0 80 18 */	lis r5, PLAYER_CALLLIST@ha
+/* 80019E04 00016D64  38 00 00 10 */	li r0, 0x10
+/* 80019E08 00016D68  38 C5 64 D0 */	addi r6, r5, PLAYER_CALLLIST@l
+/* 80019E0C 00016D6C  39 00 00 00 */	li r8, 0
+/* 80019E10 00016D70  38 A0 00 00 */	li r5, 0
+/* 80019E14 00016D74  7C 09 03 A6 */	mtctr r0
+lbl_80019E18:
+/* 80019E18 00016D78  7C E6 2A 14 */	add r7, r6, r5
+/* 80019E1C 00016D7C  80 07 00 00 */	lwz r0, 0(r7)
+/* 80019E20 00016D80  7C 00 18 40 */	cmplw r0, r3
+/* 80019E24 00016D84  40 82 00 1C */	bne lbl_80019E40
+/* 80019E28 00016D88  80 07 00 04 */	lwz r0, 4(r7)
+/* 80019E2C 00016D8C  7C 00 20 40 */	cmplw r0, r4
+/* 80019E30 00016D90  40 82 00 10 */	bne lbl_80019E40
+/* 80019E34 00016D94  7D 03 43 78 */	mr r3, r8
+/* 80019E38 00016D98  4E 80 00 20 */	blr 
+/* 80019E3C 00016D9C  60 00 00 00 */	nop 
+lbl_80019E40:
+/* 80019E40 00016DA0  39 08 00 01 */	addi r8, r8, 1
+/* 80019E44 00016DA4  38 A5 00 0C */	addi r5, r5, 0xc
+/* 80019E48 00016DA8  42 00 FF D0 */	bdnz lbl_80019E18
+/* 80019E4C 00016DAC  38 60 FF FF */	li r3, -1
+/* 80019E50 00016DB0  4E 80 00 20 */	blr 
+/* 80019E54 00016DB4  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 80019E58 00016DB8  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 80019E5C 00016DBC  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+
+.global Jac_RegisterDspPlayerCallback
+Jac_RegisterDspPlayerCallback:
+/* 80019E60 00016DC0  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80019E64 00016DC4  7C 08 02 A6 */	mflr r0
+/* 80019E68 00016DC8  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80019E6C 00016DCC  48 00 00 55 */	bl Jac_RegisterPlayerCallback
+/* 80019E70 00016DD0  2C 03 FF FF */	cmpwi r3, -1
+/* 80019E74 00016DD4  40 82 00 0C */	bne lbl_80019E80
+/* 80019E78 00016DD8  38 60 FF FF */	li r3, -1
+/* 80019E7C 00016DDC  48 00 00 1C */	b lbl_80019E98
+lbl_80019E80:
+/* 80019E80 00016DE0  1C 03 00 0C */	mulli r0, r3, 0xc
+/* 80019E84 00016DE4  3C 80 80 18 */	lis r4, PLAYER_CALLLIST@ha
+/* 80019E88 00016DE8  38 A0 00 01 */	li r5, 1
+/* 80019E8C 00016DEC  38 84 64 D0 */	addi r4, r4, PLAYER_CALLLIST@l
+/* 80019E90 00016DF0  7C 84 02 14 */	add r4, r4, r0
+/* 80019E94 00016DF4  90 A4 00 08 */	stw r5, 8(r4)
+lbl_80019E98:
+/* 80019E98 00016DF8  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80019E9C 00016DFC  7C 08 03 A6 */	mtlr r0
+/* 80019EA0 00016E00  38 21 00 10 */	addi r1, r1, 0x10
+/* 80019EA4 00016E04  4E 80 00 20 */	blr 
+/* 80019EA8 00016E08  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 80019EAC 00016E0C  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 80019EB0 00016E10  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 80019EB4 00016E14  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 80019EB8 00016E18  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 80019EBC 00016E1C  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+
+.global Jac_RegisterPlayerCallback
+Jac_RegisterPlayerCallback:
+/* 80019EC0 00016E20  94 21 FF E0 */	stwu r1, -0x20(r1)
+/* 80019EC4 00016E24  7C 08 02 A6 */	mflr r0
+/* 80019EC8 00016E28  90 01 00 24 */	stw r0, 0x24(r1)
+/* 80019ECC 00016E2C  39 61 00 20 */	addi r11, r1, 0x20
+/* 80019ED0 00016E30  48 08 10 05 */	bl func_8009AED4
+/* 80019ED4 00016E34  3C A0 80 18 */	lis r5, PLAYER_CALLLIST@ha
+/* 80019ED8 00016E38  38 00 00 10 */	li r0, 0x10
+/* 80019EDC 00016E3C  7C 7D 1B 78 */	mr r29, r3
+/* 80019EE0 00016E40  7C 9E 23 78 */	mr r30, r4
+/* 80019EE4 00016E44  38 85 64 D0 */	addi r4, r5, PLAYER_CALLLIST@l
+/* 80019EE8 00016E48  3B E0 00 00 */	li r31, 0
+/* 80019EEC 00016E4C  38 60 00 00 */	li r3, 0
+/* 80019EF0 00016E50  7C 09 03 A6 */	mtctr r0
+/* 80019EF4 00016E54  60 00 00 00 */	nop 
+lbl_80019EF8:
+/* 80019EF8 00016E58  7C 04 18 2E */	lwzx r0, r4, r3
+/* 80019EFC 00016E5C  28 00 00 00 */	cmplwi r0, 0
+/* 80019F00 00016E60  41 82 00 10 */	beq lbl_80019F10
+/* 80019F04 00016E64  3B FF 00 01 */	addi r31, r31, 1
+/* 80019F08 00016E68  38 63 00 0C */	addi r3, r3, 0xc
+/* 80019F0C 00016E6C  42 00 FF EC */	bdnz lbl_80019EF8
+lbl_80019F10:
+/* 80019F10 00016E70  28 1F 00 10 */	cmplwi r31, 0x10
+/* 80019F14 00016E74  40 82 00 0C */	bne lbl_80019F20
+/* 80019F18 00016E78  38 60 FF FF */	li r3, -1
+/* 80019F1C 00016E7C  48 00 00 44 */	b lbl_80019F60
+lbl_80019F20:
+/* 80019F20 00016E80  7F A3 EB 78 */	mr r3, r29
+/* 80019F24 00016E84  7F C4 F3 78 */	mr r4, r30
+/* 80019F28 00016E88  4B FF FE D9 */	bl Jac_CheckPlayerCallback__FPFPv_lPv
+/* 80019F2C 00016E8C  2C 03 FF FF */	cmpwi r3, -1
+/* 80019F30 00016E90  41 82 00 0C */	beq lbl_80019F3C
+/* 80019F34 00016E94  38 60 FF FF */	li r3, -1
+/* 80019F38 00016E98  48 00 00 28 */	b lbl_80019F60
+lbl_80019F3C:
+/* 80019F3C 00016E9C  1C 9F 00 0C */	mulli r4, r31, 0xc
+/* 80019F40 00016EA0  3C 60 80 18 */	lis r3, PLAYER_CALLLIST@ha
+/* 80019F44 00016EA4  38 00 00 00 */	li r0, 0
+/* 80019F48 00016EA8  38 63 64 D0 */	addi r3, r3, PLAYER_CALLLIST@l
+/* 80019F4C 00016EAC  7F A3 21 2E */	stwx r29, r3, r4
+/* 80019F50 00016EB0  7C 83 22 14 */	add r4, r3, r4
+/* 80019F54 00016EB4  7F E3 FB 78 */	mr r3, r31
+/* 80019F58 00016EB8  93 C4 00 04 */	stw r30, 4(r4)
+/* 80019F5C 00016EBC  90 04 00 08 */	stw r0, 8(r4)
+lbl_80019F60:
+/* 80019F60 00016EC0  39 61 00 20 */	addi r11, r1, 0x20
+/* 80019F64 00016EC4  48 08 0F BD */	bl func_8009AF20
+/* 80019F68 00016EC8  80 01 00 24 */	lwz r0, 0x24(r1)
+/* 80019F6C 00016ECC  7C 08 03 A6 */	mtlr r0
+/* 80019F70 00016ED0  38 21 00 20 */	addi r1, r1, 0x20
+/* 80019F74 00016ED4  4E 80 00 20 */	blr 
+/* 80019F78 00016ED8  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 80019F7C 00016EDC  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+
+.global PlayerCallback__Fv
+PlayerCallback__Fv:
+/* 80019F80 00016EE0  94 21 FF E0 */	stwu r1, -0x20(r1)
+/* 80019F84 00016EE4  7C 08 02 A6 */	mflr r0
+/* 80019F88 00016EE8  90 01 00 24 */	stw r0, 0x24(r1)
+/* 80019F8C 00016EEC  39 61 00 20 */	addi r11, r1, 0x20
+/* 80019F90 00016EF0  48 08 0F 3D */	bl func_8009AECC
+/* 80019F94 00016EF4  3B E0 00 00 */	li r31, 0
+/* 80019F98 00016EF8  3C 60 80 18 */	lis r3, PLAYER_CALLLIST@ha
+/* 80019F9C 00016EFC  7F FE FB 78 */	mr r30, r31
+/* 80019FA0 00016F00  3B 60 00 00 */	li r27, 0
+/* 80019FA4 00016F04  3B A3 64 D0 */	addi r29, r3, PLAYER_CALLLIST@l
+lbl_80019FA8:
+/* 80019FA8 00016F08  7F 9D FA 14 */	add r28, r29, r31
+/* 80019FAC 00016F0C  81 9C 00 00 */	lwz r12, 0(r28)
+/* 80019FB0 00016F10  28 0C 00 00 */	cmplwi r12, 0
+/* 80019FB4 00016F14  41 82 00 28 */	beq lbl_80019FDC
+/* 80019FB8 00016F18  80 1C 00 08 */	lwz r0, 8(r28)
+/* 80019FBC 00016F1C  28 00 00 00 */	cmplwi r0, 0
+/* 80019FC0 00016F20  40 82 00 1C */	bne lbl_80019FDC
+/* 80019FC4 00016F24  80 7C 00 04 */	lwz r3, 4(r28)
+/* 80019FC8 00016F28  7D 89 03 A6 */	mtctr r12
+/* 80019FCC 00016F2C  4E 80 04 21 */	bctrl 
+/* 80019FD0 00016F30  2C 03 FF FF */	cmpwi r3, -1
+/* 80019FD4 00016F34  40 82 00 08 */	bne lbl_80019FDC
+/* 80019FD8 00016F38  93 DC 00 00 */	stw r30, 0(r28)
+lbl_80019FDC:
+/* 80019FDC 00016F3C  3B 7B 00 01 */	addi r27, r27, 1
+/* 80019FE0 00016F40  3B FF 00 0C */	addi r31, r31, 0xc
+/* 80019FE4 00016F44  28 1B 00 10 */	cmplwi r27, 0x10
+/* 80019FE8 00016F48  41 80 FF C0 */	blt lbl_80019FA8
+/* 80019FEC 00016F4C  39 61 00 20 */	addi r11, r1, 0x20
+/* 80019FF0 00016F50  48 08 0F 29 */	bl func_8009AF18
+/* 80019FF4 00016F54  80 01 00 24 */	lwz r0, 0x24(r1)
+/* 80019FF8 00016F58  7C 08 03 A6 */	mtlr r0
+/* 80019FFC 00016F5C  38 21 00 20 */	addi r1, r1, 0x20
+/* 8001A000 00016F60  4E 80 00 20 */	blr 
+/* 8001A004 00016F64  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 8001A008 00016F68  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 8001A00C 00016F6C  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 8001A010 00016F70  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 8001A014 00016F74  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 8001A018 00016F78  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 8001A01C 00016F7C  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+
+.global DspPlayerCallback__Fv
+DspPlayerCallback__Fv:
+/* 8001A020 00016F80  94 21 FF E0 */	stwu r1, -0x20(r1)
+/* 8001A024 00016F84  7C 08 02 A6 */	mflr r0
+/* 8001A028 00016F88  90 01 00 24 */	stw r0, 0x24(r1)
+/* 8001A02C 00016F8C  39 61 00 20 */	addi r11, r1, 0x20
+/* 8001A030 00016F90  48 08 0E 9D */	bl func_8009AECC
+/* 8001A034 00016F94  3B E0 00 00 */	li r31, 0
+/* 8001A038 00016F98  3C 60 80 18 */	lis r3, PLAYER_CALLLIST@ha
+/* 8001A03C 00016F9C  7F FE FB 78 */	mr r30, r31
+/* 8001A040 00016FA0  3B 60 00 00 */	li r27, 0
+/* 8001A044 00016FA4  3B A3 64 D0 */	addi r29, r3, PLAYER_CALLLIST@l
+lbl_8001A048:
+/* 8001A048 00016FA8  7F 9D FA 14 */	add r28, r29, r31
+/* 8001A04C 00016FAC  81 9C 00 00 */	lwz r12, 0(r28)
+/* 8001A050 00016FB0  28 0C 00 00 */	cmplwi r12, 0
+/* 8001A054 00016FB4  41 82 00 28 */	beq lbl_8001A07C
+/* 8001A058 00016FB8  80 1C 00 08 */	lwz r0, 8(r28)
+/* 8001A05C 00016FBC  28 00 00 01 */	cmplwi r0, 1
+/* 8001A060 00016FC0  40 82 00 1C */	bne lbl_8001A07C
+/* 8001A064 00016FC4  80 7C 00 04 */	lwz r3, 4(r28)
+/* 8001A068 00016FC8  7D 89 03 A6 */	mtctr r12
+/* 8001A06C 00016FCC  4E 80 04 21 */	bctrl 
+/* 8001A070 00016FD0  2C 03 FF FF */	cmpwi r3, -1
+/* 8001A074 00016FD4  40 82 00 08 */	bne lbl_8001A07C
+/* 8001A078 00016FD8  93 DC 00 00 */	stw r30, 0(r28)
+lbl_8001A07C:
+/* 8001A07C 00016FDC  3B 7B 00 01 */	addi r27, r27, 1
+/* 8001A080 00016FE0  3B FF 00 0C */	addi r31, r31, 0xc
+/* 8001A084 00016FE4  28 1B 00 10 */	cmplwi r27, 0x10
+/* 8001A088 00016FE8  41 80 FF C0 */	blt lbl_8001A048
+/* 8001A08C 00016FEC  39 61 00 20 */	addi r11, r1, 0x20
+/* 8001A090 00016FF0  48 08 0E 89 */	bl func_8009AF18
+/* 8001A094 00016FF4  80 01 00 24 */	lwz r0, 0x24(r1)
+/* 8001A098 00016FF8  7C 08 03 A6 */	mtlr r0
+/* 8001A09C 00016FFC  38 21 00 20 */	addi r1, r1, 0x20
+/* 8001A0A0 00017000  4E 80 00 20 */	blr 
+/* 8001A0A4 00017004  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 8001A0A8 00017008  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 8001A0AC 0001700C  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 8001A0B0 00017010  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 8001A0B4 00017014  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 8001A0B8 00017018  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 8001A0BC 0001701C  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */

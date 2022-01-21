@@ -1,0 +1,1394 @@
+.include "macros.inc"
+
+.section .text
+
+.org 0x80060D9C
+
+.global JC_JUTConsole_print_f_va
+JC_JUTConsole_print_f_va:
+/* 80060D9C 0005DCFC  94 21 FE F0 */	stwu r1, -0x110(r1)
+/* 80060DA0 0005DD00  7C 08 02 A6 */	mflr r0
+/* 80060DA4 0005DD04  7C A6 2B 78 */	mr r6, r5
+/* 80060DA8 0005DD08  7C 85 23 78 */	mr r5, r4
+/* 80060DAC 0005DD0C  90 01 01 14 */	stw r0, 0x114(r1)
+/* 80060DB0 0005DD10  38 80 01 00 */	li r4, 0x100
+/* 80060DB4 0005DD14  93 E1 01 0C */	stw r31, 0x10c(r1)
+/* 80060DB8 0005DD18  7C 7F 1B 78 */	mr r31, r3
+/* 80060DBC 0005DD1C  38 61 00 08 */	addi r3, r1, 8
+/* 80060DC0 0005DD20  48 03 C7 69 */	bl vsnprintf
+/* 80060DC4 0005DD24  7F E3 FB 78 */	mr r3, r31
+/* 80060DC8 0005DD28  38 81 00 08 */	addi r4, r1, 8
+/* 80060DCC 0005DD2C  48 01 59 ED */	bl print__10JUTConsoleFPCc
+/* 80060DD0 0005DD30  80 01 01 14 */	lwz r0, 0x114(r1)
+/* 80060DD4 0005DD34  83 E1 01 0C */	lwz r31, 0x10c(r1)
+/* 80060DD8 0005DD38  7C 08 03 A6 */	mtlr r0
+/* 80060DDC 0005DD3C  38 21 01 10 */	addi r1, r1, 0x110
+/* 80060DE0 0005DD40  4E 80 00 20 */	blr 
+
+.global JW_JUTReport
+JW_JUTReport:
+/* 80060DE4 0005DD44  94 21 FE 70 */	stwu r1, -0x190(r1)
+/* 80060DE8 0005DD48  7C 08 02 A6 */	mflr r0
+/* 80060DEC 0005DD4C  90 01 01 94 */	stw r0, 0x194(r1)
+/* 80060DF0 0005DD50  39 61 01 90 */	addi r11, r1, 0x190
+/* 80060DF4 0005DD54  48 03 A0 DD */	bl func_8009AED0
+/* 80060DF8 0005DD58  7C 7C 1B 78 */	mr r28, r3
+/* 80060DFC 0005DD5C  7C 9D 23 78 */	mr r29, r4
+/* 80060E00 0005DD60  7C BE 2B 78 */	mr r30, r5
+/* 80060E04 0005DD64  40 86 00 24 */	bne cr1, lbl_80060E28
+/* 80060E08 0005DD68  D8 21 00 28 */	stfd f1, 0x28(r1)
+/* 80060E0C 0005DD6C  D8 41 00 30 */	stfd f2, 0x30(r1)
+/* 80060E10 0005DD70  D8 61 00 38 */	stfd f3, 0x38(r1)
+/* 80060E14 0005DD74  D8 81 00 40 */	stfd f4, 0x40(r1)
+/* 80060E18 0005DD78  D8 A1 00 48 */	stfd f5, 0x48(r1)
+/* 80060E1C 0005DD7C  D8 C1 00 50 */	stfd f6, 0x50(r1)
+/* 80060E20 0005DD80  D8 E1 00 58 */	stfd f7, 0x58(r1)
+/* 80060E24 0005DD84  D9 01 00 60 */	stfd f8, 0x60(r1)
+lbl_80060E28:
+/* 80060E28 0005DD88  39 61 01 98 */	addi r11, r1, 0x198
+/* 80060E2C 0005DD8C  38 01 00 08 */	addi r0, r1, 8
+/* 80060E30 0005DD90  3D 80 04 00 */	lis r12, 0x400
+/* 80060E34 0005DD94  90 61 00 08 */	stw r3, 8(r1)
+/* 80060E38 0005DD98  3B E1 00 68 */	addi r31, r1, 0x68
+/* 80060E3C 0005DD9C  38 61 00 74 */	addi r3, r1, 0x74
+/* 80060E40 0005DDA0  90 81 00 0C */	stw r4, 0xc(r1)
+/* 80060E44 0005DDA4  38 80 01 00 */	li r4, 0x100
+/* 80060E48 0005DDA8  90 A1 00 10 */	stw r5, 0x10(r1)
+/* 80060E4C 0005DDAC  7C C5 33 78 */	mr r5, r6
+/* 80060E50 0005DDB0  90 C1 00 14 */	stw r6, 0x14(r1)
+/* 80060E54 0005DDB4  7F E6 FB 78 */	mr r6, r31
+/* 80060E58 0005DDB8  90 E1 00 18 */	stw r7, 0x18(r1)
+/* 80060E5C 0005DDBC  91 01 00 1C */	stw r8, 0x1c(r1)
+/* 80060E60 0005DDC0  91 21 00 20 */	stw r9, 0x20(r1)
+/* 80060E64 0005DDC4  91 41 00 24 */	stw r10, 0x24(r1)
+/* 80060E68 0005DDC8  91 81 00 68 */	stw r12, 0x68(r1)
+/* 80060E6C 0005DDCC  91 61 00 6C */	stw r11, 0x6c(r1)
+/* 80060E70 0005DDD0  90 01 00 70 */	stw r0, 0x70(r1)
+/* 80060E74 0005DDD4  48 03 C6 B5 */	bl vsnprintf
+/* 80060E78 0005DDD8  7C 60 1B 79 */	or. r0, r3, r3
+/* 80060E7C 0005DDDC  41 80 00 2C */	blt lbl_80060EA8
+/* 80060E80 0005DDE0  2C 00 01 00 */	cmpwi r0, 0x100
+/* 80060E84 0005DDE4  80 6D 8C 80 */	lwz r3, sDebugPrint__10JUTDbPrint-_SDA_BASE_(r13)
+/* 80060E88 0005DDE8  7F 84 E3 78 */	mr r4, r28
+/* 80060E8C 0005DDEC  7F A5 EB 78 */	mr r5, r29
+/* 80060E90 0005DDF0  7F C6 F3 78 */	mr r6, r30
+/* 80060E94 0005DDF4  38 E1 00 74 */	addi r7, r1, 0x74
+/* 80060E98 0005DDF8  39 00 00 FF */	li r8, 0xff
+/* 80060E9C 0005DDFC  40 80 00 08 */	bge lbl_80060EA4
+/* 80060EA0 0005DE00  7C 08 03 78 */	mr r8, r0
+lbl_80060EA4:
+/* 80060EA4 0005DE04  48 00 F0 61 */	bl enter__10JUTDbPrintFiiiPCci
+lbl_80060EA8:
+/* 80060EA8 0005DE08  39 61 01 90 */	addi r11, r1, 0x190
+/* 80060EAC 0005DE0C  48 03 A0 71 */	bl func_8009AF1C
+/* 80060EB0 0005DE10  80 01 01 94 */	lwz r0, 0x194(r1)
+/* 80060EB4 0005DE14  7C 08 03 A6 */	mtlr r0
+/* 80060EB8 0005DE18  38 21 01 90 */	addi r1, r1, 0x190
+/* 80060EBC 0005DE1C  4E 80 00 20 */	blr 
+
+.global JW_Alloc
+JW_Alloc:
+/* 80060EC0 0005DE20  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80060EC4 0005DE24  7C 08 02 A6 */	mflr r0
+/* 80060EC8 0005DE28  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80060ECC 0005DE2C  93 E1 00 0C */	stw r31, 0xc(r1)
+/* 80060ED0 0005DE30  7C 9F 23 78 */	mr r31, r4
+/* 80060ED4 0005DE34  93 C1 00 08 */	stw r30, 8(r1)
+/* 80060ED8 0005DE38  7C 7E 1B 78 */	mr r30, r3
+/* 80060EDC 0005DE3C  48 00 0A 39 */	bl JC_JFWSystem_getSystemHeap
+/* 80060EE0 0005DE40  7F C4 F3 78 */	mr r4, r30
+/* 80060EE4 0005DE44  7F E5 FB 78 */	mr r5, r31
+/* 80060EE8 0005DE48  48 00 03 75 */	bl JC_JKRHeap_alloc
+/* 80060EEC 0005DE4C  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80060EF0 0005DE50  83 E1 00 0C */	lwz r31, 0xc(r1)
+/* 80060EF4 0005DE54  83 C1 00 08 */	lwz r30, 8(r1)
+/* 80060EF8 0005DE58  7C 08 03 A6 */	mtlr r0
+/* 80060EFC 0005DE5C  38 21 00 10 */	addi r1, r1, 0x10
+/* 80060F00 0005DE60  4E 80 00 20 */	blr 
+
+.global JW_Resize
+JW_Resize:
+/* 80060F04 0005DE64  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80060F08 0005DE68  7C 08 02 A6 */	mflr r0
+/* 80060F0C 0005DE6C  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80060F10 0005DE70  93 E1 00 0C */	stw r31, 0xc(r1)
+/* 80060F14 0005DE74  7C 9F 23 78 */	mr r31, r4
+/* 80060F18 0005DE78  93 C1 00 08 */	stw r30, 8(r1)
+/* 80060F1C 0005DE7C  7C 7E 1B 78 */	mr r30, r3
+/* 80060F20 0005DE80  48 00 09 F5 */	bl JC_JFWSystem_getSystemHeap
+/* 80060F24 0005DE84  7F C4 F3 78 */	mr r4, r30
+/* 80060F28 0005DE88  7F E5 FB 78 */	mr r5, r31
+/* 80060F2C 0005DE8C  48 00 03 51 */	bl JC_JKRHeap_resize
+/* 80060F30 0005DE90  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80060F34 0005DE94  83 E1 00 0C */	lwz r31, 0xc(r1)
+/* 80060F38 0005DE98  83 C1 00 08 */	lwz r30, 8(r1)
+/* 80060F3C 0005DE9C  7C 08 03 A6 */	mtlr r0
+/* 80060F40 0005DEA0  38 21 00 10 */	addi r1, r1, 0x10
+/* 80060F44 0005DEA4  4E 80 00 20 */	blr 
+
+.global JW_Free
+JW_Free:
+/* 80060F48 0005DEA8  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80060F4C 0005DEAC  7C 08 02 A6 */	mflr r0
+/* 80060F50 0005DEB0  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80060F54 0005DEB4  93 E1 00 0C */	stw r31, 0xc(r1)
+/* 80060F58 0005DEB8  7C 7F 1B 78 */	mr r31, r3
+/* 80060F5C 0005DEBC  48 00 09 B9 */	bl JC_JFWSystem_getSystemHeap
+/* 80060F60 0005DEC0  7F E4 FB 78 */	mr r4, r31
+/* 80060F64 0005DEC4  48 00 03 39 */	bl JC_JKRHeap_free
+/* 80060F68 0005DEC8  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80060F6C 0005DECC  83 E1 00 0C */	lwz r31, 0xc(r1)
+/* 80060F70 0005DED0  7C 08 03 A6 */	mtlr r0
+/* 80060F74 0005DED4  38 21 00 10 */	addi r1, r1, 0x10
+/* 80060F78 0005DED8  4E 80 00 20 */	blr 
+
+.global JW_GetMemBlockSize
+JW_GetMemBlockSize:
+/* 80060F7C 0005DEDC  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80060F80 0005DEE0  7C 08 02 A6 */	mflr r0
+/* 80060F84 0005DEE4  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80060F88 0005DEE8  93 E1 00 0C */	stw r31, 0xc(r1)
+/* 80060F8C 0005DEEC  7C 7F 1B 78 */	mr r31, r3
+/* 80060F90 0005DEF0  48 00 09 85 */	bl JC_JFWSystem_getSystemHeap
+/* 80060F94 0005DEF4  7F E4 FB 78 */	mr r4, r31
+/* 80060F98 0005DEF8  48 00 03 95 */	bl JC_JKRHeap_getSize
+/* 80060F9C 0005DEFC  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80060FA0 0005DF00  83 E1 00 0C */	lwz r31, 0xc(r1)
+/* 80060FA4 0005DF04  7C 08 03 A6 */	mtlr r0
+/* 80060FA8 0005DF08  38 21 00 10 */	addi r1, r1, 0x10
+/* 80060FAC 0005DF0C  4E 80 00 20 */	blr 
+
+.global JW_JUTXfb_clearIndex
+JW_JUTXfb_clearIndex:
+/* 80060FB0 0005DF10  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80060FB4 0005DF14  7C 08 02 A6 */	mflr r0
+/* 80060FB8 0005DF18  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80060FBC 0005DF1C  48 00 0C B1 */	bl JC_JUTXfb_getManager
+/* 80060FC0 0005DF20  48 00 0C B5 */	bl JC_JUTXfb_clearIndex
+/* 80060FC4 0005DF24  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80060FC8 0005DF28  7C 08 03 A6 */	mtlr r0
+/* 80060FCC 0005DF2C  38 21 00 10 */	addi r1, r1, 0x10
+/* 80060FD0 0005DF30  4E 80 00 20 */	blr 
+
+.global JC_JUTFader_delete
+JC_JUTFader_delete:
+/* 80060FD4 0005DF34  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80060FD8 0005DF38  7C 08 02 A6 */	mflr r0
+/* 80060FDC 0005DF3C  28 03 00 00 */	cmplwi r3, 0
+/* 80060FE0 0005DF40  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80060FE4 0005DF44  41 82 00 18 */	beq lbl_80060FFC
+/* 80060FE8 0005DF48  81 83 00 00 */	lwz r12, 0(r3)
+/* 80060FEC 0005DF4C  38 80 00 01 */	li r4, 1
+/* 80060FF0 0005DF50  81 8C 00 08 */	lwz r12, 8(r12)
+/* 80060FF4 0005DF54  7D 89 03 A6 */	mtctr r12
+/* 80060FF8 0005DF58  4E 80 04 21 */	bctrl 
+lbl_80060FFC:
+/* 80060FFC 0005DF5C  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061000 0005DF60  7C 08 03 A6 */	mtlr r0
+/* 80061004 0005DF64  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061008 0005DF68  4E 80 00 20 */	blr 
+
+.global JC_JUTFader_new
+JC_JUTFader_new:
+/* 8006100C 0005DF6C  94 21 FF D0 */	stwu r1, -0x30(r1)
+/* 80061010 0005DF70  7C 08 02 A6 */	mflr r0
+/* 80061014 0005DF74  90 01 00 34 */	stw r0, 0x34(r1)
+/* 80061018 0005DF78  39 61 00 30 */	addi r11, r1, 0x30
+/* 8006101C 0005DF7C  48 03 9E B1 */	bl func_8009AECC
+/* 80061020 0005DF80  7C 7B 1B 78 */	mr r27, r3
+/* 80061024 0005DF84  7C 9C 23 78 */	mr r28, r4
+/* 80061028 0005DF88  7C BD 2B 78 */	mr r29, r5
+/* 8006102C 0005DF8C  7C DE 33 78 */	mr r30, r6
+/* 80061030 0005DF90  7C FF 3B 78 */	mr r31, r7
+/* 80061034 0005DF94  38 60 00 28 */	li r3, 0x28
+/* 80061038 0005DF98  48 00 2E F9 */	bl __nw__FUl
+/* 8006103C 0005DF9C  7C 60 1B 79 */	or. r0, r3, r3
+/* 80061040 0005DFA0  41 82 00 50 */	beq lbl_80061090
+/* 80061044 0005DFA4  80 1F 00 00 */	lwz r0, 0(r31)
+/* 80061048 0005DFA8  7F 64 DB 78 */	mr r4, r27
+/* 8006104C 0005DFAC  7F 85 E3 78 */	mr r5, r28
+/* 80061050 0005DFB0  7F A6 EB 78 */	mr r6, r29
+/* 80061054 0005DFB4  90 01 00 08 */	stw r0, 8(r1)
+/* 80061058 0005DFB8  7F C7 F3 78 */	mr r7, r30
+/* 8006105C 0005DFBC  39 01 00 10 */	addi r8, r1, 0x10
+/* 80061060 0005DFC0  89 61 00 08 */	lbz r11, 8(r1)
+/* 80061064 0005DFC4  89 41 00 09 */	lbz r10, 9(r1)
+/* 80061068 0005DFC8  89 21 00 0A */	lbz r9, 0xa(r1)
+/* 8006106C 0005DFCC  88 01 00 0B */	lbz r0, 0xb(r1)
+/* 80061070 0005DFD0  99 61 00 0C */	stb r11, 0xc(r1)
+/* 80061074 0005DFD4  99 41 00 0D */	stb r10, 0xd(r1)
+/* 80061078 0005DFD8  99 21 00 0E */	stb r9, 0xe(r1)
+/* 8006107C 0005DFDC  98 01 00 0F */	stb r0, 0xf(r1)
+/* 80061080 0005DFE0  80 01 00 0C */	lwz r0, 0xc(r1)
+/* 80061084 0005DFE4  90 01 00 10 */	stw r0, 0x10(r1)
+/* 80061088 0005DFE8  48 01 31 05 */	bl __ct__8JUTFaderFiiiiQ28JUtility6TColor
+/* 8006108C 0005DFEC  7C 60 1B 78 */	mr r0, r3
+lbl_80061090:
+/* 80061090 0005DFF0  7C 03 03 78 */	mr r3, r0
+/* 80061094 0005DFF4  39 61 00 30 */	addi r11, r1, 0x30
+/* 80061098 0005DFF8  48 03 9E 81 */	bl func_8009AF18
+/* 8006109C 0005DFFC  80 01 00 34 */	lwz r0, 0x34(r1)
+/* 800610A0 0005E000  7C 08 03 A6 */	mtlr r0
+/* 800610A4 0005E004  38 21 00 30 */	addi r1, r1, 0x30
+/* 800610A8 0005E008  4E 80 00 20 */	blr 
+
+.global JC_JUTDbPrint_getManager
+JC_JUTDbPrint_getManager:
+/* 800610AC 0005E00C  80 6D 8C 80 */	lwz r3, sDebugPrint__10JUTDbPrint-_SDA_BASE_(r13)
+/* 800610B0 0005E010  4E 80 00 20 */	blr 
+
+.global JC_JUTDbPrint_setVisible
+JC_JUTDbPrint_setVisible:
+/* 800610B4 0005E014  30 04 FF FF */	addic r0, r4, -1
+/* 800610B8 0005E018  7C 00 21 10 */	subfe r0, r0, r4
+/* 800610BC 0005E01C  98 03 00 0C */	stb r0, 0xc(r3)
+/* 800610C0 0005E020  4E 80 00 20 */	blr 
+
+.global JC_J2DOrthoGraph_delete
+JC_J2DOrthoGraph_delete:
+/* 800610C4 0005E024  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 800610C8 0005E028  7C 08 02 A6 */	mflr r0
+/* 800610CC 0005E02C  28 03 00 00 */	cmplwi r3, 0
+/* 800610D0 0005E030  90 01 00 14 */	stw r0, 0x14(r1)
+/* 800610D4 0005E034  41 82 00 18 */	beq lbl_800610EC
+/* 800610D8 0005E038  81 83 00 00 */	lwz r12, 0(r3)
+/* 800610DC 0005E03C  38 80 00 01 */	li r4, 1
+/* 800610E0 0005E040  81 8C 00 08 */	lwz r12, 8(r12)
+/* 800610E4 0005E044  7D 89 03 A6 */	mtctr r12
+/* 800610E8 0005E048  4E 80 04 21 */	bctrl 
+lbl_800610EC:
+/* 800610EC 0005E04C  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 800610F0 0005E050  7C 08 03 A6 */	mtlr r0
+/* 800610F4 0005E054  38 21 00 10 */	addi r1, r1, 0x10
+/* 800610F8 0005E058  4E 80 00 20 */	blr 
+
+.global JC_J2DOrthoGraph_new
+JC_J2DOrthoGraph_new:
+/* 800610FC 0005E05C  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061100 0005E060  7C 08 02 A6 */	mflr r0
+/* 80061104 0005E064  38 60 00 D4 */	li r3, 0xd4
+/* 80061108 0005E068  90 01 00 14 */	stw r0, 0x14(r1)
+/* 8006110C 0005E06C  48 00 2E 25 */	bl __nw__FUl
+/* 80061110 0005E070  7C 60 1B 79 */	or. r0, r3, r3
+/* 80061114 0005E074  41 82 00 0C */	beq lbl_80061120
+/* 80061118 0005E078  48 01 70 61 */	bl __ct__13J2DOrthoGraphFv
+/* 8006111C 0005E07C  7C 60 1B 78 */	mr r0, r3
+lbl_80061120:
+/* 80061120 0005E080  7C 03 03 78 */	mr r3, r0
+/* 80061124 0005E084  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061128 0005E088  7C 08 03 A6 */	mtlr r0
+/* 8006112C 0005E08C  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061130 0005E090  4E 80 00 20 */	blr 
+
+.global JC_J2DOrthoGraph_setPort
+JC_J2DOrthoGraph_setPort:
+/* 80061134 0005E094  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061138 0005E098  7C 08 02 A6 */	mflr r0
+/* 8006113C 0005E09C  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061140 0005E0A0  81 83 00 00 */	lwz r12, 0(r3)
+/* 80061144 0005E0A4  81 8C 00 14 */	lwz r12, 0x14(r12)
+/* 80061148 0005E0A8  7D 89 03 A6 */	mtctr r12
+/* 8006114C 0005E0AC  4E 80 04 21 */	bctrl 
+/* 80061150 0005E0B0  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061154 0005E0B4  7C 08 03 A6 */	mtlr r0
+/* 80061158 0005E0B8  38 21 00 10 */	addi r1, r1, 0x10
+/* 8006115C 0005E0BC  4E 80 00 20 */	blr 
+
+.global JC_J2DOrthoGraph_setOrtho
+JC_J2DOrthoGraph_setOrtho:
+/* 80061160 0005E0C0  94 21 FF B0 */	stwu r1, -0x50(r1)
+/* 80061164 0005E0C4  7C 08 02 A6 */	mflr r0
+/* 80061168 0005E0C8  3D 20 43 30 */	lis r9, 0x4330
+/* 8006116C 0005E0CC  6C 8A 80 00 */	xoris r10, r4, 0x8000
+/* 80061170 0005E0D0  91 41 00 2C */	stw r10, 0x2c(r1)
+/* 80061174 0005E0D4  6C A8 80 00 */	xoris r8, r5, 0x8000
+/* 80061178 0005E0D8  6C C5 80 00 */	xoris r5, r6, 0x8000
+/* 8006117C 0005E0DC  C8 C2 86 60 */	lfd f6, @2247-_SDA2_BASE_(r2)
+/* 80061180 0005E0E0  91 21 00 28 */	stw r9, 0x28(r1)
+/* 80061184 0005E0E4  38 81 00 08 */	addi r4, r1, 8
+/* 80061188 0005E0E8  C0 22 86 58 */	lfs f1, @2244-_SDA2_BASE_(r2)
+/* 8006118C 0005E0EC  C8 01 00 28 */	lfd f0, 0x28(r1)
+/* 80061190 0005E0F0  90 A1 00 34 */	stw r5, 0x34(r1)
+/* 80061194 0005E0F4  EC 80 30 28 */	fsubs f4, f0, f6
+/* 80061198 0005E0F8  C0 42 86 5C */	lfs f2, @2245-_SDA2_BASE_(r2)
+/* 8006119C 0005E0FC  91 21 00 30 */	stw r9, 0x30(r1)
+/* 800611A0 0005E100  C8 01 00 30 */	lfd f0, 0x30(r1)
+/* 800611A4 0005E104  90 01 00 54 */	stw r0, 0x54(r1)
+/* 800611A8 0005E108  6C E0 80 00 */	xoris r0, r7, 0x8000
+/* 800611AC 0005E10C  EC 60 30 28 */	fsubs f3, f0, f6
+/* 800611B0 0005E110  91 01 00 3C */	stw r8, 0x3c(r1)
+/* 800611B4 0005E114  91 21 00 38 */	stw r9, 0x38(r1)
+/* 800611B8 0005E118  EC 84 18 2A */	fadds f4, f4, f3
+/* 800611BC 0005E11C  C8 01 00 38 */	lfd f0, 0x38(r1)
+/* 800611C0 0005E120  90 01 00 44 */	stw r0, 0x44(r1)
+/* 800611C4 0005E124  EC 60 30 28 */	fsubs f3, f0, f6
+/* 800611C8 0005E128  91 21 00 40 */	stw r9, 0x40(r1)
+/* 800611CC 0005E12C  C8 01 00 40 */	lfd f0, 0x40(r1)
+/* 800611D0 0005E130  91 41 00 1C */	stw r10, 0x1c(r1)
+/* 800611D4 0005E134  EC 00 30 28 */	fsubs f0, f0, f6
+/* 800611D8 0005E138  91 21 00 18 */	stw r9, 0x18(r1)
+/* 800611DC 0005E13C  C8 A1 00 18 */	lfd f5, 0x18(r1)
+/* 800611E0 0005E140  EC 03 00 2A */	fadds f0, f3, f0
+/* 800611E4 0005E144  91 01 00 24 */	stw r8, 0x24(r1)
+/* 800611E8 0005E148  EC A5 30 28 */	fsubs f5, f5, f6
+/* 800611EC 0005E14C  91 21 00 20 */	stw r9, 0x20(r1)
+/* 800611F0 0005E150  C8 61 00 20 */	lfd f3, 0x20(r1)
+/* 800611F4 0005E154  D0 A1 00 08 */	stfs f5, 8(r1)
+/* 800611F8 0005E158  EC 63 30 28 */	fsubs f3, f3, f6
+/* 800611FC 0005E15C  D0 81 00 10 */	stfs f4, 0x10(r1)
+/* 80061200 0005E160  D0 61 00 0C */	stfs f3, 0xc(r1)
+/* 80061204 0005E164  D0 01 00 14 */	stfs f0, 0x14(r1)
+/* 80061208 0005E168  48 01 71 0D */	bl setOrtho__13J2DOrthoGraphFRCQ29JGeometry8TBox2<f>ff
+/* 8006120C 0005E16C  80 01 00 54 */	lwz r0, 0x54(r1)
+/* 80061210 0005E170  7C 08 03 A6 */	mtlr r0
+/* 80061214 0005E174  38 21 00 50 */	addi r1, r1, 0x50
+/* 80061218 0005E178  4E 80 00 20 */	blr 
+
+.global JC_JUTVideo_getManager
+JC_JUTVideo_getManager:
+/* 8006121C 0005E17C  80 6D 8C E8 */	lwz r3, sManager__8JUTVideo-_SDA_BASE_(r13)
+/* 80061220 0005E180  4E 80 00 20 */	blr 
+
+.global JC_JUTVideo_setRenderMode
+JC_JUTVideo_setRenderMode:
+/* 80061224 0005E184  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061228 0005E188  7C 08 02 A6 */	mflr r0
+/* 8006122C 0005E18C  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061230 0005E190  48 01 2B B9 */	bl setRenderMode__8JUTVideoFPC16_GXRenderModeObj
+/* 80061234 0005E194  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061238 0005E198  7C 08 03 A6 */	mtlr r0
+/* 8006123C 0005E19C  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061240 0005E1A0  4E 80 00 20 */	blr 
+
+.global JC_JUTVideo_getFbWidth
+JC_JUTVideo_getFbWidth:
+/* 80061244 0005E1A4  80 63 00 04 */	lwz r3, 4(r3)
+/* 80061248 0005E1A8  A0 63 00 04 */	lhz r3, 4(r3)
+/* 8006124C 0005E1AC  4E 80 00 20 */	blr 
+
+.global JC_JUTVideo_getEfbHeight
+JC_JUTVideo_getEfbHeight:
+/* 80061250 0005E1B0  80 63 00 04 */	lwz r3, 4(r3)
+/* 80061254 0005E1B4  A0 63 00 06 */	lhz r3, 6(r3)
+/* 80061258 0005E1B8  4E 80 00 20 */	blr 
+
+.global JC_JKRHeap_alloc
+JC_JKRHeap_alloc:
+/* 8006125C 0005E1BC  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061260 0005E1C0  7C 08 02 A6 */	mflr r0
+/* 80061264 0005E1C4  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061268 0005E1C8  48 00 28 61 */	bl alloc__7JKRHeapFUli
+/* 8006126C 0005E1CC  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061270 0005E1D0  7C 08 03 A6 */	mtlr r0
+/* 80061274 0005E1D4  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061278 0005E1D8  4E 80 00 20 */	blr 
+
+.global JC_JKRHeap_resize
+JC_JKRHeap_resize:
+/* 8006127C 0005E1DC  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061280 0005E1E0  7C 08 02 A6 */	mflr r0
+/* 80061284 0005E1E4  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061288 0005E1E8  48 00 29 31 */	bl resize__7JKRHeapFPvUl
+/* 8006128C 0005E1EC  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061290 0005E1F0  7C 08 03 A6 */	mtlr r0
+/* 80061294 0005E1F4  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061298 0005E1F8  4E 80 00 20 */	blr 
+
+.global JC_JKRHeap_free
+JC_JKRHeap_free:
+/* 8006129C 0005E1FC  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 800612A0 0005E200  7C 08 02 A6 */	mflr r0
+/* 800612A4 0005E204  90 01 00 14 */	stw r0, 0x14(r1)
+/* 800612A8 0005E208  48 00 28 95 */	bl free__7JKRHeapFPv
+/* 800612AC 0005E20C  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 800612B0 0005E210  7C 08 03 A6 */	mtlr r0
+/* 800612B4 0005E214  38 21 00 10 */	addi r1, r1, 0x10
+/* 800612B8 0005E218  4E 80 00 20 */	blr 
+
+.global JC_JKRHeap_dump
+JC_JKRHeap_dump:
+/* 800612BC 0005E21C  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 800612C0 0005E220  7C 08 02 A6 */	mflr r0
+/* 800612C4 0005E224  90 01 00 14 */	stw r0, 0x14(r1)
+/* 800612C8 0005E228  81 83 00 00 */	lwz r12, 0(r3)
+/* 800612CC 0005E22C  81 8C 00 3C */	lwz r12, 0x3c(r12)
+/* 800612D0 0005E230  7D 89 03 A6 */	mtctr r12
+/* 800612D4 0005E234  4E 80 04 21 */	bctrl 
+/* 800612D8 0005E238  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 800612DC 0005E23C  54 63 06 3E */	clrlwi r3, r3, 0x18
+/* 800612E0 0005E240  7C 08 03 A6 */	mtlr r0
+/* 800612E4 0005E244  38 21 00 10 */	addi r1, r1, 0x10
+/* 800612E8 0005E248  4E 80 00 20 */	blr 
+
+.global JC_JKRHeap_getFreeSize
+JC_JKRHeap_getFreeSize:
+/* 800612EC 0005E24C  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 800612F0 0005E250  7C 08 02 A6 */	mflr r0
+/* 800612F4 0005E254  90 01 00 14 */	stw r0, 0x14(r1)
+/* 800612F8 0005E258  48 00 29 69 */	bl getFreeSize__7JKRHeapFv
+/* 800612FC 0005E25C  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061300 0005E260  7C 08 03 A6 */	mtlr r0
+/* 80061304 0005E264  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061308 0005E268  4E 80 00 20 */	blr 
+
+.global JC_JKRHeap_getTotalFreeSize
+JC_JKRHeap_getTotalFreeSize:
+/* 8006130C 0005E26C  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061310 0005E270  7C 08 02 A6 */	mflr r0
+/* 80061314 0005E274  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061318 0005E278  48 00 29 75 */	bl getTotalFreeSize__7JKRHeapFv
+/* 8006131C 0005E27C  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061320 0005E280  7C 08 03 A6 */	mtlr r0
+/* 80061324 0005E284  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061328 0005E288  4E 80 00 20 */	blr 
+
+.global JC_JKRHeap_getSize
+JC_JKRHeap_getSize:
+/* 8006132C 0005E28C  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061330 0005E290  7C 08 02 A6 */	mflr r0
+/* 80061334 0005E294  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061338 0005E298  48 00 28 FD */	bl getSize__7JKRHeapFPv
+/* 8006133C 0005E29C  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061340 0005E2A0  7C 08 03 A6 */	mtlr r0
+/* 80061344 0005E2A4  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061348 0005E2A8  4E 80 00 20 */	blr 
+
+.global JC__JKRGetSystemHeap
+JC__JKRGetSystemHeap:
+/* 8006134C 0005E2AC  80 6D 8B 58 */	lwz r3, sSystemHeap__7JKRHeap-_SDA_BASE_(r13)
+/* 80061350 0005E2B0  4E 80 00 20 */	blr 
+
+.global JC__JKRGetMemBlockSize
+JC__JKRGetMemBlockSize:
+/* 80061354 0005E2B4  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061358 0005E2B8  7C 08 02 A6 */	mflr r0
+/* 8006135C 0005E2BC  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061360 0005E2C0  7C 60 1B 78 */	mr r0, r3
+/* 80061364 0005E2C4  7C 83 23 78 */	mr r3, r4
+/* 80061368 0005E2C8  7C 04 03 78 */	mr r4, r0
+/* 8006136C 0005E2CC  48 00 28 79 */	bl getSize__7JKRHeapFPvP7JKRHeap
+/* 80061370 0005E2D0  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061374 0005E2D4  7C 08 03 A6 */	mtlr r0
+/* 80061378 0005E2D8  38 21 00 10 */	addi r1, r1, 0x10
+/* 8006137C 0005E2DC  4E 80 00 20 */	blr 
+
+.global JC_JKRExpHeap_changeGroupID
+JC_JKRExpHeap_changeGroupID:
+/* 80061380 0005E2E0  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061384 0005E2E4  7C 08 02 A6 */	mflr r0
+/* 80061388 0005E2E8  54 84 06 3E */	clrlwi r4, r4, 0x18
+/* 8006138C 0005E2EC  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061390 0005E2F0  48 00 29 29 */	bl changeGroupID__7JKRHeapFUc
+/* 80061394 0005E2F4  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061398 0005E2F8  54 63 06 3E */	clrlwi r3, r3, 0x18
+/* 8006139C 0005E2FC  7C 08 03 A6 */	mtlr r0
+/* 800613A0 0005E300  38 21 00 10 */	addi r1, r1, 0x10
+/* 800613A4 0005E304  4E 80 00 20 */	blr 
+
+.global JC_JUTGamePad_read
+JC_JUTGamePad_read:
+/* 800613A8 0005E308  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 800613AC 0005E30C  7C 08 02 A6 */	mflr r0
+/* 800613B0 0005E310  90 01 00 14 */	stw r0, 0x14(r1)
+/* 800613B4 0005E314  48 00 F1 55 */	bl read__10JUTGamePadFv
+/* 800613B8 0005E318  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 800613BC 0005E31C  7C 08 03 A6 */	mtlr r0
+/* 800613C0 0005E320  38 21 00 10 */	addi r1, r1, 0x10
+/* 800613C4 0005E324  4E 80 00 20 */	blr 
+
+.global JC_JUTGamePad_getPadStatus
+JC_JUTGamePad_getPadStatus:
+/* 800613C8 0005E328  1C A4 00 0C */	mulli r5, r4, 0xc
+/* 800613CC 0005E32C  3C 80 80 20 */	lis r4, mPadStatus__10JUTGamePad@ha
+/* 800613D0 0005E330  38 04 70 F8 */	addi r0, r4, mPadStatus__10JUTGamePad@l
+/* 800613D4 0005E334  7C A0 2A 14 */	add r5, r0, r5
+/* 800613D8 0005E338  80 85 00 00 */	lwz r4, 0(r5)
+/* 800613DC 0005E33C  80 05 00 04 */	lwz r0, 4(r5)
+/* 800613E0 0005E340  90 83 00 00 */	stw r4, 0(r3)
+/* 800613E4 0005E344  90 03 00 04 */	stw r0, 4(r3)
+/* 800613E8 0005E348  80 05 00 08 */	lwz r0, 8(r5)
+/* 800613EC 0005E34C  90 03 00 08 */	stw r0, 8(r3)
+/* 800613F0 0005E350  4E 80 00 20 */	blr 
+
+.global JC_JUTGamePad_recalibrate
+JC_JUTGamePad_recalibrate:
+/* 800613F4 0005E354  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 800613F8 0005E358  7C 08 02 A6 */	mflr r0
+/* 800613FC 0005E35C  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061400 0005E360  48 00 FD A1 */	bl recalibrate__10JUTGamePadFUl
+/* 80061404 0005E364  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061408 0005E368  54 63 06 3E */	clrlwi r3, r3, 0x18
+/* 8006140C 0005E36C  7C 08 03 A6 */	mtlr r0
+/* 80061410 0005E370  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061414 0005E374  4E 80 00 20 */	blr 
+
+.global JC_JUTConsole_setOutput
+JC_JUTConsole_setOutput:
+/* 80061418 0005E378  90 83 00 58 */	stw r4, 0x58(r3)
+/* 8006141C 0005E37C  4E 80 00 20 */	blr 
+
+.global JC_JUTConsole_getOutput
+JC_JUTConsole_getOutput:
+/* 80061420 0005E380  80 63 00 58 */	lwz r3, 0x58(r3)
+/* 80061424 0005E384  4E 80 00 20 */	blr 
+
+.global JC_JUTConsole_setVisible
+JC_JUTConsole_setVisible:
+/* 80061428 0005E388  30 04 FF FF */	addic r0, r4, -1
+/* 8006142C 0005E38C  7C 00 21 10 */	subfe r0, r0, r4
+/* 80061430 0005E390  98 03 00 64 */	stb r0, 0x64(r3)
+/* 80061434 0005E394  4E 80 00 20 */	blr 
+
+.global JC_JUTConsole_isVisible
+JC_JUTConsole_isVisible:
+/* 80061438 0005E398  88 63 00 64 */	lbz r3, 0x64(r3)
+/* 8006143C 0005E39C  4E 80 00 20 */	blr 
+
+.global JC_JUTConsole_getHeight
+JC_JUTConsole_getHeight:
+/* 80061440 0005E3A0  80 63 00 48 */	lwz r3, 0x48(r3)
+/* 80061444 0005E3A4  4E 80 00 20 */	blr 
+
+.global JC_JUTConsole_setPosition
+JC_JUTConsole_setPosition:
+/* 80061448 0005E3A8  90 83 00 40 */	stw r4, 0x40(r3)
+/* 8006144C 0005E3AC  90 A3 00 44 */	stw r5, 0x44(r3)
+/* 80061450 0005E3B0  4E 80 00 20 */	blr 
+
+.global JC_JUTConsole_getPositionX
+JC_JUTConsole_getPositionX:
+/* 80061454 0005E3B4  80 63 00 40 */	lwz r3, 0x40(r3)
+/* 80061458 0005E3B8  4E 80 00 20 */	blr 
+
+.global JC_JUTConsole_clear
+JC_JUTConsole_clear:
+/* 8006145C 0005E3BC  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061460 0005E3C0  7C 08 02 A6 */	mflr r0
+/* 80061464 0005E3C4  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061468 0005E3C8  48 01 4D 21 */	bl clear__10JUTConsoleFv
+/* 8006146C 0005E3CC  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061470 0005E3D0  7C 08 03 A6 */	mtlr r0
+/* 80061474 0005E3D4  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061478 0005E3D8  4E 80 00 20 */	blr 
+
+.global JC_JUTConsole_scroll
+JC_JUTConsole_scroll:
+/* 8006147C 0005E3DC  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061480 0005E3E0  7C 08 02 A6 */	mflr r0
+/* 80061484 0005E3E4  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061488 0005E3E8  48 01 57 8D */	bl scroll__10JUTConsoleFi
+/* 8006148C 0005E3EC  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061490 0005E3F0  7C 08 03 A6 */	mtlr r0
+/* 80061494 0005E3F4  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061498 0005E3F8  4E 80 00 20 */	blr 
+
+.global JC_JUTConsole_scrollToLastLine
+JC_JUTConsole_scrollToLastLine:
+/* 8006149C 0005E3FC  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 800614A0 0005E400  7C 08 02 A6 */	mflr r0
+/* 800614A4 0005E404  90 01 00 14 */	stw r0, 0x14(r1)
+/* 800614A8 0005E408  80 83 00 24 */	lwz r4, 0x24(r3)
+/* 800614AC 0005E40C  48 01 57 69 */	bl scroll__10JUTConsoleFi
+/* 800614B0 0005E410  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 800614B4 0005E414  7C 08 03 A6 */	mtlr r0
+/* 800614B8 0005E418  38 21 00 10 */	addi r1, r1, 0x10
+/* 800614BC 0005E41C  4E 80 00 20 */	blr 
+
+.global JC_JUTConsole_scrollToFirstLine
+JC_JUTConsole_scrollToFirstLine:
+/* 800614C0 0005E420  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 800614C4 0005E424  7C 08 02 A6 */	mflr r0
+/* 800614C8 0005E428  90 01 00 14 */	stw r0, 0x14(r1)
+/* 800614CC 0005E42C  80 03 00 24 */	lwz r0, 0x24(r3)
+/* 800614D0 0005E430  7C 80 00 D0 */	neg r4, r0
+/* 800614D4 0005E434  48 01 57 41 */	bl scroll__10JUTConsoleFi
+/* 800614D8 0005E438  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 800614DC 0005E43C  7C 08 03 A6 */	mtlr r0
+/* 800614E0 0005E440  38 21 00 10 */	addi r1, r1, 0x10
+/* 800614E4 0005E444  4E 80 00 20 */	blr 
+
+.global JC_JUTConsole_getUsedLine
+JC_JUTConsole_getUsedLine:
+/* 800614E8 0005E448  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 800614EC 0005E44C  7C 08 02 A6 */	mflr r0
+/* 800614F0 0005E450  90 01 00 14 */	stw r0, 0x14(r1)
+/* 800614F4 0005E454  48 01 57 FD */	bl getUsedLine__10JUTConsoleCFv
+/* 800614F8 0005E458  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 800614FC 0005E45C  7C 08 03 A6 */	mtlr r0
+/* 80061500 0005E460  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061504 0005E464  4E 80 00 20 */	blr 
+
+.global JC_JUTConsole_getLineOffset
+JC_JUTConsole_getLineOffset:
+/* 80061508 0005E468  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 8006150C 0005E46C  7C 08 02 A6 */	mflr r0
+/* 80061510 0005E470  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061514 0005E474  48 01 58 01 */	bl getLineOffset__10JUTConsoleCFv
+/* 80061518 0005E478  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 8006151C 0005E47C  7C 08 03 A6 */	mtlr r0
+/* 80061520 0005E480  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061524 0005E484  4E 80 00 20 */	blr 
+
+.global JC_JUTConsole_dumpToTerminal
+JC_JUTConsole_dumpToTerminal:
+/* 80061528 0005E488  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 8006152C 0005E48C  7C 08 02 A6 */	mflr r0
+/* 80061530 0005E490  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061534 0005E494  48 01 55 BD */	bl dumpToTerminal__10JUTConsoleFUi
+/* 80061538 0005E498  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 8006153C 0005E49C  7C 08 03 A6 */	mtlr r0
+/* 80061540 0005E4A0  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061544 0005E4A4  4E 80 00 20 */	blr 
+
+.global JC_JUTConsoleManager_getManager
+JC_JUTConsoleManager_getManager:
+/* 80061548 0005E4A8  80 6D 8D 20 */	lwz r3, sManager__17JUTConsoleManager-_SDA_BASE_(r13)
+/* 8006154C 0005E4AC  4E 80 00 20 */	blr 
+
+.global JC_JUTConsoleManager_drawDirect
+JC_JUTConsoleManager_drawDirect:
+/* 80061550 0005E4B0  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061554 0005E4B4  7C 08 02 A6 */	mflr r0
+/* 80061558 0005E4B8  90 01 00 14 */	stw r0, 0x14(r1)
+/* 8006155C 0005E4BC  30 04 FF FF */	addic r0, r4, -1
+/* 80061560 0005E4C0  7C 00 21 10 */	subfe r0, r0, r4
+/* 80061564 0005E4C4  54 04 06 3E */	clrlwi r4, r0, 0x18
+/* 80061568 0005E4C8  48 01 5A 45 */	bl drawDirect__17JUTConsoleManagerCFb
+/* 8006156C 0005E4CC  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061570 0005E4D0  7C 08 03 A6 */	mtlr r0
+/* 80061574 0005E4D4  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061578 0005E4D8  4E 80 00 20 */	blr 
+
+.global JC_JUTException_getManager
+JC_JUTException_getManager:
+/* 8006157C 0005E4DC  80 6D 8C B8 */	lwz r3, sErrorManager__12JUTException-_SDA_BASE_(r13)
+/* 80061580 0005E4E0  4E 80 00 20 */	blr 
+
+.global JC_JUTException_enterAllPad
+JC_JUTException_enterAllPad:
+/* 80061584 0005E4E4  38 00 FF FF */	li r0, -1
+/* 80061588 0005E4E8  90 03 00 68 */	stw r0, 0x68(r3)
+/* 8006158C 0005E4EC  90 03 00 6C */	stw r0, 0x6c(r3)
+/* 80061590 0005E4F0  4E 80 00 20 */	blr 
+
+.global JC_JUTException_setPreUserCallback
+JC_JUTException_setPreUserCallback:
+/* 80061594 0005E4F4  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061598 0005E4F8  7C 08 02 A6 */	mflr r0
+/* 8006159C 0005E4FC  90 01 00 14 */	stw r0, 0x14(r1)
+/* 800615A0 0005E500  48 01 15 4D */	bl setPreUserCallback__12JUTExceptionFPFUsP9OSContextUlUl_v
+/* 800615A4 0005E504  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 800615A8 0005E508  7C 08 03 A6 */	mtlr r0
+/* 800615AC 0005E50C  38 21 00 10 */	addi r1, r1, 0x10
+/* 800615B0 0005E510  4E 80 00 20 */	blr 
+
+.global JC_JUTException_setPostUserCallback
+JC_JUTException_setPostUserCallback:
+/* 800615B4 0005E514  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 800615B8 0005E518  7C 08 02 A6 */	mflr r0
+/* 800615BC 0005E51C  90 01 00 14 */	stw r0, 0x14(r1)
+/* 800615C0 0005E520  48 01 15 3D */	bl setPostUserCallback__12JUTExceptionFPFUsP9OSContextUlUl_v
+/* 800615C4 0005E524  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 800615C8 0005E528  7C 08 03 A6 */	mtlr r0
+/* 800615CC 0005E52C  38 21 00 10 */	addi r1, r1, 0x10
+/* 800615D0 0005E530  4E 80 00 20 */	blr 
+
+.global JC_JUTException_setMapFile
+JC_JUTException_setMapFile:
+/* 800615D4 0005E534  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 800615D8 0005E538  7C 08 02 A6 */	mflr r0
+/* 800615DC 0005E53C  90 01 00 14 */	stw r0, 0x14(r1)
+/* 800615E0 0005E540  48 01 15 2D */	bl appendMapFile__12JUTExceptionFPCc
+/* 800615E4 0005E544  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 800615E8 0005E548  7C 08 03 A6 */	mtlr r0
+/* 800615EC 0005E54C  38 21 00 10 */	addi r1, r1, 0x10
+/* 800615F0 0005E550  4E 80 00 20 */	blr 
+
+.global JC_JUTException_getConsole
+JC_JUTException_getConsole:
+/* 800615F4 0005E554  80 6D 8C CC */	lwz r3, sConsole__12JUTException-_SDA_BASE_(r13)
+/* 800615F8 0005E558  4E 80 00 20 */	blr 
+
+.global JC_JUTException_isEnablePad
+JC_JUTException_isEnablePad:
+/* 800615FC 0005E55C  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061600 0005E560  7C 08 02 A6 */	mflr r0
+/* 80061604 0005E564  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061608 0005E568  48 01 09 91 */	bl isEnablePad__12JUTExceptionCFv
+/* 8006160C 0005E56C  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061610 0005E570  54 63 06 3E */	clrlwi r3, r3, 0x18
+/* 80061614 0005E574  7C 08 03 A6 */	mtlr r0
+/* 80061618 0005E578  38 21 00 10 */	addi r1, r1, 0x10
+/* 8006161C 0005E57C  4E 80 00 20 */	blr 
+
+.global JC_JUTException_readPad
+JC_JUTException_readPad:
+/* 80061620 0005E580  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061624 0005E584  7C 08 02 A6 */	mflr r0
+/* 80061628 0005E588  90 01 00 14 */	stw r0, 0x14(r1)
+/* 8006162C 0005E58C  48 01 09 A9 */	bl readPad__12JUTExceptionFPUlPUl
+/* 80061630 0005E590  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061634 0005E594  54 63 06 3E */	clrlwi r3, r3, 0x18
+/* 80061638 0005E598  7C 08 03 A6 */	mtlr r0
+/* 8006163C 0005E59C  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061640 0005E5A0  4E 80 00 20 */	blr 
+
+.global JC_JUTException_waitTime
+JC_JUTException_waitTime:
+/* 80061644 0005E5A4  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061648 0005E5A8  7C 08 02 A6 */	mflr r0
+/* 8006164C 0005E5AC  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061650 0005E5B0  48 01 13 31 */	bl waitTime__12JUTExceptionFl
+/* 80061654 0005E5B4  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061658 0005E5B8  7C 08 03 A6 */	mtlr r0
+/* 8006165C 0005E5BC  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061660 0005E5C0  4E 80 00 20 */	blr 
+
+.global JC_JFWDisplay_createManager_0
+JC_JFWDisplay_createManager_0:
+/* 80061664 0005E5C4  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061668 0005E5C8  7C 08 02 A6 */	mflr r0
+/* 8006166C 0005E5CC  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061670 0005E5D0  30 06 FF FF */	addic r0, r6, -1
+/* 80061674 0005E5D4  7C 00 31 10 */	subfe r0, r0, r6
+/* 80061678 0005E5D8  54 06 06 3E */	clrlwi r6, r0, 0x18
+/* 8006167C 0005E5DC  48 00 0C 15 */	bl createManager__10JFWDisplayFPC16_GXRenderModeObjP7JKRHeapQ26JUTXfb10EXfbNumberb
+/* 80061680 0005E5E0  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061684 0005E5E4  7C 08 03 A6 */	mtlr r0
+/* 80061688 0005E5E8  38 21 00 10 */	addi r1, r1, 0x10
+/* 8006168C 0005E5EC  4E 80 00 20 */	blr 
+
+.global JC_JFWDisplay_destroyManager
+JC_JFWDisplay_destroyManager:
+/* 80061690 0005E5F0  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061694 0005E5F4  7C 08 02 A6 */	mflr r0
+/* 80061698 0005E5F8  90 01 00 14 */	stw r0, 0x14(r1)
+/* 8006169C 0005E5FC  48 00 0C 6D */	bl destroyManager__10JFWDisplayFv
+/* 800616A0 0005E600  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 800616A4 0005E604  7C 08 03 A6 */	mtlr r0
+/* 800616A8 0005E608  38 21 00 10 */	addi r1, r1, 0x10
+/* 800616AC 0005E60C  4E 80 00 20 */	blr 
+
+.global JC_JFWDisplay_getManager
+JC_JFWDisplay_getManager:
+/* 800616B0 0005E610  80 6D 8B 30 */	lwz r3, sManager__10JFWDisplay-_SDA_BASE_(r13)
+/* 800616B4 0005E614  4E 80 00 20 */	blr 
+
+.global JC_JFWDisplay_setGamma
+JC_JFWDisplay_setGamma:
+/* 800616B8 0005E618  B0 83 00 18 */	sth r4, 0x18(r3)
+/* 800616BC 0005E61C  4E 80 00 20 */	blr 
+
+.global JC_JFWDisplay_setFrameRate
+JC_JFWDisplay_setFrameRate:
+/* 800616C0 0005E620  B0 83 00 20 */	sth r4, 0x20(r3)
+/* 800616C4 0005E624  38 00 00 00 */	li r0, 0
+/* 800616C8 0005E628  90 03 00 24 */	stw r0, 0x24(r3)
+/* 800616CC 0005E62C  4E 80 00 20 */	blr 
+
+.global JC_JFWDisplay_setFader
+JC_JFWDisplay_setFader:
+/* 800616D0 0005E630  90 83 00 04 */	stw r4, 4(r3)
+/* 800616D4 0005E634  4E 80 00 20 */	blr 
+
+.global JC_JFWDisplay_setClearColor
+JC_JFWDisplay_setClearColor:
+/* 800616D8 0005E638  94 21 FF E0 */	stwu r1, -0x20(r1)
+/* 800616DC 0005E63C  80 04 00 00 */	lwz r0, 0(r4)
+/* 800616E0 0005E640  90 01 00 08 */	stw r0, 8(r1)
+/* 800616E4 0005E644  88 C1 00 08 */	lbz r6, 8(r1)
+/* 800616E8 0005E648  88 A1 00 09 */	lbz r5, 9(r1)
+/* 800616EC 0005E64C  88 81 00 0A */	lbz r4, 0xa(r1)
+/* 800616F0 0005E650  88 01 00 0B */	lbz r0, 0xb(r1)
+/* 800616F4 0005E654  98 C1 00 0C */	stb r6, 0xc(r1)
+/* 800616F8 0005E658  98 A1 00 0D */	stb r5, 0xd(r1)
+/* 800616FC 0005E65C  98 81 00 0E */	stb r4, 0xe(r1)
+/* 80061700 0005E660  98 01 00 0F */	stb r0, 0xf(r1)
+/* 80061704 0005E664  80 01 00 0C */	lwz r0, 0xc(r1)
+/* 80061708 0005E668  90 01 00 10 */	stw r0, 0x10(r1)
+/* 8006170C 0005E66C  88 81 00 10 */	lbz r4, 0x10(r1)
+/* 80061710 0005E670  88 01 00 11 */	lbz r0, 0x11(r1)
+/* 80061714 0005E674  98 83 00 0C */	stb r4, 0xc(r3)
+/* 80061718 0005E678  88 81 00 12 */	lbz r4, 0x12(r1)
+/* 8006171C 0005E67C  98 03 00 0D */	stb r0, 0xd(r3)
+/* 80061720 0005E680  88 01 00 13 */	lbz r0, 0x13(r1)
+/* 80061724 0005E684  98 83 00 0E */	stb r4, 0xe(r3)
+/* 80061728 0005E688  98 03 00 0F */	stb r0, 0xf(r3)
+/* 8006172C 0005E68C  38 21 00 20 */	addi r1, r1, 0x20
+/* 80061730 0005E690  4E 80 00 20 */	blr 
+
+.global JC_JFWDisplay_beginRender
+JC_JFWDisplay_beginRender:
+/* 80061734 0005E694  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061738 0005E698  7C 08 02 A6 */	mflr r0
+/* 8006173C 0005E69C  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061740 0005E6A0  81 83 00 00 */	lwz r12, 0(r3)
+/* 80061744 0005E6A4  81 8C 00 08 */	lwz r12, 8(r12)
+/* 80061748 0005E6A8  7D 89 03 A6 */	mtctr r12
+/* 8006174C 0005E6AC  4E 80 04 21 */	bctrl 
+/* 80061750 0005E6B0  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061754 0005E6B4  7C 08 03 A6 */	mtlr r0
+/* 80061758 0005E6B8  38 21 00 10 */	addi r1, r1, 0x10
+/* 8006175C 0005E6BC  4E 80 00 20 */	blr 
+
+.global JC_JFWDisplay_endRender
+JC_JFWDisplay_endRender:
+/* 80061760 0005E6C0  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061764 0005E6C4  7C 08 02 A6 */	mflr r0
+/* 80061768 0005E6C8  90 01 00 14 */	stw r0, 0x14(r1)
+/* 8006176C 0005E6CC  81 83 00 00 */	lwz r12, 0(r3)
+/* 80061770 0005E6D0  81 8C 00 0C */	lwz r12, 0xc(r12)
+/* 80061774 0005E6D4  7D 89 03 A6 */	mtctr r12
+/* 80061778 0005E6D8  4E 80 04 21 */	bctrl 
+/* 8006177C 0005E6DC  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061780 0005E6E0  7C 08 03 A6 */	mtlr r0
+/* 80061784 0005E6E4  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061788 0005E6E8  4E 80 00 20 */	blr 
+
+.global JC_JFWDisplay_endFrame
+JC_JFWDisplay_endFrame:
+/* 8006178C 0005E6EC  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061790 0005E6F0  7C 08 02 A6 */	mflr r0
+/* 80061794 0005E6F4  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061798 0005E6F8  81 83 00 00 */	lwz r12, 0(r3)
+/* 8006179C 0005E6FC  81 8C 00 10 */	lwz r12, 0x10(r12)
+/* 800617A0 0005E700  7D 89 03 A6 */	mtctr r12
+/* 800617A4 0005E704  4E 80 04 21 */	bctrl 
+/* 800617A8 0005E708  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 800617AC 0005E70C  7C 08 03 A6 */	mtlr r0
+/* 800617B0 0005E710  38 21 00 10 */	addi r1, r1, 0x10
+/* 800617B4 0005E714  4E 80 00 20 */	blr 
+
+.global JC_JFWDisplay_startFadeIn
+JC_JFWDisplay_startFadeIn:
+/* 800617B8 0005E718  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 800617BC 0005E71C  7C 08 02 A6 */	mflr r0
+/* 800617C0 0005E720  90 01 00 14 */	stw r0, 0x14(r1)
+/* 800617C4 0005E724  80 63 00 04 */	lwz r3, 4(r3)
+/* 800617C8 0005E728  28 03 00 00 */	cmplwi r3, 0
+/* 800617CC 0005E72C  41 82 00 18 */	beq lbl_800617E4
+/* 800617D0 0005E730  81 83 00 00 */	lwz r12, 0(r3)
+/* 800617D4 0005E734  81 8C 00 0C */	lwz r12, 0xc(r12)
+/* 800617D8 0005E738  7D 89 03 A6 */	mtctr r12
+/* 800617DC 0005E73C  4E 80 04 21 */	bctrl 
+/* 800617E0 0005E740  48 00 00 08 */	b lbl_800617E8
+lbl_800617E4:
+/* 800617E4 0005E744  38 60 00 01 */	li r3, 1
+lbl_800617E8:
+/* 800617E8 0005E748  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 800617EC 0005E74C  54 63 06 3E */	clrlwi r3, r3, 0x18
+/* 800617F0 0005E750  7C 08 03 A6 */	mtlr r0
+/* 800617F4 0005E754  38 21 00 10 */	addi r1, r1, 0x10
+/* 800617F8 0005E758  4E 80 00 20 */	blr 
+
+.global JC_JFWDisplay_startFadeOut
+JC_JFWDisplay_startFadeOut:
+/* 800617FC 0005E75C  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061800 0005E760  7C 08 02 A6 */	mflr r0
+/* 80061804 0005E764  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061808 0005E768  80 63 00 04 */	lwz r3, 4(r3)
+/* 8006180C 0005E76C  28 03 00 00 */	cmplwi r3, 0
+/* 80061810 0005E770  41 82 00 18 */	beq lbl_80061828
+/* 80061814 0005E774  81 83 00 00 */	lwz r12, 0(r3)
+/* 80061818 0005E778  81 8C 00 10 */	lwz r12, 0x10(r12)
+/* 8006181C 0005E77C  7D 89 03 A6 */	mtctr r12
+/* 80061820 0005E780  4E 80 04 21 */	bctrl 
+/* 80061824 0005E784  48 00 00 08 */	b lbl_8006182C
+lbl_80061828:
+/* 80061828 0005E788  38 60 00 01 */	li r3, 1
+lbl_8006182C:
+/* 8006182C 0005E78C  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061830 0005E790  54 63 06 3E */	clrlwi r3, r3, 0x18
+/* 80061834 0005E794  7C 08 03 A6 */	mtlr r0
+/* 80061838 0005E798  38 21 00 10 */	addi r1, r1, 0x10
+/* 8006183C 0005E79C  4E 80 00 20 */	blr 
+
+.global JC_JFWDisplay_getEfbWidth
+JC_JFWDisplay_getEfbWidth:
+/* 80061840 0005E7A0  80 63 00 08 */	lwz r3, 8(r3)
+/* 80061844 0005E7A4  A0 63 00 04 */	lhz r3, 4(r3)
+/* 80061848 0005E7A8  4E 80 00 20 */	blr 
+
+.global JC_JFWDisplay_getEfbHeight
+JC_JFWDisplay_getEfbHeight:
+/* 8006184C 0005E7AC  80 63 00 08 */	lwz r3, 8(r3)
+/* 80061850 0005E7B0  A0 63 00 06 */	lhz r3, 6(r3)
+/* 80061854 0005E7B4  4E 80 00 20 */	blr 
+
+.global JC_JFWDisplay_changeToSingleXfb
+JC_JFWDisplay_changeToSingleXfb:
+/* 80061858 0005E7B8  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 8006185C 0005E7BC  7C 08 02 A6 */	mflr r0
+/* 80061860 0005E7C0  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061864 0005E7C4  48 00 16 AD */	bl changeToSingleXfb__10JFWDisplayFi
+/* 80061868 0005E7C8  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 8006186C 0005E7CC  7C 08 03 A6 */	mtlr r0
+/* 80061870 0005E7D0  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061874 0005E7D4  4E 80 00 20 */	blr 
+
+.global JC_JFWDisplay_changeToDoubleXfb
+JC_JFWDisplay_changeToDoubleXfb:
+/* 80061878 0005E7D8  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 8006187C 0005E7DC  7C 08 02 A6 */	mflr r0
+/* 80061880 0005E7E0  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061884 0005E7E4  48 00 17 ED */	bl changeToDoubleXfb__10JFWDisplayFv
+/* 80061888 0005E7E8  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 8006188C 0005E7EC  7C 08 03 A6 */	mtlr r0
+/* 80061890 0005E7F0  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061894 0005E7F4  4E 80 00 20 */	blr 
+
+.global JC_JFWDisplay_clearEfb
+JC_JFWDisplay_clearEfb:
+/* 80061898 0005E7F8  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 8006189C 0005E7FC  7C 08 02 A6 */	mflr r0
+/* 800618A0 0005E800  90 01 00 14 */	stw r0, 0x14(r1)
+/* 800618A4 0005E804  80 04 00 00 */	lwz r0, 0(r4)
+/* 800618A8 0005E808  38 81 00 08 */	addi r4, r1, 8
+/* 800618AC 0005E80C  90 01 00 08 */	stw r0, 8(r1)
+/* 800618B0 0005E810  48 00 18 C5 */	bl clearEfb__10JFWDisplayF8_GXColor
+/* 800618B4 0005E814  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 800618B8 0005E818  7C 08 03 A6 */	mtlr r0
+/* 800618BC 0005E81C  38 21 00 10 */	addi r1, r1, 0x10
+/* 800618C0 0005E820  4E 80 00 20 */	blr 
+
+.global JC_JFWDisplay_getRenderMode
+JC_JFWDisplay_getRenderMode:
+/* 800618C4 0005E824  80 63 00 08 */	lwz r3, 8(r3)
+/* 800618C8 0005E828  4E 80 00 20 */	blr 
+
+.global JC_JFWSystem_setMaxStdHeap
+JC_JFWSystem_setMaxStdHeap:
+/* 800618CC 0005E82C  90 6D 82 A0 */	stw r3, maxStdHeaps__Q29JFWSystem11CSetUpParam-_SDA_BASE_(r13)
+/* 800618D0 0005E830  4E 80 00 20 */	blr 
+
+.global JC_JFWSystem_setSysHeapSize
+JC_JFWSystem_setSysHeapSize:
+/* 800618D4 0005E834  90 6D 82 A4 */	stw r3, sysHeapSize__Q29JFWSystem11CSetUpParam-_SDA_BASE_(r13)
+/* 800618D8 0005E838  4E 80 00 20 */	blr 
+
+.global JC_JFWSystem_setFifoBufSize
+JC_JFWSystem_setFifoBufSize:
+/* 800618DC 0005E83C  90 6D 82 A8 */	stw r3, fifoBufSize__Q29JFWSystem11CSetUpParam-_SDA_BASE_(r13)
+/* 800618E0 0005E840  4E 80 00 20 */	blr 
+
+.global JC_JFWSystem_setAramAudioBufSize
+JC_JFWSystem_setAramAudioBufSize:
+/* 800618E4 0005E844  90 6D 82 AC */	stw r3, aramAudioBufSize__Q29JFWSystem11CSetUpParam-_SDA_BASE_(r13)
+/* 800618E8 0005E848  4E 80 00 20 */	blr 
+
+.global JC_JFWSystem_setAramGraphBufSize
+JC_JFWSystem_setAramGraphBufSize:
+/* 800618EC 0005E84C  90 6D 82 B0 */	stw r3, aramGraphBufSize__Q29JFWSystem11CSetUpParam-_SDA_BASE_(r13)
+/* 800618F0 0005E850  4E 80 00 20 */	blr 
+
+.global JC_JFWSystem_init
+JC_JFWSystem_init:
+/* 800618F4 0005E854  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 800618F8 0005E858  7C 08 02 A6 */	mflr r0
+/* 800618FC 0005E85C  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061900 0005E860  48 00 04 CD */	bl init__9JFWSystemFv
+/* 80061904 0005E864  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061908 0005E868  7C 08 03 A6 */	mtlr r0
+/* 8006190C 0005E86C  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061910 0005E870  4E 80 00 20 */	blr 
+
+.global JC_JFWSystem_getSystemHeap
+JC_JFWSystem_getSystemHeap:
+/* 80061914 0005E874  80 6D 8B 14 */	lwz r3, systemHeap__9JFWSystem-_SDA_BASE_(r13)
+/* 80061918 0005E878  4E 80 00 20 */	blr 
+
+.global JC_JFWSystem_getRootHeap
+JC_JFWSystem_getRootHeap:
+/* 8006191C 0005E87C  80 6D 8B 10 */	lwz r3, rootHeap__9JFWSystem-_SDA_BASE_(r13)
+/* 80061920 0005E880  4E 80 00 20 */	blr 
+
+.global JC_JFWSystem_getSystemConsole
+JC_JFWSystem_getSystemConsole:
+/* 80061924 0005E884  80 6D 8B 28 */	lwz r3, systemConsole__9JFWSystem-_SDA_BASE_(r13)
+/* 80061928 0005E888  4E 80 00 20 */	blr 
+
+.global JC_JUTProcBar_getManager
+JC_JUTProcBar_getManager:
+/* 8006192C 0005E88C  80 6D 8D 08 */	lwz r3, sManager__10JUTProcBar-_SDA_BASE_(r13)
+/* 80061930 0005E890  4E 80 00 20 */	blr 
+
+.global JC_JUTProcBar_setVisible
+JC_JUTProcBar_setVisible:
+/* 80061934 0005E894  30 04 FF FF */	addic r0, r4, -1
+/* 80061938 0005E898  7C 00 21 10 */	subfe r0, r0, r4
+/* 8006193C 0005E89C  98 03 01 0C */	stb r0, 0x10c(r3)
+/* 80061940 0005E8A0  4E 80 00 20 */	blr 
+
+.global JC_JUTProcBar_setVisibleHeapBar
+JC_JUTProcBar_setVisibleHeapBar:
+/* 80061944 0005E8A4  30 04 FF FF */	addic r0, r4, -1
+/* 80061948 0005E8A8  7C 00 21 10 */	subfe r0, r0, r4
+/* 8006194C 0005E8AC  98 03 01 30 */	stb r0, 0x130(r3)
+/* 80061950 0005E8B0  4E 80 00 20 */	blr 
+
+.global JC_JKRDecomp_checkCompressed
+JC_JKRDecomp_checkCompressed:
+/* 80061954 0005E8B4  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061958 0005E8B8  7C 08 02 A6 */	mflr r0
+/* 8006195C 0005E8BC  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061960 0005E8C0  48 00 C3 1D */	bl checkCompressed__9JKRDecompFPUc
+/* 80061964 0005E8C4  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061968 0005E8C8  7C 08 03 A6 */	mtlr r0
+/* 8006196C 0005E8CC  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061970 0005E8D0  4E 80 00 20 */	blr 
+
+.global JC_JKRDecomp_decode
+JC_JKRDecomp_decode:
+/* 80061974 0005E8D4  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061978 0005E8D8  7C 08 02 A6 */	mflr r0
+/* 8006197C 0005E8DC  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061980 0005E8E0  48 00 BF E1 */	bl decode__9JKRDecompFPUcPUcUlUl
+/* 80061984 0005E8E4  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061988 0005E8E8  7C 08 03 A6 */	mtlr r0
+/* 8006198C 0005E8EC  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061990 0005E8F0  4E 80 00 20 */	blr 
+
+.global JC__JKRGetResource
+JC__JKRGetResource:
+/* 80061994 0005E8F4  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061998 0005E8F8  7C 08 02 A6 */	mflr r0
+/* 8006199C 0005E8FC  90 01 00 14 */	stw r0, 0x14(r1)
+/* 800619A0 0005E900  48 00 67 CD */	bl getGlbResource__13JKRFileLoaderFPCc
+/* 800619A4 0005E904  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 800619A8 0005E908  7C 08 03 A6 */	mtlr r0
+/* 800619AC 0005E90C  38 21 00 10 */	addi r1, r1, 0x10
+/* 800619B0 0005E910  4E 80 00 20 */	blr 
+
+.global JC__JKRRemoveResource
+JC__JKRRemoveResource:
+/* 800619B4 0005E914  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 800619B8 0005E918  7C 08 02 A6 */	mflr r0
+/* 800619BC 0005E91C  38 80 00 00 */	li r4, 0
+/* 800619C0 0005E920  90 01 00 14 */	stw r0, 0x14(r1)
+/* 800619C4 0005E924  48 00 68 69 */	bl removeResource__13JKRFileLoaderFPvP13JKRFileLoader
+/* 800619C8 0005E928  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 800619CC 0005E92C  7C 08 03 A6 */	mtlr r0
+/* 800619D0 0005E930  38 21 00 10 */	addi r1, r1, 0x10
+/* 800619D4 0005E934  4E 80 00 20 */	blr 
+
+.global JC__JKRDetachResource
+JC__JKRDetachResource:
+/* 800619D8 0005E938  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 800619DC 0005E93C  7C 08 02 A6 */	mflr r0
+/* 800619E0 0005E940  38 80 00 00 */	li r4, 0
+/* 800619E4 0005E944  90 01 00 14 */	stw r0, 0x14(r1)
+/* 800619E8 0005E948  48 00 68 DD */	bl detachResource__13JKRFileLoaderFPvP13JKRFileLoader
+/* 800619EC 0005E94C  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 800619F0 0005E950  7C 08 03 A6 */	mtlr r0
+/* 800619F4 0005E954  38 21 00 10 */	addi r1, r1, 0x10
+/* 800619F8 0005E958  4E 80 00 20 */	blr 
+
+.global JC__JKRMountArchive
+JC__JKRMountArchive:
+/* 800619FC 0005E95C  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061A00 0005E960  7C 08 02 A6 */	mflr r0
+/* 80061A04 0005E964  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061A08 0005E968  48 00 6D 91 */	bl mount__10JKRArchiveFPCcQ210JKRArchive10EMountModeP7JKRHeapQ210JKRArchive15EMountDirection
+/* 80061A0C 0005E96C  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061A10 0005E970  7C 08 03 A6 */	mtlr r0
+/* 80061A14 0005E974  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061A18 0005E978  4E 80 00 20 */	blr 
+
+.global JC__JKRGetResourceEntry_byName
+JC__JKRGetResourceEntry_byName:
+/* 80061A1C 0005E97C  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061A20 0005E980  7C 08 02 A6 */	mflr r0
+/* 80061A24 0005E984  7C 66 1B 78 */	mr r6, r3
+/* 80061A28 0005E988  7C A3 2B 78 */	mr r3, r5
+/* 80061A2C 0005E98C  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061A30 0005E990  7C 80 23 78 */	mr r0, r4
+/* 80061A34 0005E994  7C C4 33 78 */	mr r4, r6
+/* 80061A38 0005E998  7C 05 03 78 */	mr r5, r0
+/* 80061A3C 0005E99C  48 00 77 39 */	bl findTypeResource__10JKRArchiveCFUlPCc
+/* 80061A40 0005E9A0  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061A44 0005E9A4  7C 08 03 A6 */	mtlr r0
+/* 80061A48 0005E9A8  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061A4C 0005E9AC  4E 80 00 20 */	blr 
+
+.global JC_JKRAramHeap_dump
+JC_JKRAramHeap_dump:
+/* 80061A50 0005E9B0  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061A54 0005E9B4  7C 08 02 A6 */	mflr r0
+/* 80061A58 0005E9B8  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061A5C 0005E9BC  48 00 57 11 */	bl dump__11JKRAramHeapFv
+/* 80061A60 0005E9C0  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061A64 0005E9C4  7C 08 03 A6 */	mtlr r0
+/* 80061A68 0005E9C8  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061A6C 0005E9CC  4E 80 00 20 */	blr 
+
+.global JC_JKRAram_getAramHeap
+JC_JKRAram_getAramHeap:
+/* 80061A70 0005E9D0  80 6D 8B A0 */	lwz r3, sAramObject__7JKRAram-_SDA_BASE_(r13)
+/* 80061A74 0005E9D4  80 63 00 78 */	lwz r3, 0x78(r3)
+/* 80061A78 0005E9D8  4E 80 00 20 */	blr 
+
+.global JC_JKRAramArchive_delete
+JC_JKRAramArchive_delete:
+/* 80061A7C 0005E9DC  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061A80 0005E9E0  7C 08 02 A6 */	mflr r0
+/* 80061A84 0005E9E4  28 03 00 00 */	cmplwi r3, 0
+/* 80061A88 0005E9E8  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061A8C 0005E9EC  41 82 00 18 */	beq lbl_80061AA4
+/* 80061A90 0005E9F0  81 83 00 00 */	lwz r12, 0(r3)
+/* 80061A94 0005E9F4  38 80 00 01 */	li r4, 1
+/* 80061A98 0005E9F8  81 8C 00 08 */	lwz r12, 8(r12)
+/* 80061A9C 0005E9FC  7D 89 03 A6 */	mtctr r12
+/* 80061AA0 0005EA00  4E 80 04 21 */	bctrl 
+lbl_80061AA4:
+/* 80061AA4 0005EA04  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061AA8 0005EA08  7C 08 03 A6 */	mtlr r0
+/* 80061AAC 0005EA0C  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061AB0 0005EA10  4E 80 00 20 */	blr 
+
+.global JC_JKRAramArchive_new
+JC_JKRAramArchive_new:
+/* 80061AB4 0005EA14  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061AB8 0005EA18  7C 08 02 A6 */	mflr r0
+/* 80061ABC 0005EA1C  38 60 00 68 */	li r3, 0x68
+/* 80061AC0 0005EA20  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061AC4 0005EA24  48 00 24 6D */	bl __nw__FUl
+/* 80061AC8 0005EA28  7C 60 1B 79 */	or. r0, r3, r3
+/* 80061ACC 0005EA2C  41 82 00 0C */	beq lbl_80061AD8
+/* 80061AD0 0005EA30  48 00 7F 59 */	bl __ct__14JKRAramArchiveFv
+/* 80061AD4 0005EA34  7C 60 1B 78 */	mr r0, r3
+lbl_80061AD8:
+/* 80061AD8 0005EA38  7C 03 03 78 */	mr r3, r0
+/* 80061ADC 0005EA3C  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061AE0 0005EA40  7C 08 03 A6 */	mtlr r0
+/* 80061AE4 0005EA44  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061AE8 0005EA48  4E 80 00 20 */	blr 
+
+.global JC__JKRMountFixedAramArchive
+JC__JKRMountFixedAramArchive:
+/* 80061AEC 0005EA4C  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061AF0 0005EA50  7C 08 02 A6 */	mflr r0
+/* 80061AF4 0005EA54  38 A0 00 01 */	li r5, 1
+/* 80061AF8 0005EA58  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061AFC 0005EA5C  48 00 82 3D */	bl mountFixed__14JKRAramArchiveFPCcQ210JKRArchive15EMountDirection
+/* 80061B00 0005EA60  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061B04 0005EA64  54 63 06 3E */	clrlwi r3, r3, 0x18
+/* 80061B08 0005EA68  7C 08 03 A6 */	mtlr r0
+/* 80061B0C 0005EA6C  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061B10 0005EA70  4E 80 00 20 */	blr 
+
+.global JC__JKRUnmountFixedAramArchive
+JC__JKRUnmountFixedAramArchive:
+/* 80061B14 0005EA74  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061B18 0005EA78  7C 08 02 A6 */	mflr r0
+/* 80061B1C 0005EA7C  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061B20 0005EA80  48 00 82 69 */	bl unmountFixed__14JKRAramArchiveFv
+/* 80061B24 0005EA84  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061B28 0005EA88  7C 08 03 A6 */	mtlr r0
+/* 80061B2C 0005EA8C  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061B30 0005EA90  4E 80 00 20 */	blr 
+
+.global JC_JKRAramArchive_getAramAddress_byName
+JC_JKRAramArchive_getAramAddress_byName:
+/* 80061B34 0005EA94  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061B38 0005EA98  7C 08 02 A6 */	mflr r0
+/* 80061B3C 0005EA9C  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061B40 0005EAA0  48 00 86 F5 */	bl getAramAddress__14JKRAramArchiveFUlPCc
+/* 80061B44 0005EAA4  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061B48 0005EAA8  7C 08 03 A6 */	mtlr r0
+/* 80061B4C 0005EAAC  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061B50 0005EAB0  4E 80 00 20 */	blr 
+
+.global JC__JKRAllocFromAram
+JC__JKRAllocFromAram:
+/* 80061B54 0005EAB4  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061B58 0005EAB8  7C 08 02 A6 */	mflr r0
+/* 80061B5C 0005EABC  7C 64 1B 78 */	mr r4, r3
+/* 80061B60 0005EAC0  38 A0 00 00 */	li r5, 0
+/* 80061B64 0005EAC4  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061B68 0005EAC8  80 CD 8B A0 */	lwz r6, sAramObject__7JKRAram-_SDA_BASE_(r13)
+/* 80061B6C 0005EACC  80 66 00 78 */	lwz r3, 0x78(r6)
+/* 80061B70 0005EAD0  48 00 54 85 */	bl alloc__11JKRAramHeapFUlQ211JKRAramHeap10EAllocMode
+/* 80061B74 0005EAD4  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061B78 0005EAD8  7C 08 03 A6 */	mtlr r0
+/* 80061B7C 0005EADC  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061B80 0005EAE0  4E 80 00 20 */	blr 
+
+.global JC_JKRAramBlock_getAddress
+JC_JKRAramBlock_getAddress:
+/* 80061B84 0005EAE4  80 63 00 14 */	lwz r3, 0x14(r3)
+/* 80061B88 0005EAE8  4E 80 00 20 */	blr 
+
+.global JC__JKRAramToMainRam_block
+JC__JKRAramToMainRam_block:
+/* 80061B8C 0005EAEC  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061B90 0005EAF0  7C 08 02 A6 */	mflr r0
+/* 80061B94 0005EAF4  38 C0 00 00 */	li r6, 0
+/* 80061B98 0005EAF8  38 E0 00 00 */	li r7, 0
+/* 80061B9C 0005EAFC  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061BA0 0005EB00  38 00 00 00 */	li r0, 0
+/* 80061BA4 0005EB04  39 00 00 00 */	li r8, 0
+/* 80061BA8 0005EB08  39 20 00 00 */	li r9, 0
+/* 80061BAC 0005EB0C  90 01 00 08 */	stw r0, 8(r1)
+/* 80061BB0 0005EB10  39 40 FF FF */	li r10, -1
+/* 80061BB4 0005EB14  48 00 4C 6D */	bl aramToMainRam__7JKRAramFP12JKRAramBlockPUcUlUl15JKRExpandSwitchUlP7JKRHeapiPUl
+/* 80061BB8 0005EB18  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061BBC 0005EB1C  7C 08 03 A6 */	mtlr r0
+/* 80061BC0 0005EB20  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061BC4 0005EB24  4E 80 00 20 */	blr 
+
+.global JC__JKRMainRamToAram_block
+JC__JKRMainRamToAram_block:
+/* 80061BC8 0005EB28  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061BCC 0005EB2C  7C 08 02 A6 */	mflr r0
+/* 80061BD0 0005EB30  38 C0 00 00 */	li r6, 0
+/* 80061BD4 0005EB34  38 E0 00 00 */	li r7, 0
+/* 80061BD8 0005EB38  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061BDC 0005EB3C  39 00 00 00 */	li r8, 0
+/* 80061BE0 0005EB40  39 20 FF FF */	li r9, -1
+/* 80061BE4 0005EB44  48 00 48 F5 */	bl mainRamToAram__7JKRAramFPUcP12JKRAramBlockUl15JKRExpandSwitchUlP7JKRHeapi
+/* 80061BE8 0005EB48  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061BEC 0005EB4C  7C 08 03 A6 */	mtlr r0
+/* 80061BF0 0005EB50  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061BF4 0005EB54  4E 80 00 20 */	blr 
+
+.global JC__JKRDvdToMainRam_byName
+JC__JKRDvdToMainRam_byName:
+/* 80061BF8 0005EB58  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061BFC 0005EB5C  7C 08 02 A6 */	mflr r0
+/* 80061C00 0005EB60  38 C0 00 00 */	li r6, 0
+/* 80061C04 0005EB64  38 E0 00 00 */	li r7, 0
+/* 80061C08 0005EB68  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061C0C 0005EB6C  39 00 00 01 */	li r8, 1
+/* 80061C10 0005EB70  39 20 00 00 */	li r9, 0
+/* 80061C14 0005EB74  39 40 00 00 */	li r10, 0
+/* 80061C18 0005EB78  48 00 A1 F5 */	bl loadToMainRAM__12JKRDvdRipperFPCcPUc15JKRExpandSwitchUlP7JKRHeapQ212JKRDvdRipper15EAllocDirectionUlPi
+/* 80061C1C 0005EB7C  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061C20 0005EB80  7C 08 03 A6 */	mtlr r0
+/* 80061C24 0005EB84  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061C28 0005EB88  4E 80 00 20 */	blr 
+
+.global JC_JUTAssertion_changeDevice
+JC_JUTAssertion_changeDevice:
+/* 80061C2C 0005EB8C  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061C30 0005EB90  7C 08 02 A6 */	mflr r0
+/* 80061C34 0005EB94  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061C38 0005EB98  48 01 1C C9 */	bl changeDevice__12JUTAssertionFUl
+/* 80061C3C 0005EB9C  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061C40 0005EBA0  7C 08 03 A6 */	mtlr r0
+/* 80061C44 0005EBA4  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061C48 0005EBA8  4E 80 00 20 */	blr 
+
+.global JC_JUTAssertion_changeDisplayTime
+JC_JUTAssertion_changeDisplayTime:
+/* 80061C4C 0005EBAC  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061C50 0005EBB0  7C 08 02 A6 */	mflr r0
+/* 80061C54 0005EBB4  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061C58 0005EBB8  48 01 1C A1 */	bl changeDisplayTime__12JUTAssertionFUl
+/* 80061C5C 0005EBBC  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061C60 0005EBC0  7C 08 03 A6 */	mtlr r0
+/* 80061C64 0005EBC4  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061C68 0005EBC8  4E 80 00 20 */	blr 
+
+.global JC_JUTXfb_getManager
+JC_JUTXfb_getManager:
+/* 80061C6C 0005EBCC  80 6D 8D 00 */	lwz r3, sManager__6JUTXfb-_SDA_BASE_(r13)
+/* 80061C70 0005EBD0  4E 80 00 20 */	blr 
+
+.global JC_JUTXfb_clearIndex
+JC_JUTXfb_clearIndex:
+/* 80061C74 0005EBD4  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061C78 0005EBD8  7C 08 02 A6 */	mflr r0
+/* 80061C7C 0005EBDC  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061C80 0005EBE0  48 01 21 E5 */	bl clearIndex__6JUTXfbFv
+/* 80061C84 0005EBE4  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061C88 0005EBE8  7C 08 03 A6 */	mtlr r0
+/* 80061C8C 0005EBEC  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061C90 0005EBF0  4E 80 00 20 */	blr 
+
+.global __dt__8JUTFaderFv
+__dt__8JUTFaderFv:
+/* 80061C94 0005EBF4  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061C98 0005EBF8  7C 08 02 A6 */	mflr r0
+/* 80061C9C 0005EBFC  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061CA0 0005EC00  93 E1 00 0C */	stw r31, 0xc(r1)
+/* 80061CA4 0005EC04  7C 7F 1B 79 */	or. r31, r3, r3
+/* 80061CA8 0005EC08  41 82 00 1C */	beq lbl_80061CC4
+/* 80061CAC 0005EC0C  3C A0 80 0E */	lis r5, __vt__8JUTFader@ha
+/* 80061CB0 0005EC10  7C 80 07 35 */	extsh. r0, r4
+/* 80061CB4 0005EC14  38 05 F6 EC */	addi r0, r5, __vt__8JUTFader@l
+/* 80061CB8 0005EC18  90 1F 00 00 */	stw r0, 0(r31)
+/* 80061CBC 0005EC1C  40 81 00 08 */	ble lbl_80061CC4
+/* 80061CC0 0005EC20  48 00 22 F1 */	bl __dl__FPv
+lbl_80061CC4:
+/* 80061CC4 0005EC24  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061CC8 0005EC28  7F E3 FB 78 */	mr r3, r31
+/* 80061CCC 0005EC2C  83 E1 00 0C */	lwz r31, 0xc(r1)
+/* 80061CD0 0005EC30  7C 08 03 A6 */	mtlr r0
+/* 80061CD4 0005EC34  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061CD8 0005EC38  4E 80 00 20 */	blr 
+
+.global dump_sort__7JKRHeapFv
+dump_sort__7JKRHeapFv:
+/* 80061CDC 0005EC3C  38 60 00 01 */	li r3, 1
+/* 80061CE0 0005EC40  4E 80 00 20 */	blr 
+
+.global getResFont__10JUTResFontCFv
+getResFont__10JUTResFontCFv:
+/* 80061CE4 0005EC44  80 63 00 48 */	lwz r3, 0x48(r3)
+/* 80061CE8 0005EC48  4E 80 00 20 */	blr 
+
+.global getFontType__10JUTResFontCFv
+getFontType__10JUTResFontCFv:
+/* 80061CEC 0005EC4C  80 63 00 4C */	lwz r3, 0x4c(r3)
+/* 80061CF0 0005EC50  A0 63 00 08 */	lhz r3, 8(r3)
+/* 80061CF4 0005EC54  4E 80 00 20 */	blr 
+
+.global getLeading__10JUTResFontCFv
+getLeading__10JUTResFontCFv:
+/* 80061CF8 0005EC58  80 63 00 4C */	lwz r3, 0x4c(r3)
+/* 80061CFC 0005EC5C  A0 63 00 10 */	lhz r3, 0x10(r3)
+/* 80061D00 0005EC60  4E 80 00 20 */	blr 
+
+.global getWidth__10JUTResFontCFv
+getWidth__10JUTResFontCFv:
+/* 80061D04 0005EC64  80 63 00 4C */	lwz r3, 0x4c(r3)
+/* 80061D08 0005EC68  A0 63 00 0E */	lhz r3, 0xe(r3)
+/* 80061D0C 0005EC6C  4E 80 00 20 */	blr 
+
+.global getAscent__10JUTResFontCFv
+getAscent__10JUTResFontCFv:
+/* 80061D10 0005EC70  80 63 00 4C */	lwz r3, 0x4c(r3)
+/* 80061D14 0005EC74  A0 63 00 0A */	lhz r3, 0xa(r3)
+/* 80061D18 0005EC78  4E 80 00 20 */	blr 
+
+.global getDescent__10JUTResFontCFv
+getDescent__10JUTResFontCFv:
+/* 80061D1C 0005EC7C  80 63 00 4C */	lwz r3, 0x4c(r3)
+/* 80061D20 0005EC80  A0 63 00 0C */	lhz r3, 0xc(r3)
+/* 80061D24 0005EC84  4E 80 00 20 */	blr 
+
+.global getHeight__10JUTResFontCFv
+getHeight__10JUTResFontCFv:
+/* 80061D28 0005EC88  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 80061D2C 0005EC8C  7C 08 02 A6 */	mflr r0
+/* 80061D30 0005EC90  90 01 00 14 */	stw r0, 0x14(r1)
+/* 80061D34 0005EC94  93 E1 00 0C */	stw r31, 0xc(r1)
+/* 80061D38 0005EC98  93 C1 00 08 */	stw r30, 8(r1)
+/* 80061D3C 0005EC9C  7C 7E 1B 78 */	mr r30, r3
+/* 80061D40 0005ECA0  81 83 00 00 */	lwz r12, 0(r3)
+/* 80061D44 0005ECA4  81 8C 00 20 */	lwz r12, 0x20(r12)
+/* 80061D48 0005ECA8  7D 89 03 A6 */	mtctr r12
+/* 80061D4C 0005ECAC  4E 80 04 21 */	bctrl 
+/* 80061D50 0005ECB0  7C 7F 1B 78 */	mr r31, r3
+/* 80061D54 0005ECB4  7F C3 F3 78 */	mr r3, r30
+/* 80061D58 0005ECB8  81 9E 00 00 */	lwz r12, 0(r30)
+/* 80061D5C 0005ECBC  81 8C 00 1C */	lwz r12, 0x1c(r12)
+/* 80061D60 0005ECC0  7D 89 03 A6 */	mtctr r12
+/* 80061D64 0005ECC4  4E 80 04 21 */	bctrl 
+/* 80061D68 0005ECC8  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 80061D6C 0005ECCC  7C 63 FA 14 */	add r3, r3, r31
+/* 80061D70 0005ECD0  83 E1 00 0C */	lwz r31, 0xc(r1)
+/* 80061D74 0005ECD4  83 C1 00 08 */	lwz r30, 8(r1)
+/* 80061D78 0005ECD8  7C 08 03 A6 */	mtlr r0
+/* 80061D7C 0005ECDC  38 21 00 10 */	addi r1, r1, 0x10
+/* 80061D80 0005ECE0  4E 80 00 20 */	blr 

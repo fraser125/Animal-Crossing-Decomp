@@ -1,0 +1,214 @@
+.include "macros.inc"
+
+.section .text
+
+.org 0x8002CD20
+
+.global DSPSendCommands__FPUlUl
+DSPSendCommands__FPUlUl:
+/* 8002CD20 00029C80  94 21 FF E0 */	stwu r1, -0x20(r1)
+/* 8002CD24 00029C84  7C 08 02 A6 */	mflr r0
+/* 8002CD28 00029C88  90 01 00 24 */	stw r0, 0x24(r1)
+/* 8002CD2C 00029C8C  39 61 00 20 */	addi r11, r1, 0x20
+/* 8002CD30 00029C90  48 06 E1 A1 */	bl func_8009AED0
+/* 8002CD34 00029C94  7C 7C 1B 78 */	mr r28, r3
+/* 8002CD38 00029C98  7C 9D 23 78 */	mr r29, r4
+/* 8002CD3C 00029C9C  48 06 04 7D */	bl DSPCheckMailToDSP
+/* 8002CD40 00029CA0  28 03 00 00 */	cmplwi r3, 0
+/* 8002CD44 00029CA4  41 82 00 0C */	beq lbl_8002CD50
+/* 8002CD48 00029CA8  38 60 FF FF */	li r3, -1
+/* 8002CD4C 00029CAC  48 00 00 4C */	b lbl_8002CD98
+lbl_8002CD50:
+/* 8002CD50 00029CB0  48 06 04 79 */	bl DSPCheckMailFromDSP
+/* 8002CD54 00029CB4  28 03 00 00 */	cmplwi r3, 0
+/* 8002CD58 00029CB8  41 82 00 0C */	beq lbl_8002CD64
+/* 8002CD5C 00029CBC  38 60 FF FF */	li r3, -1
+/* 8002CD60 00029CC0  48 00 00 38 */	b lbl_8002CD98
+lbl_8002CD64:
+/* 8002CD64 00029CC4  3B C0 00 00 */	li r30, 0
+/* 8002CD68 00029CC8  3B E0 00 00 */	li r31, 0
+/* 8002CD6C 00029CCC  48 00 00 20 */	b lbl_8002CD8C
+lbl_8002CD70:
+/* 8002CD70 00029CD0  7C 7C F8 2E */	lwzx r3, r28, r31
+/* 8002CD74 00029CD4  48 06 04 7D */	bl DSPSendMailToDSP
+lbl_8002CD78:
+/* 8002CD78 00029CD8  48 06 04 41 */	bl DSPCheckMailToDSP
+/* 8002CD7C 00029CDC  28 03 00 00 */	cmplwi r3, 0
+/* 8002CD80 00029CE0  40 82 FF F8 */	bne lbl_8002CD78
+/* 8002CD84 00029CE4  3B DE 00 01 */	addi r30, r30, 1
+/* 8002CD88 00029CE8  3B FF 00 04 */	addi r31, r31, 4
+lbl_8002CD8C:
+/* 8002CD8C 00029CEC  7C 1E E8 40 */	cmplw r30, r29
+/* 8002CD90 00029CF0  41 80 FF E0 */	blt lbl_8002CD70
+/* 8002CD94 00029CF4  38 60 00 00 */	li r3, 0
+lbl_8002CD98:
+/* 8002CD98 00029CF8  39 61 00 20 */	addi r11, r1, 0x20
+/* 8002CD9C 00029CFC  48 06 E1 81 */	bl func_8009AF1C
+/* 8002CDA0 00029D00  80 01 00 24 */	lwz r0, 0x24(r1)
+/* 8002CDA4 00029D04  7C 08 03 A6 */	mtlr r0
+/* 8002CDA8 00029D08  38 21 00 20 */	addi r1, r1, 0x20
+/* 8002CDAC 00029D0C  4E 80 00 20 */	blr 
+/* 8002CDB0 00029D10  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 8002CDB4 00029D14  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 8002CDB8 00029D18  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 8002CDBC 00029D1C  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+
+.global DSPReleaseHalt__Fv
+DSPReleaseHalt__Fv:
+/* 8002CDC0 00029D20  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 8002CDC4 00029D24  7C 08 02 A6 */	mflr r0
+/* 8002CDC8 00029D28  90 01 00 14 */	stw r0, 0x14(r1)
+/* 8002CDCC 00029D2C  60 00 00 00 */	nop 
+lbl_8002CDD0:
+/* 8002CDD0 00029D30  48 06 03 E9 */	bl DSPCheckMailToDSP
+/* 8002CDD4 00029D34  28 03 00 00 */	cmplwi r3, 0
+/* 8002CDD8 00029D38  40 82 FF F8 */	bne lbl_8002CDD0
+/* 8002CDDC 00029D3C  38 60 00 00 */	li r3, 0
+/* 8002CDE0 00029D40  48 06 04 11 */	bl DSPSendMailToDSP
+/* 8002CDE4 00029D44  48 06 03 E5 */	bl DSPCheckMailFromDSP
+/* 8002CDE8 00029D48  28 03 00 00 */	cmplwi r3, 0
+/* 8002CDEC 00029D4C  41 82 00 08 */	beq lbl_8002CDF4
+/* 8002CDF0 00029D50  48 06 03 E9 */	bl DSPReadMailFromDSP
+lbl_8002CDF4:
+/* 8002CDF4 00029D54  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 8002CDF8 00029D58  3C 60 88 88 */	lis r3, 0x88881357@ha
+/* 8002CDFC 00029D5C  38 63 13 57 */	addi r3, r3, 0x88881357@l
+/* 8002CE00 00029D60  7C 08 03 A6 */	mtlr r0
+/* 8002CE04 00029D64  38 21 00 10 */	addi r1, r1, 0x10
+/* 8002CE08 00029D68  4E 80 00 20 */	blr 
+/* 8002CE0C 00029D6C  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 8002CE10 00029D70  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 8002CE14 00029D74  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 8002CE18 00029D78  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 8002CE1C 00029D7C  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+
+.global DSPWaitFinish__Fv
+DSPWaitFinish__Fv:
+/* 8002CE20 00029D80  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 8002CE24 00029D84  7C 08 02 A6 */	mflr r0
+/* 8002CE28 00029D88  90 01 00 14 */	stw r0, 0x14(r1)
+/* 8002CE2C 00029D8C  60 00 00 00 */	nop 
+lbl_8002CE30:
+/* 8002CE30 00029D90  48 06 03 99 */	bl DSPCheckMailFromDSP
+/* 8002CE34 00029D94  28 03 00 00 */	cmplwi r3, 0
+/* 8002CE38 00029D98  41 82 FF F8 */	beq lbl_8002CE30
+/* 8002CE3C 00029D9C  48 06 03 9D */	bl DSPReadMailFromDSP
+/* 8002CE40 00029DA0  3C 03 77 78 */	addis r0, r3, 0x7778
+/* 8002CE44 00029DA4  28 00 13 57 */	cmplwi r0, 0x1357
+/* 8002CE48 00029DA8  41 82 FF E8 */	beq lbl_8002CE30
+/* 8002CE4C 00029DAC  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 8002CE50 00029DB0  7C 08 03 A6 */	mtlr r0
+/* 8002CE54 00029DB4  38 21 00 10 */	addi r1, r1, 0x10
+/* 8002CE58 00029DB8  4E 80 00 20 */	blr 
+/* 8002CE5C 00029DBC  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+
+.global DsetupTable__FUlUlUlUlUl
+DsetupTable__FUlUlUlUlUl:
+/* 8002CE60 00029DC0  94 21 FF E0 */	stwu r1, -0x20(r1)
+/* 8002CE64 00029DC4  7C 08 02 A6 */	mflr r0
+/* 8002CE68 00029DC8  90 01 00 24 */	stw r0, 0x24(r1)
+/* 8002CE6C 00029DCC  54 60 04 3E */	clrlwi r0, r3, 0x10
+/* 8002CE70 00029DD0  64 00 81 00 */	oris r0, r0, 0x8100
+/* 8002CE74 00029DD4  38 61 00 08 */	addi r3, r1, 8
+/* 8002CE78 00029DD8  90 81 00 0C */	stw r4, 0xc(r1)
+/* 8002CE7C 00029DDC  38 80 00 05 */	li r4, 5
+/* 8002CE80 00029DE0  90 01 00 08 */	stw r0, 8(r1)
+/* 8002CE84 00029DE4  90 A1 00 10 */	stw r5, 0x10(r1)
+/* 8002CE88 00029DE8  90 C1 00 14 */	stw r6, 0x14(r1)
+/* 8002CE8C 00029DEC  90 E1 00 18 */	stw r7, 0x18(r1)
+/* 8002CE90 00029DF0  4B FF FE 91 */	bl DSPSendCommands__FPUlUl
+/* 8002CE94 00029DF4  4B FF FF 8D */	bl DSPWaitFinish__Fv
+/* 8002CE98 00029DF8  80 01 00 24 */	lwz r0, 0x24(r1)
+/* 8002CE9C 00029DFC  7C 08 03 A6 */	mtlr r0
+/* 8002CEA0 00029E00  38 21 00 20 */	addi r1, r1, 0x20
+/* 8002CEA4 00029E04  4E 80 00 20 */	blr 
+/* 8002CEA8 00029E08  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 8002CEAC 00029E0C  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 8002CEB0 00029E10  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 8002CEB4 00029E14  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 8002CEB8 00029E18  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 8002CEBC 00029E1C  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+
+.global DsyncFrame__FUlUlUl
+DsyncFrame__FUlUlUl:
+/* 8002CEC0 00029E20  94 21 FF E0 */	stwu r1, -0x20(r1)
+/* 8002CEC4 00029E24  7C 08 02 A6 */	mflr r0
+/* 8002CEC8 00029E28  54 63 82 1E */	rlwinm r3, r3, 0x10, 8, 0xf
+/* 8002CECC 00029E2C  90 01 00 24 */	stw r0, 0x24(r1)
+/* 8002CED0 00029E30  64 63 82 00 */	oris r3, r3, 0x8200
+/* 8002CED4 00029E34  A0 0D 80 98 */	lhz r0, DSP_MIXERLEVEL-_SDA_BASE_(r13)
+/* 8002CED8 00029E38  90 81 00 0C */	stw r4, 0xc(r1)
+/* 8002CEDC 00029E3C  38 80 00 03 */	li r4, 3
+/* 8002CEE0 00029E40  7C 60 03 78 */	or r0, r3, r0
+/* 8002CEE4 00029E44  38 61 00 08 */	addi r3, r1, 8
+/* 8002CEE8 00029E48  90 01 00 08 */	stw r0, 8(r1)
+/* 8002CEEC 00029E4C  90 A1 00 10 */	stw r5, 0x10(r1)
+/* 8002CEF0 00029E50  4B FF FE 31 */	bl DSPSendCommands__FPUlUl
+/* 8002CEF4 00029E54  4B FF FF 2D */	bl DSPWaitFinish__Fv
+/* 8002CEF8 00029E58  80 01 00 24 */	lwz r0, 0x24(r1)
+/* 8002CEFC 00029E5C  7C 08 03 A6 */	mtlr r0
+/* 8002CF00 00029E60  38 21 00 20 */	addi r1, r1, 0x20
+/* 8002CF04 00029E64  4E 80 00 20 */	blr 
+/* 8002CF08 00029E68  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 8002CF0C 00029E6C  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 8002CF10 00029E70  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 8002CF14 00029E74  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 8002CF18 00029E78  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 8002CF1C 00029E7C  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+
+.global DwaitFrame__Fv
+DwaitFrame__Fv:
+/* 8002CF20 00029E80  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 8002CF24 00029E84  7C 08 02 A6 */	mflr r0
+/* 8002CF28 00029E88  38 80 00 01 */	li r4, 1
+/* 8002CF2C 00029E8C  90 01 00 14 */	stw r0, 0x14(r1)
+/* 8002CF30 00029E90  3C 00 80 00 */	lis r0, 0x8000
+/* 8002CF34 00029E94  38 61 00 08 */	addi r3, r1, 8
+/* 8002CF38 00029E98  90 01 00 08 */	stw r0, 8(r1)
+/* 8002CF3C 00029E9C  4B FF FD E5 */	bl DSPSendCommands__FPUlUl
+/* 8002CF40 00029EA0  4B FF FE E1 */	bl DSPWaitFinish__Fv
+/* 8002CF44 00029EA4  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 8002CF48 00029EA8  7C 08 03 A6 */	mtlr r0
+/* 8002CF4C 00029EAC  38 21 00 10 */	addi r1, r1, 0x10
+/* 8002CF50 00029EB0  4E 80 00 20 */	blr 
+/* 8002CF54 00029EB4  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 8002CF58 00029EB8  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+/* 8002CF5C 00029EBC  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+
+.global DiplSec__FUl
+DiplSec__FUl:
+/* 8002CF60 00029EC0  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 8002CF64 00029EC4  7C 08 02 A6 */	mflr r0
+/* 8002CF68 00029EC8  3C 80 8B 00 */	lis r4, 0x8B000008@ha
+/* 8002CF6C 00029ECC  90 01 00 14 */	stw r0, 0x14(r1)
+/* 8002CF70 00029ED0  38 04 00 08 */	addi r0, r4, 0x8B000008@l
+/* 8002CF74 00029ED4  38 80 00 02 */	li r4, 2
+/* 8002CF78 00029ED8  90 61 00 0C */	stw r3, 0xc(r1)
+/* 8002CF7C 00029EDC  38 61 00 08 */	addi r3, r1, 8
+/* 8002CF80 00029EE0  90 01 00 08 */	stw r0, 8(r1)
+/* 8002CF84 00029EE4  4B FF FD 9D */	bl DSPSendCommands__FPUlUl
+/* 8002CF88 00029EE8  4B FF FE 99 */	bl DSPWaitFinish__Fv
+/* 8002CF8C 00029EEC  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 8002CF90 00029EF0  7C 08 03 A6 */	mtlr r0
+/* 8002CF94 00029EF4  38 21 00 10 */	addi r1, r1, 0x10
+/* 8002CF98 00029EF8  4E 80 00 20 */	blr 
+/* 8002CF9C 00029EFC  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
+
+.global DagbSec__FUl
+DagbSec__FUl:
+/* 8002CFA0 00029F00  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 8002CFA4 00029F04  7C 08 02 A6 */	mflr r0
+/* 8002CFA8 00029F08  3C 80 8C 00 */	lis r4, 0x8C000008@ha
+/* 8002CFAC 00029F0C  90 01 00 14 */	stw r0, 0x14(r1)
+/* 8002CFB0 00029F10  38 04 00 08 */	addi r0, r4, 0x8C000008@l
+/* 8002CFB4 00029F14  38 80 00 02 */	li r4, 2
+/* 8002CFB8 00029F18  90 61 00 0C */	stw r3, 0xc(r1)
+/* 8002CFBC 00029F1C  38 61 00 08 */	addi r3, r1, 8
+/* 8002CFC0 00029F20  90 01 00 08 */	stw r0, 8(r1)
+/* 8002CFC4 00029F24  4B FF FD 5D */	bl DSPSendCommands__FPUlUl
+/* 8002CFC8 00029F28  4B FF FE 59 */	bl DSPWaitFinish__Fv
+/* 8002CFCC 00029F2C  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 8002CFD0 00029F30  7C 08 03 A6 */	mtlr r0
+/* 8002CFD4 00029F34  38 21 00 10 */	addi r1, r1, 0x10
+/* 8002CFD8 00029F38  4E 80 00 20 */	blr 
+/* 8002CFDC 00029F3C  00 00 00 00 */	.4byte 0x00000000  /* unknown instruction */
