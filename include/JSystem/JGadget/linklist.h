@@ -133,13 +133,13 @@ public:
     ~TNodeLinkList();
 
     void Initialize_() {
-        this->size = 0;
+        this->listSize = 0;
         this->oNode.pNext = &this->oNode;
         this->oNode.pPrev = &this->oNode;
     }
 
     bool empty() const {
-        return !this->size;
+        return !this->listSize;
     }
 
     TLinkListNode* erase(iterator to, iterator from) {
@@ -164,7 +164,7 @@ public:
     }
 
     bool Iterator_isEnd_(const_iterator it) const {
-        return !(reinterpret_cast<int>(this) + (sizeof(this->size) - reinterpret_cast<int>(it->pNext)));
+        return !(reinterpret_cast<int>(this) + (sizeof(this->listSize) - reinterpret_cast<int>(it->pNext)));
     }
 
     void pop_back() {
@@ -190,9 +190,10 @@ public:
     iterator Erase(TLinkListNode* p);
     iterator Insert(iterator pIt, TLinkListNode* p);
     void splice(iterator thisIt, TNodeLinkList& other, iterator otherIt);
+    iterator Find(const TLinkListNode* node);
 
 protected:
-    int size;
+    int listSize;
     TLinkListNode oNode;
 };
 

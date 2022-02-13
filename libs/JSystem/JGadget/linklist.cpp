@@ -1,3 +1,4 @@
+#include <algorithm.h>
 #include "linklist.h"
 
 namespace JSystem::JGadget {
@@ -7,7 +8,7 @@ TNodeLinkList::iterator TNodeLinkList::Insert(iterator pIt, TLinkListNode* p) {
     p->pPrev = pIt->pPrev;
     pIt->pPrev->pNext = p;
     pIt->pPrev = p;
-    this->size++;
+    this->listSize++;
     return iterator(p);
 }
 
@@ -16,7 +17,7 @@ TNodeLinkList::iterator TNodeLinkList::Erase(TLinkListNode* p) {
     TLinkListNode* pPrev = p->pPrev;
     pNext->pPrev = pPrev;
     pPrev->pNext = pNext;
-    this->size--;
+    this->listSize--;
     p->clear_();
     return iterator(pNext);
 }
@@ -49,6 +50,10 @@ inline void TNodeLinkList::Remove_if(TPRIsEqual_pointer_<T> p, TNodeLinkList& li
             list.splice(list.end(), this, t);
         }
     }
+}
+
+inline TNodeLinkList::iterator TNodeLinkList::Find(const TLinkListNode* node) {
+    return std::find_if(this->begin(), this->end(), TPRIsEqual_pointer_(node));
 }
 
 void TNodeLinkList::Remove(TLinkListNode* pNode) {
