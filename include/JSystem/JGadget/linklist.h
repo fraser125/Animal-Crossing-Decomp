@@ -2,7 +2,7 @@
  * @file linklist.h
  * @brief JSystem LinkedList implementation
  * 
- * Basic reimplementation of Nintendo's JSystem::JGadget linked list implementatin.
+ * Basic reimplementation of Nintendo's JSystem::JGadget linked list implementation.
  * Some methods may be missing. Both Animal Crossing and Twilight Princess were used to
  * reverse engineer this file.
  */
@@ -138,6 +138,10 @@ public:
         this->oNode.pPrev = &this->oNode;
     }
 
+    int size() const {
+        return this->listSize;
+    }
+
     bool empty() const {
         return !this->listSize;
     }
@@ -201,21 +205,27 @@ protected:
 template<class T>
 class TLinkList {
 public:
-    class iterator : TNodeLinkList::iterator {
+    class iterator : public TNodeLinkList::iterator {
+    public:
         iterator() : TNodeLinkList::iterator() { }
         iterator(TNodeLinkList::iterator it) : TNodeLinkList::iterator(it) { }
+        iterator(const iterator& it) : TNodeLinkList::iterator(it) { }
 
         T* operator->() const { return Element_toValue(TNodeLinkList::iterator::operator->(this)); }
         T* operator*() const { return this->operator->(); }
         iterator operator--() { return TNodeLinkList::iterator::operator--(this); }
     };
 
-    class const_iterator : TNodeLinkList::const_iterator {
+    class const_iterator : public TNodeLinkList::const_iterator {
+    public:
         const_iterator() : TNodeLinkList::const_iterator() { }
         const_iterator(const TNodeLinkList::const_iterator& it) : TNodeLinkList::const_iterator(it) { }
+        const_iterator(const const_iterator& it) : TNodeLinkList::const_iterator(it) { }
+        const_iterator(const iterator& it) : TNodeLinkList::const_iterator(it) { }
 
         T* operator->() const { return Element_toValue(TNodeLinkList::const_iterator::operator->(this)); }
         T* operator*() const { return this->operator->(); }
+        bool operator!=(const const_iterator& other) const { return *this != *other; }
         const_iterator operator++() { return TNodeLinkList::const_iterator::operator++(this); }
     };
 

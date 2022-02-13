@@ -73,6 +73,7 @@ void JUTConsoleManager::draw() {
 void JUTConsoleManager::drawDirect(bool wait_vi_retrace) {
     if (this->directConsole != nullptr) {
         if (wait_vi_retrace) {
+            /*
             u32 save = OSEnableInterrupts();
             int retrace = VIGetRetraceCount();
             int retraceNow;
@@ -80,6 +81,7 @@ void JUTConsoleManager::drawDirect(bool wait_vi_retrace) {
                 retraceNow = VIGetRetraceCount();
             } while (retrace == retraceNow);
             OSRestoreInterrupts(save);
+            */
         }
 
         this->directConsole->doDraw(JUTConsole::EConsoleType::Direct);
