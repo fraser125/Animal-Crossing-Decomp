@@ -1,16 +1,20 @@
 #pragma once
 
+#include "color.hpp"
 #include "linklist.h"
 #include "JKRDisposer.hpp"
 #include <va_list.h>
 
 namespace JSystem::JUtility {
 
-static JUTConsoleManager* sManager;
-static JUTConsole* sReportConsole;
-static JUTConsole* sWarningConsole;
-
 class JUTConsole : JKernel::JKRDisposer {
+public:
+    enum class EConsoleType {
+        Active,
+        Inactive,
+        Direct
+    };
+
     JGadget::TLinkListNode node;
     size_t bufferSize;
     u32 lines;
@@ -27,6 +31,8 @@ class JUTConsole : JKernel::JKRDisposer {
     float _50;
     u32 _54;
     int _58;
+    TColor inactiveColor;
+    TColor activeColor;
 
     int diffIndex(int start, int end) {
         int diff = end - start;
@@ -35,24 +41,29 @@ class JUTConsole : JKernel::JKRDisposer {
         }
         return diff;
     }
+
+    void doDraw(EConsoleType type);
 };
 
 class JUTConsoleManager {
 public:
     JUTConsoleManager();
 
-    JUTConsoleManager* createManager(JKernel::JKRHeap* heap);
     void appendConsole(JUTConsole* console);
     void removeConsole(JUTConsole* console);
     void draw();
     void drawDirect(bool wait_vi_retrace);
+    JUTConsole* getDirectConsole() { return this->directConsole; }
     void setDirectConsole(JUTConsole* console);
+    JUTConsole* getActiveConsole() { return this->activeConsole; }
+    void setActiveConsole(JUTConsole* console);
 
     static JUTConsoleManager* getManager() { return sManager; }
+    static JUTConsoleManager* createManager(JKernel::JKRHeap* heap);
 
 private:
     JGadget::TLinkList<JUTConsole> soLink_;
-    JUTConsole* firstConsole;
+    JUTConsole* activeConsole;
     JUTConsole* directConsole;
 };
 
@@ -68,5 +79,9 @@ static void JUTReportConsole(char* s);
 
 static void JUTWarningConsole_f(char* format,  ...);
 static void JUTWarningConsole(char* s);
+
+static JUTConsoleManager* sManager;
+static JUTConsole* sReportConsole;
+static JUTConsole* sWarningConsole;
 
 } // namespace JSystem::JUtility

@@ -5,40 +5,6 @@
 #include "dolphin/os/OSMutex.h"
 #include <cstdlib>
 
-// Global operators are declared outside of a namespace for compliance.
-
-void* operator new(size_t size) {
-    if (JSystem::JKernel::JKRHeap::sCurrentHeap == NULL)
-        return NULL;
-    
-    return JSystem::JKernel::JKRHeap::sCurrentHeap->alloc(size, 4);
-}
-
-void* operator new(size_t size, JSystem::JKernel::JKRHeap* heap, int align) {
-    if (heap == NULL) {
-        if (JSystem::JKernel::JKRHeap::sCurrentHeap == NULL)
-            return NULL;
-        return JSystem::JKernel::JKRHeap::sCurrentHeap->alloc(size, align);
-    }
-    return heap->alloc(size, align);
-}
-
-void* operator new[](size_t size, JSystem::JKernel::JKRHeap* heap, int align) {
-    if (heap != NULL)
-        return heap->alloc(size, align);
-    if (JSystem::JKernel::JKRHeap::sCurrentHeap == NULL)
-        return NULL;
-    return JSystem::JKernel::JKRHeap::sCurrentHeap->alloc(size, align);
-}
-
-void operator delete(void* ptr) {
-    JSystem::JKernel::JKRHeap::free(ptr, nullptr);
-}
-
-void operator delete[](void* ptr) {
-    JSystem::JKernel::JKRHeap::free(ptr, nullptr);
-}
-
 namespace JSystem::JKernel {
 
 #define ARENA_ALIGN 32-1
@@ -101,6 +67,10 @@ public:
     static void copyMemory(void* dst, void* src, size_t n);
 	static void free(void* addr, JKRHeap* heap);
 
+    static JKRHeap* getSystemHeap() { return sSystemHeap; }
+    static JKRHeap* getRootHeap() { return sRootHeap; }
+    static JKRHeap* getCurrentHeap() { return sCurrentHeap; }
+
 	// Static global variables.
 	static JKRHeap* sSystemHeap;
 	static JKRHeap* sRootHeap;
@@ -132,15 +102,48 @@ protected:
     static int mMemorySize;
 
     void dispose_subroutine(u32 start, u32 end);
-
-    /* Big hack to call the constructor without initializing new memory */
-    static inline void* operator new(size_t size, void* arena) {
-        return arena;
-    }
-
-    static inline void* operator new[](size_t size, void* arena) {
-        return arena;
-    }
 };
 
 } // namespace JSystem::JKernel
+
+// Global operators are declared outside of a namespace for compliance.
+
+void* operator new(size_t size) {
+    if (JSystem::JKernel::JKRHeap::sCurrentHeap == NULL)
+        return NULL;
+    
+    return JSystem::JKernel::JKRHeap::sCurrentHeap->alloc(size, 4);
+}
+
+void* operator new(size_t size, JSystem::JKernel::JKRHeap* heap, int align) {
+    if (heap == NULL) {
+        if (JSystem::JKernel::JKRHeap::sCurrentHeap == NULL)
+            return NULL;
+        return JSystem::JKernel::JKRHeap::sCurrentHeap->alloc(size, align);
+    }
+    return heap->alloc(size, align);
+}
+
+void* operator new[](size_t size, JSystem::JKernel::JKRHeap* heap, int align) {
+    if (heap != NULL)
+        return heap->alloc(size, align);
+    if (JSystem::JKernel::JKRHeap::sCurrentHeap == NULL)
+        return NULL;
+    return JSystem::JKernel::JKRHeap::sCurrentHeap->alloc(size, align);
+}
+
+void operator delete(void* ptr) {
+    JSystem::JKernel::JKRHeap::free(ptr, nullptr);
+}
+
+void operator delete[](void* ptr) {
+    JSystem::JKernel::JKRHeap::free(ptr, nullptr);
+}
+
+static inline void* operator new(size_t size, void* arena) {
+    return arena;
+}
+
+static inline void* operator new[](size_t size, void* arena) {
+    return arena;
+}
