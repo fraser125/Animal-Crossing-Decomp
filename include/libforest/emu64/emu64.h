@@ -188,12 +188,15 @@ public:
 
     const char* segchk(u32 segment);
     EMU64_INLINE void* seg2k0(u32 segment);
+    EMU64_INLINE void emu64_change_ucode(void* addr);
 
     /* F3DZEX2 microcode implementations */
     void dl_G_SPNOOP();
     void dl_G_DL();
     void dl_G_RDPHALF_1();
     void dl_G_TEXRECT();
+    void dl_G_LOAD_UCODE();
+    void dl_G_ENDDL();
     void dl_G_RDPSETOTHERMODE(); /* gsDPSetOtherMode */
 
     /* Static Members */

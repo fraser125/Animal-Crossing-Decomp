@@ -121,6 +121,29 @@ void emu64::emu64_init() {
     //MTXIdentity();
 }
 
+EMU64_INLINE void emu64::emu64_change_ucode(void* addr) {
+    if (this->ucode_len == 0) {
+        #ifdef EMU64_DEBUG
+        if (this->print_commands != false) {
+            this->Printf1("### マイクロコード情報がありません\n");
+        }
+        #endif
+    }
+    else {
+        for (int i = 0; i < this->ucode_len; i++) {
+            if (addr == (void*)this->ucode_info[i].words.w1) {
+                this->ucode_p = *(Gfx**)(this->ucode_info + i);
+                return;
+            }
+        }
+
+        this->Printf0("### マイクロコードが一致しなかった\n");
+        this->err_count++;
+        this->num_unknown_ucodes++;
+        this->ucode_p = nullptr;
+    }
+}
+
 void emu64::dl_G_SPNOOP() {
     #ifdef EMU64_DEBUG
 
@@ -248,6 +271,51 @@ void emu64::dl_G_TEXRECT() {
     }
 
     this->gfx_p += 2; /* Increment by two here, the emulator will increment by another for the full Gtexrect2 size */
+}
+
+void emu64::dl_G_LOAD_UCODE() {
+    #ifdef EMU64_DEBUG
+    u16 uc_dsize = this->gfx.words.w0 & 0xFFFF;
+    if (uc_dsize == 0x7FF) {
+        if (this->print_commands != false) {
+            this->Printf1("gsSPLoadUcode(%s, 0x%08x),", segchk(this->gfx.words.w1), this->rdpHalf_1);
+        }
+    }
+    else if (this->print_commands != false) {
+        this->Printf1("gsSPLoadUcodeEx(%s, 0x%08x, 0x%05x),", this->segchk(this->gfx.words.w1), this->rdpHalf_1, uc_dsize + 1);
+    }
+    #endif
+
+    /* Animal Crossing exposes extra code in this one function */
+    #ifdef ANIMAL_CROSSING
+    #define EMU64_DEBUG_CVT_PARTIAL_ADDR
+    #endif
+
+    this->emu64_change_ucode(this->seg2k0(this->gfx.words.w1));
+
+    #ifdef ANIMAL_CROSSING
+    #undef EMU64_DEBUG_CVT_PARTIAL_ADDR
+    #endif
+
+    this->load_ucode_calls++;
+}
+
+void emu64::dl_G_ENDDL() {
+    #ifdef EMU64_DEBUG
+
+    if (this->print_commands) {
+        this->Printf1("gsSPEndDisplayList(),");
+    }
+
+    #endif
+
+    if (this->DL_stack_level < 1) {
+        this->end_dl = TRUE;
+    }
+    else {
+        this->DL_stack_level--;
+        this->gfx_p = this->DL_stack[this->DL_stack_level];
+    }
 }
 
 void emu64::dl_G_RDPSETOTHERMODE() {
