@@ -39,9 +39,9 @@ extern "C" {
 
 /* Conditional inline which is present in DnM+ and DnMe+ but not AC. */
 #ifdef ANIMAL_CROSSING
-#define EMU64_INLINE
-#else
 #define EMU64_INLINE inline
+#else
+#define EMU64_INLINE
 #endif
 
 static char s[256];
