@@ -201,6 +201,55 @@ void emu64::dl_G_DL() {
     }
 }
 
+void emu64::dl_G_RDPHALF_1() {
+    #ifdef EMU64_DEBUG
+
+    if (this->print_commands != false) {
+        this->Printf2("RDPHALF_1(0x%08x),", this->gfx.words.w1);
+    }
+
+    #endif
+
+    this->rdpHalf_1 = this->gfx.words.w1;
+}
+
+void emu64::dl_G_TEXRECT() {
+    Gtexrect2* texrect_p = (Gtexrect2*)this->gfx_p;
+
+    #ifdef EMU64_DEBUG
+
+    if (this->print_commands != false) {
+        this->Printf2(
+            "gsSPTextureRectangle(%d,%d,%d,%d,%d,%d,%d,%d,%d),",
+            texrect_p->xh, /* TODO: check if this is just wrong, or Gtexrect2 flips xh/yh with xl/yl */
+            texrect_p->yh,
+            texrect_p->xl,
+            texrect_p->yl,
+            texrect_p->tile,
+            texrect_p->s,
+            texrect_p->t,
+            texrect_p->dsdx,
+            texrect_p->dtdy
+        );
+    }
+
+    #endif
+
+    if (this->disable_polygons == false) {
+        this->dirty_check(texrect_p->tile, 0, 0);
+
+        #ifdef EMU64_DEBUG
+        if (aflags[AFLAGS_SKIP_DRAW_RECTANGLE] == 0) {
+        #endif
+            this->draw_rectangle(texrect_p);
+        #ifdef EMU64_DEBUG
+        }
+        #endif
+    }
+
+    this->gfx_p += 2; /* Increment by two here, the emulator will increment by another for the full Gtexrect2 size */
+}
+
 void emu64::dl_G_RDPSETOTHERMODE() {
 
     /* Debug output */

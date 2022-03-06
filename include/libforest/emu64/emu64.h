@@ -48,6 +48,64 @@ static char s[256];
 
 /* C++ */
 
+/* aflags class */
+
+#define AFLAGS_SKIP_DRAW_RECTANGLE 50
+
+#ifdef EMU64_DEBUG
+
+template<typename T, size_t maxSize>
+class aflags_c {
+public:
+    const size_t getMaxArray() const {
+        return maxSize;
+    }
+
+    void set(u32 idx, T value) {
+        this->flags[idx] = value;
+    }
+
+    T operator[](u32 idx) {
+        return this->flags[idx];
+    }
+
+private:
+    T flags[maxSize];
+};
+
+#else
+
+template<typename T, size_t maxSize>
+class aflags_c {
+public:
+    const size_t getMaxArray() const {
+        return 0;
+    }
+
+    void set(u32 idx, T value) {
+        return;
+    }
+
+    T operator[](u32 idx) {
+        return 0;
+    }
+
+private:
+    T flags[0];
+};
+
+#endif
+
+#if EMU64_DEBUG
+#ifdef E_PLUS
+static aflags_c<u8, 100> aflags;
+#else /* PLUS/AC */
+static aflags_c<u32, 100> aflags;
+#endif
+#else
+static aflags_c<u8, 0> aflags;
+#endif
+
 /* Macro for quick panic */
 #define EMU64_PANIC(emu, msg)(emu->panic(msg, __FILE__, __LINE__))
 
@@ -134,6 +192,8 @@ public:
     /* F3DZEX2 microcode implementations */
     void dl_G_SPNOOP();
     void dl_G_DL();
+    void dl_G_RDPHALF_1();
+    void dl_G_TEXRECT();
     void dl_G_RDPSETOTHERMODE(); /* gsDPSetOtherMode */
 
     /* Static Members */
@@ -194,6 +254,9 @@ private:
     Mtx44 ortho_mtx;
 
     //...
+
+    /* 0xA20 */
+    u32 rdpHalf_1;
 
     /* 0x2020 */
     u32 resolved_addresses;
