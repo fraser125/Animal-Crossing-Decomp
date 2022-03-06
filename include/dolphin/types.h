@@ -33,7 +33,13 @@ typedef unsigned long size_t;
 
 #define NULL (0)
 
+#define INT32_MIN (0x80000000)
 #define INT32_MAX (0x7fffffff)
+
+#define UINT32_MIN (0x00000000)
 #define UINT32_MAX (0xffffffff)
+
+#define RAM_MIN (0x80000000)
+#define RAM_MAX (0x82FFFFFF)
 
 #endif
