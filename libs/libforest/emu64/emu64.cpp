@@ -92,6 +92,16 @@ static OthermodeParameterInfo l_tbl[] = {
     }
 };
 
+static char* dolfmttbl[] = {
+    "I4", "I8", "IA4", "IA8", "RGB565", "RGB5A3", "RGBA8", "CMPR"
+};
+
+static char* doltexwrapmode[] = {
+    "CLAMP", "REPEAT", "MIRROR", "?"
+};
+
+static tmem tmem_map[TMEM_ENTRIES];
+
 void emu64::emu64_init() {
     static bool init;
     static f32 AAnear;
@@ -119,6 +129,21 @@ void emu64::emu64_init() {
 
     C_MTXOrtho(ortho_mtx, 1.0f, -1.0f, -1.0f, 1.0f, AAnear, AAfar);
     //MTXIdentity();
+}
+
+void emu64::panic(char* msg, char* file, int line) {
+    if (file == nullptr) {
+        this->Printf0("\x1B[41;37memu64 PANIC!!\x1B[m\n");
+    }
+    else {
+        this->Printf0("\x1B[41;37memu64 PANIC!! in %s line %d\x1B[m\n", file, line);
+    }
+
+    if (msg != nullptr) {
+        this->Printf0("%s", msg);
+    }
+
+    this->printInfo();
 }
 
 EMU64_INLINE void emu64::emu64_change_ucode(void* addr) {
@@ -316,6 +341,203 @@ void emu64::dl_G_ENDDL() {
         this->DL_stack_level--;
         this->gfx_p = this->DL_stack[this->DL_stack_level];
     }
+}
+
+void emu64::dl_G_SETTILE() {
+    Gsettile* settile = (Gsettile*)this->gfx_p;
+
+    #ifdef EMU64_DEBUG
+
+    if (this->print_commands != false) {
+        const char* s_wrapmode;
+        int s_wrap = settile->ms + (settile->cs << 1);
+        if (s_wrap == G_TX_WRAP) {
+            s_wrapmode = "G_TX_WRAP";
+        }
+        else if (s_wrap == G_TX_MIRROR) {
+            s_wrapmode = "G_TX_MIRROR";
+        }
+        else if (s_wrap == G_TX_CLAMP) {
+            s_wrapmode = "G_TX_CLAMP";
+        }
+        else { /* s_wrap == G_TX_MIRROR|G_TX_CLAMP */
+            s_wrapmode = "G_TX_MIRROR|G_TX_CLAMP";
+        }
+
+        const char* t_wrapmode;
+        int t_wrap = settile->mt + (settile->ct << 1);
+        if (t_wrap == G_TX_WRAP) {
+            t_wrapmode = "G_TX_WRAP";
+        }
+        else if (t_wrap == G_TX_MIRROR) {
+            t_wrapmode = "G_TX_MIRROR";
+        }
+        else if (t_wrap == G_TX_CLAMP) {
+            t_wrapmode = "G_TX_CLAMP";
+        }
+        else { /* t_wrap == G_TX_MIRROR|G_TX_CLAMP */
+            t_wrapmode = "G_TX_MIRROR|G_TX_CLAMP";
+        }
+
+        const char* s_siz;
+        int siz = settile->siz;
+        if (siz == G_IM_SIZ_4b) {
+            s_siz = "4b";
+        }
+        else if (siz == G_IM_SIZ_8b) {
+            s_siz = "8b";
+        }
+        else if (siz == G_IM_SIZ_16b) {
+            s_siz = "16b";
+        }
+        else { /* siz == G_IM_SIZ_32b */
+            s_siz = "32b";
+        }
+
+        const char* s_fmt;
+        int fmt = settile->fmt;
+        if (fmt == G_IM_FMT_RGBA) {
+            s_fmt = "RGBA";
+        }
+        else if (fmt == G_IM_FMT_YUV) {
+            s_fmt = "YUV";
+        }
+        else if (fmt == G_IM_FMT_CI) {
+            s_fmt = "CI";
+        }
+        else if (fmt == G_IM_FMT_IA) {
+            s_fmt = "IA";
+        }
+        else { /* fmt == G_IM_FMT_I */
+            s_fmt = "I";
+        }
+
+        this->Printf2(
+            "gsDPSetTile(G_IM_FMT_%s, G_IM_SIZ_%s,%d,%d,%d,%d,%s,%d,%d,%s,%d,%d),",
+            s_fmt,
+            s_siz,
+            settile->line,
+            settile->tmem,
+            settile->tile,
+            settile->palette,
+            t_wrapmode,
+            settile->maskt,
+            settile->shiftt,
+            s_wrapmode,
+            settile->masks,
+            settile->shifts
+        );
+    }
+
+    #endif
+
+    this->use_dolphin_settile[settile->tile] = false;
+    bzero(&this->settile_dolphin_cmds[settile->tile], sizeof(Gsettile_dolphin));
+    this->settile_cmds[settile->tile] = *settile;
+    this->tex_tile_dirty[settile->tile] = true;
+}
+
+void emu64::dl_G_SETTILE_DOLPHIN() {
+    Gsettile_dolphin* settile_dolphin = (Gsettile_dolphin*)this->gfx_p;
+
+    #ifdef EMU64_DEBUG
+
+    if (this->print_commands != false) {
+        this->Printf2(
+            "gsDPSetTile_Dolphin(G_TF_%s,%d,%d,GX_%s,GX_%s,%d,%d),",
+            dolfmttbl[settile_dolphin->dol_fmt],
+            settile_dolphin->tile,
+            settile_dolphin->unk_0,
+            doltexwrapmode[settile_dolphin->wrap_s],
+            doltexwrapmode[settile_dolphin->wrap_t],
+            settile_dolphin->shift_s,
+            settile_dolphin->shift_t
+        );
+    }
+
+    #endif
+
+    int tile = settile_dolphin->tile;
+    this->use_dolphin_settile[tile] = true;
+    this->settile_dolphin_cmds[tile] = *settile_dolphin;
+    bzero(&this->settile_cmds[tile], sizeof(Gsettile));
+    this->setimg2_cmds[tile] = this->now_setimg2;
+
+    /* Setup tile size using S (X): [0, width - 1], T (Y): [0, height - 1] */
+    this->settilesize_dolphin_cmds[tile].sl = 0;
+    this->settilesize_dolphin_cmds[tile].tl = 0;
+    this->settilesize_dolphin_cmds[tile].slen = this->now_setimg2.wd;
+    this->settilesize_dolphin_cmds[tile].tlen = EXPAND_HEIGHT(this->now_setimg2.ht) - 1;
+
+    /* Set texture info for use in GC texture object initialization */
+    this->texture_info[tile].img_addr = (void*)this->now_setimg2.imgaddr;
+    this->texture_info[tile].format = this->now_setimg2.fmt;
+    this->texture_info[tile].size = this->now_setimg2.siz;
+    this->texture_info[tile].width = EXPAND_WIDTH(this->now_setimg2.wd);
+    this->texture_info[tile].height = EXPAND_HEIGHT(this->now_setimg2.ht);
+
+    /* Mark texture tile as dirty */
+    this->tex_tile_dirty[tile] = true;
+}
+
+void emu64::dl_G_LOADTILE() {
+    Gloadtile* loadtile = (Gloadtile*)this->gfx_p;
+
+    #ifdef EMU64_DEBUG
+
+    if (this->print_commands) {
+        this->Printf2(
+            "gsDPLoadTile(%d,%d,%d,%d,%d),",
+            loadtile->tile,
+            loadtile->sl,
+            loadtile->tl,
+            loadtile->sh,
+            loadtile->th
+        );
+    }
+
+    #endif
+
+    /* Check if this image does not support gsDPLoadTile() */
+    if (this->now_setimg2.no_load != false) return;
+
+    int tmem = this->settile_cmds[loadtile->tile].tmem;
+
+    int sl = loadtile->sl / 4;
+    int tl = loadtile->tl / 4;
+    int width = EXPAND_WIDTH(this->now_setimg2.wd);
+    u32 addr = this->now_setimg2.imgaddr + ((sl + tl) * (width << this->now_setimg2.siz)) / 2;
+
+    #ifdef EMU64_DEBUG
+    
+    if (this->print_commands) {
+        this->Printf2(
+            "\n [%d %d]-[%d %d] tmem=%d dram=%08x\n",
+            sl, tl,
+            loadtile->sh / 4, loadtile->tl / 4,
+            tmem,
+            addr
+        );
+    }
+
+    #endif
+
+    int tmem_idx = tmem / 4;
+
+    /* Determine tmem base address */
+    tmem_map[tmem_idx].addr = (void*)addr;
+
+    /* Copy setup values to tmem */
+    tmem_map[tmem_idx].loadtile = *loadtile;
+    tmem_map[tmem_idx].setimg2 = this->now_setimg2;
+
+    #ifdef EMU64_DEBUG
+
+    if (this->print_commands) {
+        this->Printf3("tmem_map[%d]=%08x\n", tmem_idx, addr);
+    }
+
+    #endif
 }
 
 void emu64::dl_G_RDPSETOTHERMODE() {

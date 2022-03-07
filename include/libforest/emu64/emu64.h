@@ -13,6 +13,9 @@ extern "C" {
 #define NUM_SEGMENTS 16
 #define DL_MAX_STACK_LEVEL 18
 #define DL_HISTORY_COUNT 16
+#define NUM_TILES 8
+#define NUM_TEX_OBJS 4
+#define TMEM_ENTRIES 128
 
 /* Debug/Print Definitions */
 #define EMU64_PRINT_FLAG_ENABLE 1
@@ -114,6 +117,11 @@ static aflags_c<u8, 0> aflags;
 #define SEG_2_SEGADDR(seg)(seg << SEGMENT_SHIFT)
 #define SEG_EQUALS(seg_addr, seg)(seg_addr == SEG_2_SEGADDR(seg))
 
+
+/* Macro to expand packed image/tile width and height */
+#define EXPAND_WIDTH(wd)(wd + 1)
+#define EXPAND_HEIGHT(ht)((ht + 1) * 4)
+
 typedef struct {
     unsigned int cmd:8;
     unsigned int xl:12;	/* Top-left x coord */
@@ -135,6 +143,53 @@ typedef struct {
 } Gtexrect2;
 
 typedef struct {
+    int cmd:8;
+    unsigned int dol_fmt:4;
+    unsigned int pad0:1;
+    unsigned int tile:3;
+    unsigned int unk_0:4;
+    unsigned int wrap_s:2;
+    unsigned int wrap_t:2;
+    unsigned int shift_s:4;
+    unsigned int shift_t:4;
+    unsigned int pad1:32;
+} Gsettile_dolphin;
+
+typedef struct {
+    int cmd:8;
+    unsigned int sl:14; /* Start of S coordinate */
+    unsigned int slen:10; /* Length of S coordinate */
+    
+    unsigned int isDolphin:1; /* If true, format is Gsettilesize_dolphin. If false, format is Gsettilesize2 */
+    unsigned int unk_1:4;
+    unsigned int tile:3; /* Tile descriptor */
+    unsigned int tl:14; /* Start of T coordinate */
+    unsigned int tlen:10; /* Length of T coordinate */
+} Gsettilesize_dolphin;
+
+typedef struct {
+		int cmd:8;
+		unsigned int sl:12;
+		unsigned int tl:12;
+        int isDolphin:1; /* If true, format is Gsettilesize_dolphin. If false, format is Gsettilesize2 */
+		int pad:4;
+		unsigned int tile:3;
+		unsigned int sh:12;
+		unsigned int th:12;
+} Gsettilesize2;
+
+typedef struct {
+    int cmd:8; /* Command */
+    unsigned int fmt:3; /* Image format */
+    unsigned int siz:2; /* Image format texel size */
+    unsigned int no_load:1; /* Enabled? Used in dl_G_LOADTILE. If set, it skips. */
+    unsigned int ht:8; /* Height, packed: (height / 4) - 1 */
+    unsigned int wd:10; /* Width, packed: width - 1 */
+
+    unsigned int imgaddr:32; /* Image RAM address */
+} Gsetimg2;
+
+typedef struct {
     char* name;
     int shift;
     int len;
@@ -147,6 +202,25 @@ typedef struct {
     char* opt3;
     int opt3Val;
 } OthermodeParameterInfo;
+
+typedef struct {
+    void* img_addr; /* Texture RAM address */
+    u16 width; /* Texture width */
+    u16 height; /* Texture height */
+    u8 format; /* Texture format */
+    u8 size; /* Size in bpp */
+    u8 tlut_name; /* Palette/TLUT idx */
+    u8 pad;
+} emu64_texture_info;
+
+typedef struct {
+    void* addr;
+    u32 unk_0;
+    u16 unk_1;
+    u16 unk_2;
+    Gloadtile loadtile;
+    Gsetimg2 setimg2;
+} tmem;
 
 class emu64_print {
 public:
@@ -187,6 +261,7 @@ public:
     void dirty_check(int tile, int nTiles, int doTextureMatrix);
 
     const char* segchk(u32 segment);
+    EMU64_INLINE void printInfo();
     EMU64_INLINE void* seg2k0(u32 segment);
     EMU64_INLINE void emu64_change_ucode(void* addr);
 
@@ -197,6 +272,9 @@ public:
     void dl_G_TEXRECT();
     void dl_G_LOAD_UCODE();
     void dl_G_ENDDL();
+    void dl_G_SETTILE();
+    void dl_G_SETTILE_DOLPHIN();
+    void dl_G_LOADTILE();
     void dl_G_RDPSETOTHERMODE(); /* gsDPSetOtherMode */
 
     /* Static Members */
@@ -242,6 +320,23 @@ private:
     u32 geometry_mode;
     //...
 
+    /* 0x108 */
+    u32 combiner_high;
+    u32 combiner_low;
+    emu64_texture_info texture_info[NUM_TILES];
+    Gsetimg2 setimg2_cmds[NUM_TILES];
+
+    /* 0x1F0 */
+    GXTexObj tex_objs[NUM_TEX_OBJS];
+
+    /* 0x3B0 */
+    bool use_dolphin_settile[NUM_TILES];
+    Gsettile settile_cmds[NUM_TILES];
+    Gsettile_dolphin settile_dolphin_cmds[NUM_TILES];
+    Gsettilesize_dolphin settilesize_dolphin_cmds[NUM_TILES];
+    Gsetimg2 now_setimg2;
+    u8 text_edge_alpha;
+
     /* 0x4A7 */
     bool fog_dirty;
     bool unk_4a8;
@@ -252,6 +347,8 @@ private:
     bool geometry_mode_dirty;
     bool projection_mtx_dirty;
     bool tex_dirty;
+    bool unk_4b0;
+    bool tex_tile_dirty[NUM_TILES];
 
     //...
     Mtx44 ortho_mtx;

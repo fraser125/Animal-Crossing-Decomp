@@ -1,5 +1,4 @@
 /* Note: They used .c file extensions for C++ files */
-
 #include "emu64.h"
 #include "boot.h"
 #include <stdio.h>
@@ -22,27 +21,7 @@ EMU64_INLINE void* emu64::seg2k0(u32 segment) {
 
             #ifdef EMU64_DEBUG_CVT_PARTIAL_ADDR
 
-            this->Printf0("DLスタック表示 %d level\n", this->DL_stack_level);
-
-            for (int lvl = 0; lvl < this->DL_stack_level; lvl++) {
-                u32 addr = convert_partial_address((u32)this->DL_stack[lvl]);
-                this->Printf0("%d %08x %08x\n", lvl, this->DL_stack[lvl], addr);
-            }
-
-            this->Printf0("最終16DL表示\n");
-
-            for (int lvl = 0; lvl < DL_HISTORY_COUNT; lvl++) {
-                int adj = lvl + this->dl_history_start; /* Adjusted for the current start position */
-                Gfx* gfx = this->dl_history[adj % DL_HISTORY_COUNT];
-                this->Printf0("%016llx ", *gfx);
-                this->Printf0(" %08x\n", convert_partial_address(gfx->words.w1));
-            }
-
-            this->Printf0("セグメントテーブル表示\n");
-
-            for (int lvl = 0; lvl < NUM_SEGMENTS; lvl++) {
-                this->Printf0("%2d %08x %08x\n", lvl, this->segments[lvl], convert_partial_address((u32)this->segments[lvl]));
-            }
+            this->printInfo();
 
             #endif
 
@@ -51,9 +30,29 @@ EMU64_INLINE void* emu64::seg2k0(u32 segment) {
         else {
             resolved_addr = (u32)this->segments[(segment >> 24) & 0xF] + segment & 0xFFFFFF;
         }
+
+        this->resolved_addresses++;
     }
 
     /* Space for panic __LINE__ number to line up */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -79,27 +78,7 @@ EMU64_INLINE void* emu64::seg2k0(u32 segment) {
 
         #ifdef EMU64_DEBUG_CVT_PARTIAL_ADDR
 
-        this->Printf0("DLスタック表示 %d level\n", this->DL_stack_level);
-
-        for (int lvl = 0; lvl < this->DL_stack_level; lvl++) {
-            u32 addr = convert_partial_address((u32)this->DL_stack[lvl]);
-            this->Printf0("%d %08x %08x\n", lvl, this->DL_stack[lvl], addr);
-        }
-
-        this->Printf0("最終16DL表示\n");
-
-        for (int lvl = 0; lvl < DL_HISTORY_COUNT; lvl++) {
-            int adj = lvl + this->dl_history_start; /* Adjusted for the current start position */
-            Gfx* gfx = this->dl_history[adj % DL_HISTORY_COUNT];
-            this->Printf0("%016llx ", *gfx);
-            this->Printf0(" %08x\n", convert_partial_address(gfx->words.w1));
-        }
-
-        this->Printf0("セグメントテーブル表示\n");
-
-        for (int lvl = 0; lvl < NUM_SEGMENTS; lvl++) {
-            this->Printf0("%2d %08x %08x\n", lvl, this->segments[lvl], convert_partial_address((u32)this->segments[lvl]));
-        }
+        this->printInfo();
 
         #endif
 
@@ -109,6 +88,30 @@ EMU64_INLINE void* emu64::seg2k0(u32 segment) {
     #endif
 
     return (void*)resolved_addr;
+}
+
+EMU64_INLINE void emu64::printInfo() {
+    this->Printf0("DLスタック表示 %d level\n", this->DL_stack_level);
+
+    for (int lvl = 0; lvl < this->DL_stack_level; lvl++) {
+        u32 addr = convert_partial_address((u32)this->DL_stack[lvl]);
+        this->Printf0("%d %08x %08x\n", lvl, this->DL_stack[lvl], addr);
+    }
+
+    this->Printf0("最終16DL表示\n");
+
+    for (int lvl = 0; lvl < DL_HISTORY_COUNT; lvl++) {
+        int adj = lvl + this->dl_history_start; /* Adjusted for the current start position */
+        Gfx* gfx = this->dl_history[adj % DL_HISTORY_COUNT];
+        this->Printf0("%016llx ", *gfx);
+        this->Printf0(" %08x\n", convert_partial_address(gfx->words.w1));
+    }
+
+    this->Printf0("セグメントテーブル表示\n");
+
+    for (int lvl = 0; lvl < NUM_SEGMENTS; lvl++) {
+        this->Printf0("%2d %08x %08x\n", lvl, this->segments[lvl], convert_partial_address((u32)this->segments[lvl]));
+    }
 }
 
 const char* emu64::segchk(u32 segment) {
