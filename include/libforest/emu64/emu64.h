@@ -161,22 +161,11 @@ typedef struct {
     unsigned int slen:10; /* Length of S coordinate */
     
     unsigned int isDolphin:1; /* If true, format is Gsettilesize_dolphin. If false, format is Gsettilesize2 */
-    unsigned int unk_1:4;
+    unsigned int pad:4;
     unsigned int tile:3; /* Tile descriptor */
     unsigned int tl:14; /* Start of T coordinate */
     unsigned int tlen:10; /* Length of T coordinate */
 } Gsettilesize_dolphin;
-
-typedef struct {
-		int cmd:8;
-		unsigned int sl:12;
-		unsigned int tl:12;
-        int isDolphin:1; /* If true, format is Gsettilesize_dolphin. If false, format is Gsettilesize2 */
-		int pad:4;
-		unsigned int tile:3;
-		unsigned int sh:12;
-		unsigned int th:12;
-} Gsettilesize2;
 
 typedef struct {
     int cmd:8; /* Command */
@@ -274,6 +263,7 @@ public:
     void dl_G_SETTILE_DOLPHIN();
     void dl_G_LOADTILE();
     void dl_G_LOADBLOCK();
+    void dl_G_SETTILESIZE();
     void dl_G_RDPSETOTHERMODE(); /* gsDPSetOtherMode */
 
     /* Static Members */

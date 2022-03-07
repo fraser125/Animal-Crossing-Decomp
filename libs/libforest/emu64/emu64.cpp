@@ -577,6 +577,66 @@ void emu64::dl_G_LOADBLOCK() {
     #endif
 }
 
+void emu64::dl_G_SETTILESIZE() {
+    Gsettilesize_dolphin* settilesize_dolphin = (Gsettilesize_dolphin*)this->gfx_p;
+
+    if (settilesize_dolphin->isDolphin == TRUE) {
+        #ifdef EMU64_DEBUG
+
+        /* Seems they checked it twice in source code... */
+        if (this->print_commands != false && this->print_commands != false) {
+            this->Printf2(
+                "gsDPSetTileSize_Dolphin(%d,%d,%d,%d,%d),",
+                settilesize_dolphin->tile,
+                settilesize_dolphin->sl,
+                settilesize_dolphin->tl,
+                settilesize_dolphin->slen,
+                settilesize_dolphin->tlen
+            );
+        }
+
+        #endif
+
+        this->settilesize_dolphin_cmds[settilesize_dolphin->tile] = *settilesize_dolphin;
+    }
+    else { /* Gsettilesize */
+        Gsettilesize* settilesize = (Gsettilesize*)settilesize_dolphin;
+        u32 s_len = (settilesize->sh - settilesize->sl) / 4;
+        u32 t_len = (settilesize->th - settilesize->tl) / 4;
+
+        #ifdef EMU64_DEBUG
+
+        if (this->print_commands != false) {
+            if (this->print_commands != false) {
+                this->Printf2(
+                    "gsDPSetTileSize(%d,%d,%d,%d,%d),",
+                    settilesize->tile,
+                    settilesize->sl,
+                    settilesize->tl,
+                    settilesize->sh,
+                    settilesize->th
+                );
+            }
+
+            if (this->print_commands != false) {
+                this->Printf2(" /* %dx%d */", (u16)(s_len + 1), (u16)(t_len + 1));
+            }
+        }
+
+        #endif
+
+        /* Convert from N64 Gsettilesize to Gsettilesize_dolphin */
+        this->settilesize_dolphin_cmds[settilesize->tile].sl = settilesize->sl;
+        this->settilesize_dolphin_cmds[settilesize->tile].tl = settilesize->tl;
+        this->settilesize_dolphin_cmds[settilesize->tile].slen = s_len;
+        this->settilesize_dolphin_cmds[settilesize->tile].tlen = t_len;
+        this->settilesize_dolphin_cmds[settilesize->tile].tile = settilesize->tile;
+
+        /* Mark texture tile as dirty */
+        this->tex_tile_dirty[settilesize->tile] = true;
+    }
+}
+
 void emu64::dl_G_RDPSETOTHERMODE() {
 
     /* Debug output */
