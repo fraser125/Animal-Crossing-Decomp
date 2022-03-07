@@ -540,6 +540,43 @@ void emu64::dl_G_LOADTILE() {
     #endif
 }
 
+void emu64::dl_G_LOADBLOCK() {
+    Gloadblock* loadblock = (Gloadblock*)this->gfx_p;
+
+    #ifdef EMU64_DEBUG
+
+    u32 start = osGetCount();
+
+    if (this->print_commands) {
+        this->Printf2(
+            "gsDPLoadBlock(%d,%d,%d,%d,%d),",
+            loadblock->tile,
+            loadblock->sl,
+            loadblock->tl,
+            loadblock->sh,
+            loadblock->th
+        );
+    }
+
+    #endif
+
+    if (this->now_setimg2.no_load != false) return; /* Does not support LOAD commands */
+
+    int tmem_idx = this->settile_cmds[loadblock->tile].tmem / 4;
+    for (int i = tmem_idx; i < tmem_idx + (loadblock->sh + 1) / 16; i++) {
+        tmem entry = tmem_map[i];
+        entry.addr = (void*)((int)entry.addr + 32);
+        entry.loadblock = *loadblock;
+        entry.setimg2 = this->now_setimg2;
+    }
+
+    #ifdef EMU64_DEBUG
+
+    this->loadblock_time += (osGetCount() - start);
+
+    #endif
+}
+
 void emu64::dl_G_RDPSETOTHERMODE() {
 
     /* Debug output */

@@ -215,9 +215,7 @@ typedef struct {
 
 typedef struct {
     void* addr;
-    u32 unk_0;
-    u16 unk_1;
-    u16 unk_2;
+    Gloadblock loadblock;
     Gloadtile loadtile;
     Gsetimg2 setimg2;
 } tmem;
@@ -275,6 +273,7 @@ public:
     void dl_G_SETTILE();
     void dl_G_SETTILE_DOLPHIN();
     void dl_G_LOADTILE();
+    void dl_G_LOADBLOCK();
     void dl_G_RDPSETOTHERMODE(); /* gsDPSetOtherMode */
 
     /* Static Members */
@@ -357,6 +356,9 @@ private:
 
     /* 0xA20 */
     u32 rdpHalf_1;
+
+    /* 0xB90 */
+    u32 loadblock_time;
 
     /* 0x2020 */
     u32 resolved_addresses;
