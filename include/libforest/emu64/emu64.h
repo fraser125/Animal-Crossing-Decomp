@@ -227,7 +227,7 @@ private:
     u8 text_edge_alpha;
 
     /* 0x48C*/
-    GXColor environment_color;
+    u32 environment_color;
 
     /* 0x4A5 */
     bool env_color_dirty;
