@@ -58,8 +58,52 @@ static char s[256];
 
 #define EMU64_IS_PRINT_ENABLED(emu)(emu->print_commands & EMU64_PRINT_FLAG_ENABLE)
 
+/* Macros for various log levels */
+
+#ifdef EMU64_DEBUG
+#define EMU64_LOG_NORMAL(fmt, args...) do { \
+    if (this->print_commands != false) { \
+        this->Printf(fmt, ##args); \
+    } \
+} while(0)
+
+#define EMU64_LOG_QUIET(fmt, args...) do { \
+    if (this->print_commands != false) { \
+        this->Printf1(fmt, ##args); \
+    } \
+} while(0)
+
+#define EMU64_LOG_VERBOSE(fmt, args...) do { \
+    if (this->print_commands != false) { \
+        this->Printf2(fmt, ##args); \
+    } \
+} while(0)
+
+#define EMU64_LOG_INFO(fmt, args...) do { \
+    if (this->print_commands != false) { \
+        this->Printf3(fmt, ##args); \
+    } \
+} while(0)
+#else
+#define EMU64_LOG_NORMAL(fmt, args...)
+#define EMU64_LOG_QUIET(fmt, args...)
+#define EMU64_LOG_VERBOSE(fmt, args...)
+#define EMU64_LOG_INFO(fmt, args...)
+#endif
+
 #define SEG_2_SEGADDR(seg)(seg << SEGMENT_SHIFT)
 #define SEG_EQUALS(seg_addr, seg)(seg_addr == SEG_2_SEGADDR(seg))
+
+typedef union {
+    GXColor color;
+    struct {
+        u8 r;
+        u8 g;
+        u8 b;
+        u8 a;
+    };
+    u32 raw;
+} EmuColor;
 
 typedef struct {
     char* name;
@@ -165,6 +209,17 @@ public:
     void dl_G_SETZIMG();
     void dl_G_SETTIMG();
     void dl_G_SETENVCOLOR();
+    void dl_G_SETBLENDCOLOR();
+    void dl_G_SETFOGCOLOR();
+    void dl_G_SETFILLCOLOR();
+    void dl_G_SETTEXEDGEALPHA();
+    void dl_G_SETPRIMDEPTH();
+    void dl_G_SETPRIMCOLOR();
+    void dl_G_RDPFULLSYNC();
+    void dl_G_RDPPIPESYNC();
+    void dl_G_RDPTILESYNC();
+    void dl_G_RDPLOADSYNC();
+    void dl_G_NOOP();
 
     /* Static Members */
     static char* warningString[EMU64_WARNING_COUNT];
@@ -224,17 +279,29 @@ private:
     Gsettile_dolphin settile_dolphin_cmds[NUM_TILES];
     Gsettilesize_dolphin settilesize_dolphin_cmds[NUM_TILES];
     Gsetimg2 now_setimg2; /* NOTE: this can be either Gsetimg or Gsetimg2 */
-    u8 text_edge_alpha;
+    u8 tex_edge_alpha;
 
-    /* 0x48C*/
-    u32 environment_color;
+    union {
+        u32 primdepth;
+        struct {
+            u16 primdepth_z; /* Z value */
+            u16 primdepth_dz; /* Delta Z */
+        };
+    };
 
-    /* 0x4A5 */
+    EmuColor primitive_color; /* GX_TEVREG1 */
+    EmuColor environment_color; /* GX_TEVREG2 */
+    EmuColor blend_color;
+    EmuColor fog_color;
+    //
+    EmuColor fill_color;
+    EmuColor fill_tev_color; /* GX_TEVREG0 */
+    bool prim_color_dirty;
     bool env_color_dirty;
-    bool unk_4a6;
+    bool blend_color_dirty;
     bool fog_dirty;
-    bool unk_4a8;
-    bool unk_4a9;
+    bool fill_color_dirty;
+    bool fill_tev_color_dirty;
     bool combine_dirty;
     bool othermode_high_dirty;
     bool othermode_low_dirty;
@@ -255,6 +322,7 @@ private:
     /* 0xB90 */
     u32 loadblock_time;
     u32 loadtlut_time;
+    u32 mtx_time;
 
     /*  0xDF0 */
     u32 tex_cache_find_time;
@@ -264,6 +332,7 @@ private:
 
     /* 0x2030 */
     u32 abnormal_addresses;
+    bool rdp_pipe_sync_needed;
 
     /* 0x2035 */
     bool segment_set;

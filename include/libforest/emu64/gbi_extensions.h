@@ -16,6 +16,20 @@ extern "C" {
 #define G_SETCOMBINE_TEV 0xD0
 #define G_SETTILE_DOLPHIN 0xD2
 
+
+/* NOOP Debug Tags */
+#define G_TAG_NONE 0
+#define G_TAG_HERE 1
+#define G_TAG_STRING 2
+#define G_TAG_WORD 3
+#define G_TAG_FLOAT 4
+#define G_TAG_INFO 5
+#define G_TAG_CALLBACK 6
+#define G_TAG_OPENDISP 7
+#define G_TAG_CLOSEDISP 8
+#define G_TAG_FILL 9
+
+
 #define COMBINER_PARAM_A 1
 #define COMBINER_PARAM_B 2
 #define COMBINER_PARAM_C 3
@@ -273,6 +287,25 @@ static combiner_tev_color tblc[32] {
     { 0, TEV_ZERO, 0, TEV_ZERO, 0, TEV_ZERO, 0, TEV_ZERO },
     { 0, TEV_ZERO, 0, TEV_ZERO, 0, TEV_ZERO, 0, TEV_ZERO }
 };
+
+/* New Command Macros */
+#define gsDPParam2(cmd, tag, param, extra) \
+{{ \
+	_SHIFTL(cmd, 24, 8) | _SHIFTL(tag, 16, 8) | _SHIFTL(param, 0, 16), extra \
+}}
+
+#define gsDPNoOpTag2(tag, param, extra) gsDPParam2(G_NOOP, tag, param, extra) 
+#define	gsDPNoOpHere() gsDPNoOpTag2(G_TAG_HERE, __LINE__, __FILE__)
+#define gsDPNoOpString(str, param) gsDPNoOpTag2(G_TAG_STRING, param, str)
+#define gsDPNoOpWord(word, param) gsDPNoOpTag2(G_TAG_WORD, param, word)
+#define gsDPNoOpFloat(float, param) gsDPNoOpTag2(G_TAG_FLOAT, param, float)
+#define gsDPNoOpQuiet() gsDPNoOpTag2(G_TAG_INFO, 0, 0)
+#define gsDPNoOpVerbose() gsDPNoOpTag2(G_TAG_INFO, 0xF, 0)
+#define gsDPNoOpCallBack(callback, param) gsDPNoOpTag2(G_TAG_CALLBACK, param, callback)
+#define gsDPNoOpOpenDisp() gsDPNoOpTag2(G_TAG_OPENDISP, __LINE__, __FILE__)
+#define gsDPNoOpCloseDisp() gsDPNoOpTag2(G_TAG_CLOSEDISP, __LINE__, __FILE__)
+#define gsDPNoOpFill() gsDPNoOpTag2(G_TAG_FILL, 0, 0)
+#define gsDPNoOpTag3(tag, extra, param) gsDPNoOpTag2(tag, param, extra)
 
 #ifdef _LANGUAGE_C_PLUS_PLUS
 }

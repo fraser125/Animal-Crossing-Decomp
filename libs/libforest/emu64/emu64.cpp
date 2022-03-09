@@ -1434,8 +1434,227 @@ void emu64::dl_G_SETENVCOLOR() {
 
     #endif
 
-    if (this->environment_color != this->gfx.setcolor.color) {
-        this->environment_color = this->gfx.setcolor.color;
+    if (this->environment_color.raw != this->gfx.setcolor.color) {
+        this->environment_color.raw = this->gfx.setcolor.color;
         this->env_color_dirty = true;
+    }
+}
+
+void emu64::dl_G_SETBLENDCOLOR() {
+    #ifdef EMU64_DEBUG
+
+    if (this->print_commands != false) {
+        GXColor* color = (GXColor*)&this->gfx.setcolor.color;
+        this->Printf2(
+            "gsDPSetBlendColor(%d, %d, %d, %d),",
+            color->r,
+            color->g,
+            color->b,
+            color->a
+        );
+    }
+
+    #endif
+
+    if (this->blend_color.raw != this->gfx.setcolor.color) {
+        this->blend_color.raw = this->gfx.setcolor.color;
+        this->blend_color_dirty = true;
+    }
+}
+
+void emu64::dl_G_SETFOGCOLOR() {
+    #ifdef EMU64_DEBUG
+
+    if (this->print_commands != false) {
+        GXColor* color = (GXColor*)&this->gfx.setcolor.color;
+        this->Printf2(
+            "gsDPSetFogColor(%d, %d, %d, %d),",
+            color->r,
+            color->g,
+            color->b,
+            color->a
+        );
+    }
+
+    #endif
+
+    if (this->fog_color.raw != this->gfx.setcolor.color) {
+        this->fog_color.raw = this->gfx.setcolor.color;
+        this->fog_dirty = true;
+    }
+}
+
+void emu64::dl_G_SETFILLCOLOR() {
+    #ifdef EMU64_DEBUG
+
+    if (this->print_commands != false) {
+        this->Printf2("gsDPSetFillColor(0x%08x),", this->gfx.setcolor.color);
+    }
+
+    #endif
+
+    if (this->fill_color.raw != this->gfx.setcolor.color) {
+        this->fill_color.raw = this->gfx.setcolor.color;
+
+        /* The alpha component is ignored for TEV fill color */
+        EmuColor* color = (EmuColor*)&this->gfx.setcolor.color;
+        this->fill_tev_color.r = color->r;
+        this->fill_tev_color.g = color->g;
+        this->fill_tev_color.b = color->g;
+
+        this->fill_color_dirty = true;
+        this->fill_tev_color_dirty = true;
+    }
+}
+
+void emu64::dl_G_SETTEXEDGEALPHA() {
+    this->tex_edge_alpha = (u8)(this->gfx.words.w1 & 0xFF);
+    this->othermode_low_dirty = true;
+}
+
+void emu64::dl_G_SETPRIMDEPTH() {
+    #ifdef EMU64_DEBUG
+
+    if (this->print_commands != false) {
+        this->Printf2(
+            "gsDPSetPrimDepth(%d, %d),",
+            (u16)(this->gfx.words.w1 >> 16),
+            (u16)this->gfx.words.w1
+        );
+    }
+
+    #endif
+
+    this->primdepth = this->gfx.words.w1;
+}
+
+void emu64::dl_G_SETPRIMCOLOR() {
+    #ifdef EMU64_DEBUG
+
+    if (this->print_commands != false) {
+        GXColor* color = (GXColor*)&this->gfx.setcolor.color;
+        this->Printf2(
+            "gsDPSetPrimColor(%d, %d, %d, %d, %d, %d),",
+            this->gfx.setcolor.prim_min_level,
+            this->gfx.setcolor.prim_level,
+            color->r,
+            color->g,
+            color->b,
+            color->a
+        );
+    }
+
+    #endif
+
+    if (this->primitive_color.raw != this->gfx.setcolor.color) {
+        this->primitive_color.raw = this->gfx.setcolor.color;
+        this->prim_color_dirty = true;
+    }
+
+    u8 prim_level = this->gfx.setcolor.prim_level;
+    if (this->fill_tev_color.a != prim_level) {
+        this->fill_tev_color.a = prim_level;
+        this->fill_tev_color_dirty = true;
+    }
+}
+
+void emu64::dl_G_RDPFULLSYNC() {
+    #ifdef EMU64_DEBUG
+
+    if (this->print_commands != false) {
+        this->Printf1("gsDPFullSync(),");
+    }
+
+    #endif
+}
+
+void emu64::dl_G_RDPPIPESYNC() {
+    #ifdef EMU64_DEBUG
+
+    if (this->print_commands != false) {
+        this->Printf2("gsDPPipeSync(),");
+    }
+
+    #endif
+
+    if (aflags[AFLAGS_FORCE_PIPE_SYNC] == 1 || (aflags[AFLAGS_FORCE_PIPE_SYNC] == 0 && this->rdp_pipe_sync_needed != false)) {
+        this->rdp_pipe_sync_needed = false;
+    }
+}
+
+void emu64::dl_G_RDPTILESYNC() {
+    #ifdef EMU64_DEBUG
+
+    if (this->print_commands != false) {
+        this->Printf2("gsDPTileSync(),");
+    }
+
+    #endif
+}
+
+void emu64::dl_G_RDPLOADSYNC() {
+    #ifdef EMU64_DEBUG
+
+    if (this->print_commands != false) {
+        this->Printf2("gsDPLoadSync(),");
+    }
+
+    #endif
+}
+
+void emu64::dl_G_NOOP() {
+    u8 tag = (u8)(this->gfx.words.w0 >> 16);
+    switch (tag) {
+    case G_TAG_NONE:
+        if (this->gfx.words.w1 == 0) {
+            EMU64_LOG_VERBOSE("gsDPNoOp(),");
+        }
+        else {
+            EMU64_LOG_VERBOSE("gsDPNoOpTag(%08x),", this->gfx.words.w1);
+        }
+        break;
+    case G_TAG_HERE:
+        EMU64_LOG_QUIET("gsDPNoOpHere([%s:%d]),", (char*)(this->gfx.words.w1), (u16)(this->gfx.words.w0));
+        break;
+    case G_TAG_STRING:
+        EMU64_LOG_QUIET("gsDPNoOpString(%c%s%c, %d),", '"', (char*)(this->gfx.words.w1), '"', (u16)(this->gfx.words.w0));
+        break;
+    case G_TAG_WORD:
+        EMU64_LOG_QUIET("gsDPNoOpWord(0x%08x, %d),", this->gfx.words.w1, (u16)(this->gfx.words.w0));
+        break;
+    case G_TAG_FLOAT:
+        EMU64_LOG_QUIET("gsDPNoOpFloat(%8.3f, %d),", *(f32*)&(this->gfx.words.w1), (u16)(this->gfx.words.w0));
+        break;
+    case G_TAG_INFO:
+        if ((u16)(this->gfx.words.w0) == 0) {
+            EMU64_LOG_QUIET("gsDPNoOpQuiet(),");
+        }
+        else {
+            EMU64_LOG_QUIET("gsDPNoOpVerbose(),");
+        }
+
+        this->print_commands = (u8)((u16)(this->gfx.words.w0));
+        break;
+    case G_TAG_CALLBACK:
+        /* They forgot to pass arguments here */
+        #ifdef EMU64_FIX_NOOP_CALLBACK_LOG
+        EMU64_LOG_QUIET("gsDPNoOpCallBack(%08x,%d),", this->gfx.words.w1, (u16)(this->gfx.words.w0));
+        #else
+        EMU64_LOG_QUIET("gsDPNoOpCallBack(%08x,%d),");
+        #endif
+        break;
+    case G_TAG_OPENDISP:
+        EMU64_LOG_QUIET("gsDPNoOpOpenDisp([%s:%d]),", this->gfx.words.w1, (u16)(this->gfx.words.w0));
+        break;
+    case G_TAG_CLOSEDISP:
+        EMU64_LOG_QUIET("gsDPNoOpCloseDisp([%s:%d]),", this->gfx.words.w1, (u16)(this->gfx.words.w0));
+        break;
+    case G_TAG_FILL:
+        EMU64_LOG_QUIET("gsDPNoOpFill(), /* ### 何じゃコリャ */"); /* Rough translation: ### What the hell */
+        this->num_unknown_cmds++;
+        break;
+    default:
+        EMU64_LOG_QUIET("gsDPNoOpTag3(%02x, %08x, %04x),", tag, this->gfx.words.w1, (u16)(this->gfx.words.w0));
+        break;
     }
 }
