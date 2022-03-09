@@ -128,6 +128,13 @@ static char* doltexwrapmode[] = {
     "CLAMP", "REPEAT", "MIRROR", "?"
 };
 
+static char* dolfmttbl2[4][5] = {
+    { "CMPR", "Z", "CI", "IA", "I" },
+    { "RGBA?", "Z", "CI", "IA", "I" },
+    { "RGB4A3", "YUV", "CI", "IA", "RGB565" },
+    { "RGBA8888", "Z", "CI?", "IA?", "RGB?" }
+};
+
 static tmem tmem_map[TMEM_ENTRIES];
 
 void emu64::emu64_init() {
@@ -527,7 +534,7 @@ void emu64::dl_G_LOADTILE() {
     #endif
 
     /* Check if this image does not support gsDPLoadTile() */
-    if (this->now_setimg2.no_load != false) return;
+    if (this->now_setimg2.isDolphin != false) return;
 
     int tmem = this->settile_cmds[loadtile->tile].tmem;
 
@@ -588,7 +595,7 @@ void emu64::dl_G_LOADBLOCK() {
 
     #endif
 
-    if (this->now_setimg2.no_load != false) return; /* Does not support LOAD commands */
+    if (this->now_setimg2.isDolphin != false) return; /* Does not support LOAD commands */
 
     int tmem_idx = this->settile_cmds[loadblock->tile].tmem / 4;
     for (int i = tmem_idx; i < tmem_idx + (loadblock->sh + 1) / 16; i++) {
@@ -758,7 +765,7 @@ void emu64::dl_G_LOADTLUT() {
                 void* tlut = (void*)addr;
 
                 /* Convert TLUT */
-                if (this->now_setimg2.no_load == false) {
+                if (this->now_setimg2.isDolphin == false) {
                     tlut = this->tlutconv_new((u16*)addr, TLUT_FORMAT_RGB5A3, count);
                 }
 
@@ -1175,5 +1182,260 @@ void emu64::dl_G_RDPSETOTHERMODE() {
         this->fog_dirty = true;
         this->othermode_low = this->gfx.words.w1;
         this->othermode_low_dirty = true;
+    }
+}
+
+void emu64::dl_G_SETSCISSOR() {
+    u8 print_commands = this->print_commands;
+    Gfillrect* scissor = (Gfillrect*)this->gfx_p;
+
+    #ifdef EMU64_DEBUG
+
+    if (print_commands & EMU64_PRINT_FLAG_ENABLE != 0) {
+        const char* mode;
+        if (scissor->pad == G_SC_NON_INTERLACE) {
+            mode = "G_SC_NON_INTERLACE";
+        }
+        else if (scissor->pad == G_SC_ODD_INTERLACE) {
+            mode = "G_SC_ODD_INTERLACE";
+        }
+        else if (scissor->pad == G_SC_EVEN_INTERLACE) {
+            mode = "G_SC_EVEN_INTERLACE";
+        }
+        else {
+            mode = "???";
+        }
+
+        int x0frac = scissor->x0frac;
+        int y0frac = scissor->y0frac;
+        int x1frac = scissor->x1frac;
+        int y1frac = scissor->y1frac;
+
+        if ((x0frac | y0frac | x1frac | y1frac) == 0) {
+            if (print_commands != false) {
+                this->Printf2(
+                    "gsDPSetScissor(%s, %d, %d, %d, %d),",
+                    mode,
+                    scissor->x0,
+                    scissor->y0,
+                    scissor->x1,
+                    scissor->y1
+                );
+            }
+        }
+        else if (print_commands != false) {
+            this->Printf2(
+                "gsDPSetScissorFrac(%s, %d, %d, %d, %d),",
+                mode,
+                scissor->x0 * 4 + x0frac,
+                scissor->y0 * 4 + y0frac,
+                scissor->x1 * 4 + x1frac,
+                scissor->y1 * 4 + y1frac
+            );
+        }
+    }
+
+    #endif
+
+    /* NOTE: fractional scissor components are ignored */
+    if (this->disable_polygons == false) {
+        GXSetScissor(scissor->x0, scissor->y0, scissor->x1, scissor->y1);
+    }
+}
+
+void emu64::dl_G_FILLRECT() {
+    Gfillrect* fillrect = (Gfillrect*)this->gfx_p;
+
+    #ifdef EMU64_DEBUG
+
+    if (this->print_commands != false) {
+        this->Printf2(
+            "gsDPFillRectangle(%d, %d, %d, %d),",
+            fillrect->x1,
+            fillrect->y1,
+            fillrect->x0,
+            fillrect->y0
+        );
+    }
+
+    #endif
+
+    if (this->disable_polygons == false) {
+        this->dirty_check(-1, -1, 0);
+        this->fill_rectangle(fillrect->x1, fillrect->y1, fillrect->x0, fillrect->y0);
+    }
+}
+
+/* NOTE: In AC this is a NOOP since it has no non-debug code */
+void emu64::dl_G_SETCIMG() {
+    #ifdef EMU64_DEBUG
+
+    if (this->print_commands & EMU64_PRINT_FLAG_ENABLE != 0) {
+        u32 fmt = this->gfx.setimg.fmt;
+        u32 siz = this->gfx.setimg.siz;
+
+        if (this->print_commands != false) {
+            const char* s_siz;
+            const char* s_fmt;
+
+            if (siz == G_IM_SIZ_4b) {
+                s_siz = "4b";
+            }
+            else if (siz == G_IM_SIZ_8b) {
+                s_siz = "8b";
+            }
+            else if (siz == G_IM_SIZ_16b) {
+                s_siz = "16b";
+            }
+            else {
+                s_siz = "32b";
+            }
+
+            if (fmt == G_IM_FMT_RGBA) {
+                s_fmt = "RBGA";
+            }
+            else if (fmt == G_IM_FMT_YUV) {
+                s_fmt = "YUV";
+            }
+            else if (fmt == G_IM_FMT_CI) {
+                s_fmt = "CI";
+            }
+            else if (fmt == G_IM_FMT_IA) {
+                s_fmt = "IA";
+            }
+            else {
+                s_fmt = "I";
+            }
+
+            this->Printf1(
+                "gsDPSetColorImage(G_IM_FMT_%s, G_IM_SIZ_%s, %d, %s),",
+                s_fmt,
+                s_siz,
+                EXPAND_WIDTH(this->gfx.setimg.wd),
+                this->segchk(this->gfx.setimg.dram)
+            );
+        }
+    }
+
+    #endif
+}
+
+void emu64::dl_G_SETZIMG() {
+    #ifdef EMU64_DEBUG
+
+    if (this->print_commands != false) {
+        this->Printf1("gsDPSetDepthImage(%s),", this->segchk(this->gfx.setimg.dram));
+    }
+
+    #endif
+}
+
+void emu64::dl_G_SETTIMG() {
+    u8 print_commands = this->print_commands;
+    Gsetimg2* setimg2 = (Gsetimg2*)this->gfx_p;
+
+    #ifdef EMU64_DEBUG
+
+    if (EMU64_IS_PRINT_ENABLED(this)) {
+        if (setimg2->isDolphin == FALSE) {
+            Gsetimg* setimg = (Gsetimg*)setimg2;
+            if (print_commands != false) {
+                const char* s_siz;
+                const char* s_fmt;
+
+                u32 siz = setimg->siz;
+                u32 fmt = setimg->fmt;
+
+                if (siz == G_IM_SIZ_4b) {
+                    s_siz = "4b";
+                }
+                else if (siz == G_IM_SIZ_8b) {
+                    s_siz = "8b";
+                }
+                else if (siz == G_IM_SIZ_16b) {
+                    s_siz = "16b";
+                }
+                else {
+                    s_siz = "32b";
+                }
+
+                if (fmt == G_IM_FMT_RGBA) {
+                    s_fmt = "RBGA";
+                }
+                else if (fmt == G_IM_FMT_YUV) {
+                    s_fmt = "YUV";
+                }
+                else if (fmt == G_IM_FMT_CI) {
+                    s_fmt = "CI";
+                }
+                else if (fmt == G_IM_FMT_IA) {
+                    s_fmt = "IA";
+                }
+                else {
+                    s_fmt = "I";
+                }
+
+                this->Printf2(
+                    "gsDPSetTextureImage(G_IM_FMT_%s, G_IM_SIZ_%s, %d, %s),",
+                    s_fmt,
+                    s_siz,
+                    EXPAND_WIDTH(setimg->wd),
+                    this->segchk(setimg->dram)
+                );
+            }
+        }
+        else if (print_commands != false) {
+            const char* s_siz;
+            u32 siz = setimg2->siz;
+
+            if (siz == G_IM_SIZ_4b) {
+                s_siz = "4b";
+            }
+            else if (siz == G_IM_SIZ_8b) {
+                s_siz = "8b";
+            }
+            else if (siz == G_IM_SIZ_16b) {
+                s_siz = "16b";
+            }
+            else {
+                s_siz = "32b";
+            }
+
+            this->Printf2(
+                "gsDPSetTextureImage_Dolphin(G_IM_FMT_%s, G_IM_SIZ_%s, %d, %d, %s),",
+                dolfmttbl2[setimg2->siz][setimg2->fmt],
+                s_siz,
+                EXPAND_WIDTH(setimg2->wd),
+                EXPAND_HEIGHT(setimg2->ht),
+                this->segchk(setimg2->imgaddr)
+            );
+        }
+    }
+
+    #endif
+
+    this->now_setimg2 = *setimg2;
+    this->now_setimg2.imgaddr = (u32)this->seg2k0(setimg2->imgaddr);
+}
+
+void emu64::dl_G_SETENVCOLOR() {
+    #ifdef EMU64_DEBUG
+
+    if (this->print_commands != false) {
+        GXColor* color = (GXColor*)&this->gfx.setcolor.color;
+        this->Printf2(
+            "gsDPSetEnvColor(%d, %d, %d, %d),",
+            color->r,
+            color->g,
+            color->b,
+            color->a
+        );
+    }
+
+    #endif
+
+    if (this->environment_color != this->gfx.setcolor.color) {
+        this->environment_color = this->gfx.setcolor.color;
+        this->env_color_dirty = true;
     }
 }

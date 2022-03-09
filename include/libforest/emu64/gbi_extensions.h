@@ -191,7 +191,7 @@ typedef struct {
     int cmd:8; /* Command */
     unsigned int fmt:3; /* Image format */
     unsigned int siz:2; /* Image format texel size */
-    unsigned int no_load:1; /* Enabled? Used in dl_G_LOADTILE. If set, it skips. */
+    unsigned int isDolphin:1; /* Is this Gsetimg2 or Gsetimg */
     unsigned int ht:8; /* Height, packed: (height / 4) - 1 */
     unsigned int wd:10; /* Width, packed: width - 1 */
 

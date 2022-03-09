@@ -159,6 +159,12 @@ public:
     void dl_G_SETOTHERMODE_H();
     void dl_G_SETOTHERMODE_L();
     void dl_G_RDPSETOTHERMODE(); /* gsDPSetOtherMode */
+    void dl_G_SETSCISSOR();
+    void dl_G_FILLRECT();
+    void dl_G_SETCIMG();
+    void dl_G_SETZIMG();
+    void dl_G_SETTIMG();
+    void dl_G_SETENVCOLOR();
 
     /* Static Members */
     static char* warningString[EMU64_WARNING_COUNT];
@@ -217,10 +223,15 @@ private:
     Gsettile settile_cmds[NUM_TILES];
     Gsettile_dolphin settile_dolphin_cmds[NUM_TILES];
     Gsettilesize_dolphin settilesize_dolphin_cmds[NUM_TILES];
-    Gsetimg2 now_setimg2;
+    Gsetimg2 now_setimg2; /* NOTE: this can be either Gsetimg or Gsetimg2 */
     u8 text_edge_alpha;
 
-    /* 0x4A7 */
+    /* 0x48C*/
+    GXColor environment_color;
+
+    /* 0x4A5 */
+    bool env_color_dirty;
+    bool unk_4a6;
     bool fog_dirty;
     bool unk_4a8;
     bool unk_4a9;
