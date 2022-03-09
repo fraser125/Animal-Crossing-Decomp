@@ -1,14 +1,12 @@
 #ifndef __EMU64_H__
 #define __EMU64_H__
 
-#ifdef _LANGUAGE_C_PLUS_PLUS
-extern "C" {
-#endif
-
+#include "aflags.h"
 #include "common.h"
+#include "gbi_extensions.h"
+#include "texture_cache.h"
 #include <dolphin/gx.h>
 #include <dolphin/mtx.h>
-#include <gbi.h>
 
 #define NUM_SEGMENTS 16
 #define DL_MAX_STACK_LEVEL 18
@@ -16,6 +14,7 @@ extern "C" {
 #define NUM_TILES 8
 #define NUM_TEX_OBJS 4
 #define TMEM_ENTRIES 128
+#define NUM_TLUTS 16
 
 /* Debug/Print Definitions */
 #define EMU64_PRINT_FLAG_ENABLE 1
@@ -40,6 +39,9 @@ extern "C" {
 #define ANIME_5_TXT_SEG 0x0C
 #define ANIME_6_TXT_SEG 0x0D
 
+#define TLUT_FORMAT_NONE 0
+#define TLUT_FORMAT_RGB5A3 0x8000
+
 /* Conditional inline which is present in DnM+ and DnMe+ but not AC. */
 #ifdef ANIMAL_CROSSING
 #define EMU64_INLINE inline
@@ -51,64 +53,6 @@ static char s[256];
 
 /* C++ */
 
-/* aflags class */
-
-#define AFLAGS_SKIP_DRAW_RECTANGLE 50
-
-#ifdef EMU64_DEBUG
-
-template<typename T, size_t maxSize>
-class aflags_c {
-public:
-    const size_t getMaxArray() const {
-        return maxSize;
-    }
-
-    void set(u32 idx, T value) {
-        this->flags[idx] = value;
-    }
-
-    T operator[](u32 idx) {
-        return this->flags[idx];
-    }
-
-private:
-    T flags[maxSize];
-};
-
-#else
-
-template<typename T, size_t maxSize>
-class aflags_c {
-public:
-    const size_t getMaxArray() const {
-        return 0;
-    }
-
-    void set(u32 idx, T value) {
-        return;
-    }
-
-    T operator[](u32 idx) {
-        return 0;
-    }
-
-private:
-    T flags[0];
-};
-
-#endif
-
-#if EMU64_DEBUG
-#ifdef E_PLUS
-static aflags_c<u8, 100> aflags;
-#else /* PLUS/AC */
-static aflags_c<u32, 100> aflags;
-#endif
-#else
-static aflags_c<u8, 0> aflags;
-#endif
-
 /* Macro for quick panic */
 #define EMU64_PANIC(emu, msg)(emu->panic(msg, __FILE__, __LINE__))
 
@@ -116,67 +60,6 @@ static aflags_c<u8, 0> aflags;
 
 #define SEG_2_SEGADDR(seg)(seg << SEGMENT_SHIFT)
 #define SEG_EQUALS(seg_addr, seg)(seg_addr == SEG_2_SEGADDR(seg))
-
-
-/* Macro to expand packed image/tile width and height */
-#define EXPAND_WIDTH(wd)(wd + 1)
-#define EXPAND_HEIGHT(ht)((ht + 1) * 4)
-
-typedef struct {
-    unsigned int cmd:8;
-    unsigned int xl:12;	/* Top-left x coord */
-    unsigned int yl:12;	/* Top-left y coord */
-    unsigned int pad1:5;
-    unsigned int tile:3; /* Tile descriptor index */
-    unsigned int xh:12;	/* Lower-right x coord */
-    unsigned int yh:12;	/* Lower-right y coord */
-
-    unsigned int pad2:32;
-
-    unsigned int s:16;	/* S (X) texture coord at top left */
-    unsigned int t:16;	/* T (Y) texture coord at top left */
-
-    unsigned int pad3:32;
-
-    unsigned int dsdx:16; /* Change in S (X) per change in X */
-    unsigned int dtdy:16; /* Change in T (Y) per change in Y */
-} Gtexrect2;
-
-typedef struct {
-    int cmd:8;
-    unsigned int dol_fmt:4;
-    unsigned int pad0:1;
-    unsigned int tile:3;
-    unsigned int unk_0:4;
-    unsigned int wrap_s:2;
-    unsigned int wrap_t:2;
-    unsigned int shift_s:4;
-    unsigned int shift_t:4;
-    unsigned int pad1:32;
-} Gsettile_dolphin;
-
-typedef struct {
-    int cmd:8;
-    unsigned int sl:14; /* Start of S coordinate */
-    unsigned int slen:10; /* Length of S coordinate */
-    
-    unsigned int isDolphin:1; /* If true, format is Gsettilesize_dolphin. If false, format is Gsettilesize2 */
-    unsigned int pad:4;
-    unsigned int tile:3; /* Tile descriptor */
-    unsigned int tl:14; /* Start of T coordinate */
-    unsigned int tlen:10; /* Length of T coordinate */
-} Gsettilesize_dolphin;
-
-typedef struct {
-    int cmd:8; /* Command */
-    unsigned int fmt:3; /* Image format */
-    unsigned int siz:2; /* Image format texel size */
-    unsigned int no_load:1; /* Enabled? Used in dl_G_LOADTILE. If set, it skips. */
-    unsigned int ht:8; /* Height, packed: (height / 4) - 1 */
-    unsigned int wd:10; /* Width, packed: width - 1 */
-
-    unsigned int imgaddr:32; /* Image RAM address */
-} Gsetimg2;
 
 typedef struct {
     char* name;
@@ -193,6 +76,12 @@ typedef struct {
 } OthermodeParameterInfo;
 
 typedef struct {
+    char* name;
+    u32 value;
+    u32 mask;
+} RendermodeInfo;
+
+typedef struct {
     void* img_addr; /* Texture RAM address */
     u16 width; /* Texture width */
     u16 height; /* Texture height */
@@ -201,13 +90,6 @@ typedef struct {
     u8 tlut_name; /* Palette/TLUT idx */
     u8 pad;
 } emu64_texture_info;
-
-typedef struct {
-    void* addr;
-    Gloadblock loadblock;
-    Gloadtile loadtile;
-    Gsetimg2 setimg2;
-} tmem;
 
 class emu64_print {
 public:
@@ -224,7 +106,7 @@ public:
     void Printf(const char* fmt, ...);
 
 protected:
-    u8 flags;
+    u8 print_flags;
 };
 
 class emu64 : public emu64_print {
@@ -251,6 +133,12 @@ public:
     EMU64_INLINE void printInfo();
     EMU64_INLINE void* seg2k0(u32 segment);
     EMU64_INLINE void emu64_change_ucode(void* addr);
+    EMU64_INLINE u16* tlutconv_new(u16* addr, u32 format, u32 count);
+    EMU64_INLINE void tlutconv_ia16(u16* src, u16* dst, u32 count);
+    EMU64_INLINE const char* combine_alpha(int param, int type);
+    const char* combine_name(u32 param, u32 type);
+    EMU64_INLINE const char* combine_tev_alpha_name(u32 param);
+    const char* combine_tev_color_name(u32 param);
 
     /* F3DZEX2 microcode implementations */
     void dl_G_SPNOOP();
@@ -264,6 +152,12 @@ public:
     void dl_G_LOADTILE();
     void dl_G_LOADBLOCK();
     void dl_G_SETTILESIZE();
+    void dl_G_LOADTLUT();
+    void dl_G_SETCOMBINE_NOTEV();
+    void dl_G_SETCOMBINE();
+    void dl_G_SETCOMBINE_TEV();
+    void dl_G_SETOTHERMODE_H();
+    void dl_G_SETOTHERMODE_L();
     void dl_G_RDPSETOTHERMODE(); /* gsDPSetOtherMode */
 
     /* Static Members */
@@ -314,11 +208,11 @@ private:
     u32 combiner_low;
     emu64_texture_info texture_info[NUM_TILES];
     Gsetimg2 setimg2_cmds[NUM_TILES];
-
-    /* 0x1F0 */
+    void* tlut_addresses[NUM_TLUTS];
     GXTexObj tex_objs[NUM_TEX_OBJS];
 
-    /* 0x3B0 */
+    /* 0x2F0 */
+    GXTlutObj tlut_objs[NUM_TLUTS];
     bool use_dolphin_settile[NUM_TILES];
     Gsettile settile_cmds[NUM_TILES];
     Gsettile_dolphin settile_dolphin_cmds[NUM_TILES];
@@ -349,6 +243,10 @@ private:
 
     /* 0xB90 */
     u32 loadblock_time;
+    u32 loadtlut_time;
+
+    /*  0xDF0 */
+    u32 tex_cache_find_time;
 
     /* 0x2020 */
     u32 resolved_addresses;
@@ -399,9 +297,5 @@ extern void emu64_set_aflags(s32 idx, s32 value);
 extern s32 emu64_get_aflags(s32 idx);
 
 //__sinit_emu64_c(); // Auto-generated by CodeWarrior?
-
-#ifdef _LANGUAGE_C_PLUS_PLUS
-}
-#endif
 
 #endif /* __EMU64_H__ */

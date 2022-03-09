@@ -92,6 +92,34 @@ static OthermodeParameterInfo l_tbl[] = {
     }
 };
 
+#define NUM_RENDERMODE_FLAGS 16
+static RendermodeInfo flags[NUM_RENDERMODE_FLAGS] = {
+    { "AA_EN", AA_EN, AA_EN },
+    { "Z_CMP", Z_CMP, Z_CMP },
+    { "Z_UPD", Z_UPD, Z_UPD },
+    { "IM_RD", IM_RD, IM_RD },
+    { "CLR_ON_CVG", CLR_ON_CVG, CLR_ON_CVG },
+    { "CVG_DST_CLAMP", CVG_DST_CLAMP, CVG_DST_SAVE },
+    { "CVG_DST_WRAP", CVG_DST_WRAP, CVG_DST_SAVE },
+    { "CVG_DST_FULL", CVG_DST_FULL, CVG_DST_SAVE },
+    { "CVG_DST_SAVE", CVG_DST_SAVE, CVG_DST_SAVE },
+    { "ZMODE_OPA", ZMODE_OPA, ZMODE_DEC },
+    { "ZMODE_INTER", ZMODE_INTER, ZMODE_DEC },
+    { "ZMODE_XLU", ZMODE_XLU, ZMODE_DEC },
+    { "ZMODE_DEC", ZMODE_DEC, ZMODE_DEC },
+    { "CVG_X_ALPHA", CVG_X_ALPHA, CVG_X_ALPHA },
+    { "ALPHA_CVG_SEL", ALPHA_CVG_SEL, ALPHA_CVG_SEL },
+    { "FORCE_BL", FORCE_BL, FORCE_BL }
+};
+
+#define NUM_BL_OPTS 4
+static char* m[NUM_BL_OPTS][NUM_BL_OPTS] = {
+    { "G_BL_CLR_IN", "G_BL_CLR_MEM", "G_BL_CLR_BL", "G_BL_CLR_FOG" },
+    { "G_BL_A_SHADE", "G_BL_0", "G_BL_A_IN", "G_BL_A_FOG" },
+    { "G_BL_CLR_IN", "G_BL_CLR_MEM", "G_BL_CLR_BL", "G_BL_CLR_FOG" },
+    { "G_BL_A_MEM", "G_BL_0", "G_BL_1MA", "G_BL_1" }
+};
+
 static char* dolfmttbl[] = {
     "I4", "I8", "IA4", "IA8", "RGB565", "RGB5A3", "RGBA8", "CMPR"
 };
@@ -634,6 +662,387 @@ void emu64::dl_G_SETTILESIZE() {
 
         /* Mark texture tile as dirty */
         this->tex_tile_dirty[settilesize->tile] = true;
+    }
+}
+
+void emu64::dl_G_LOADTLUT() {
+    Gloadtlut_dolphin* loadtlut_dol = (Gloadtlut_dolphin*)this->gfx_p;
+
+    #ifdef EMU64_DEBUG
+    u32 start = osGetCount();
+    #endif
+
+    if (loadtlut_dol->type == 2) {
+        #ifdef EMU64_DEBUG
+
+        if (this->print_commands != false) {
+            this->Printf2(
+                "gsDPLoadTLUT_Dolphin(%d, %d, %s),",
+                loadtlut_dol->tlut_name,
+                loadtlut_dol->count,
+                this->segchk(loadtlut_dol->tlut_addr)
+            );
+        }
+
+        #endif
+
+        if (this->disable_polygons == false) {
+            u32 count = loadtlut_dol->count;
+            u32 tlut_name = loadtlut_dol->tlut_name;
+            void* tlut_addr = this->seg2k0(loadtlut_dol->tlut_addr);
+
+            if (tlut_addr == this->tlut_addresses[tlut_name]) {
+                #ifdef EMU64_DEBUG
+
+                if (this->print_commands != false) {
+                    this->Printf3("### 同じTLUTアドレスです\n");
+                }
+
+                #endif
+            }
+            else { /* tlut_addr != this->tlut_addresses[tlut_name] */
+                this->tlut_addresses[tlut_name] = tlut_addr;
+
+                if (tlut_addr != nullptr) {
+                    void* aligned_addr = tlut_addr;
+                    if (((u32)tlut_addr & (~0x1F)) != 0) {
+                        #ifdef ANIMAL_CROSSING
+                        this->Printf0("\x1B[41;37mパレット(%08x)のアライメントが３２バイトになっていません\n\x1B[m", tlut_addr);
+                        #else /* Present in DnM+ */
+                        this->Printf0("パレット(%08x)のアライメントが３２バイトになっていません\n", tlut_addr);
+                        #endif
+
+                        aligned_addr = (void*)((u32)tlut_addr & (~0x1F));
+                    }
+
+                    GXInitTlutObj(&this->tlut_objs[tlut_name], aligned_addr, GX_TL_RGB5A3, count);
+                    GXLoadTlut(&this->tlut_objs[tlut_name], tlut_name);
+
+                    #ifdef EMU64_DEBUG
+
+                    if (this->print_commands != false) {
+                        this->Printf3("GXInitTlutObj %08x %d pal_no=%d\n", tlut_addr, count, tlut_name);
+                    }
+
+                    #endif
+                }
+            }
+        }
+    }
+    else {
+        Gfx* loadtlut = this->gfx_p;
+        
+        #if EMU64_DEBUG
+        
+        if (this->print_commands != false) {
+            this->Printf2("gsDPLoadTLUTCmd(%d,%d),", loadtlut->loadtlut.tile, (loadtlut->words.w1 >> 14) & 0x3FF);
+        }
+
+        #endif
+
+        if (this->disable_polygons == false) {
+            u32 tlut_name = (this->settile_cmds[loadtlut->loadtlut.tile].tmem / 16) & 0xF;
+            u32 count = ((loadtlut->words.w1 >> 14) & 0x3FF) + 1;
+            u32 addr = this->now_setimg2.imgaddr;
+
+            if (addr == (u32)this->tlut_addresses[tlut_name]) {
+                #ifdef EMU64_DEBUG
+
+                if (this->print_commands != false) {
+                    this->Printf3("### 同じTLUTアドレスです %08x %d\n", addr, tlut_name);
+                }
+
+                #endif
+            }
+            else {
+                void* tlut = (void*)addr;
+
+                /* Convert TLUT */
+                if (this->now_setimg2.no_load == false) {
+                    tlut = this->tlutconv_new((u16*)addr, TLUT_FORMAT_RGB5A3, count);
+                }
+
+                if (tlut != nullptr) {
+                    for (; (u16)count != 0; count -= 16) {
+                        tlut_addresses[tlut_name] = (void*)addr;
+                        GXInitTlutObj(&this->tlut_objs[tlut_name], tlut, GX_TL_RGB5A3, count);
+                        GXLoadTlut(&this->tlut_objs[tlut_name], tlut_name);
+
+                        #ifdef EMU64_DEBUG
+
+                        if (this->print_commands) {
+                            this->Printf3("GXInitTlutObj %08x %d pal_no=%d\n", addr, (u16)count, tlut_name);
+                        }
+
+                        #endif
+
+                        tlut_name++;
+                        addr += 16 * sizeof(u16);
+                        tlut = ((u16*)tlut) + 16;
+                    }
+                }
+            }
+        }
+    }
+
+    #ifdef EMU64_DEBUG
+    this->loadtlut_time += (osGetCount() - start);
+    #endif
+}
+
+void emu64::dl_G_SETCOMBINE_NOTEV() {
+    if (this->print_commands != false) {
+        const char* Ad1 = this->combine_alpha(COMBINER_GET_Ad1(this->gfx.words), COMBINER_PARAM_D);
+        const char* Ac1 = this->combine_alpha(COMBINER_GET_Ac1(this->gfx.words), COMBINER_PARAM_C);
+        const char* Ab1 = this->combine_alpha(COMBINER_GET_Ab1(this->gfx.words), COMBINER_PARAM_B);
+        const char* Aa1 = this->combine_alpha(COMBINER_GET_Aa1(this->gfx.words), COMBINER_PARAM_A);
+
+        const char* d1 = this->combine_name(COMBINER_GET_d1(this->gfx.words), COMBINER_PARAM_D);
+        const char* c1 = this->combine_name(COMBINER_GET_c1(this->gfx.words), COMBINER_PARAM_C);
+        const char* b1 = this->combine_name(COMBINER_GET_b1(this->gfx.words), COMBINER_PARAM_B);
+        const char* a1 = this->combine_name(COMBINER_GET_a1(this->gfx.words), COMBINER_PARAM_A);
+
+        const char* Ad0 = this->combine_alpha(COMBINER_GET_Ad0(this->gfx.words), COMBINER_PARAM_D);
+        const char* Ac0 = this->combine_alpha(COMBINER_GET_Ac0(this->gfx.words), COMBINER_PARAM_C);
+        const char* Ab0 = this->combine_alpha(COMBINER_GET_Ab0(this->gfx.words), COMBINER_PARAM_B);
+        const char* Aa0 = this->combine_alpha(COMBINER_GET_Aa0(this->gfx.words), COMBINER_PARAM_A);
+
+        const char* d0 = this->combine_name(COMBINER_GET_d0(this->gfx.words), COMBINER_PARAM_D);
+        const char* c0 = this->combine_name(COMBINER_GET_c0(this->gfx.words), COMBINER_PARAM_C);
+        const char* b0 = this->combine_name(COMBINER_GET_b0(this->gfx.words), COMBINER_PARAM_B);
+        const char* a0 = this->combine_name(COMBINER_GET_a0(this->gfx.words), COMBINER_PARAM_A);
+
+        this->Printf0(
+            "gsDPSetCombineLERP(%s,%s,%s,%s, %s,%s,%s,%s, %s,%s,%s,%s, %s,%s,%s,%s),",
+            a0, b0, c0, d0,
+            Aa0, Ab0, Ac0, Ad0,
+            a1, b1, c1, d1,
+            Aa1, Ab1, Ac1, Ad1
+        );
+    }
+
+    /* Update combiner settings only if it changed */
+    this->gfx.setcombine.cmd = G_SETCOMBINE;
+    if (((this->combiner_low ^ this->gfx.words.w1) | (this->combiner_high ^ this->gfx.words.w0)) != 0) {
+        this->combiner_low = this->gfx.words.w1;
+        this->combiner_high = this->gfx.words.w0;
+        this->combine_dirty = true;
+    }
+}
+
+void emu64::dl_G_SETCOMBINE() {
+    if (this->print_commands != false) {
+        const char* Ad1 = this->combine_alpha(COMBINER_GET_Ad1(this->gfx.words), COMBINER_PARAM_D);
+        const char* Ac1 = this->combine_alpha(COMBINER_GET_Ac1(this->gfx.words), COMBINER_PARAM_C);
+        const char* Ab1 = this->combine_alpha(COMBINER_GET_Ab1(this->gfx.words), COMBINER_PARAM_B);
+        const char* Aa1 = this->combine_alpha(COMBINER_GET_Aa1(this->gfx.words), COMBINER_PARAM_A);
+
+        const char* d1 = this->combine_name(COMBINER_GET_d1(this->gfx.words), COMBINER_PARAM_D);
+        const char* c1 = this->combine_name(COMBINER_GET_c1(this->gfx.words), COMBINER_PARAM_C);
+        const char* b1 = this->combine_name(COMBINER_GET_b1(this->gfx.words), COMBINER_PARAM_B);
+        const char* a1 = this->combine_name(COMBINER_GET_a1(this->gfx.words), COMBINER_PARAM_A);
+
+        const char* Ad0 = this->combine_alpha(COMBINER_GET_Ad0(this->gfx.words), COMBINER_PARAM_D);
+        const char* Ac0 = this->combine_alpha(COMBINER_GET_Ac0(this->gfx.words), COMBINER_PARAM_C);
+        const char* Ab0 = this->combine_alpha(COMBINER_GET_Ab0(this->gfx.words), COMBINER_PARAM_B);
+        const char* Aa0 = this->combine_alpha(COMBINER_GET_Aa0(this->gfx.words), COMBINER_PARAM_A);
+
+        const char* d0 = this->combine_name(COMBINER_GET_d0(this->gfx.words), COMBINER_PARAM_D);
+        const char* c0 = this->combine_name(COMBINER_GET_c0(this->gfx.words), COMBINER_PARAM_C);
+        const char* b0 = this->combine_name(COMBINER_GET_b0(this->gfx.words), COMBINER_PARAM_B);
+        const char* a0 = this->combine_name(COMBINER_GET_a0(this->gfx.words), COMBINER_PARAM_A);
+
+        this->Printf0(
+            "gsDPSetCombineLERP(%s,%s,%s,%s, %s,%s,%s,%s, %s,%s,%s,%s, %s,%s,%s,%s),",
+            a0, b0, c0, d0,
+            Aa0, Ab0, Ac0, Ad0,
+            a1, b1, c1, d1,
+            Aa1, Ab1, Ac1, Ad1
+        );
+    }
+
+    /* Update combiner settings only if it changed */
+    if (((this->combiner_low ^ this->gfx.words.w1) | (this->combiner_high ^ this->gfx.words.w0)) != 0) {
+        this->combiner_low = this->gfx.words.w1;
+        this->combiner_high = this->gfx.words.w0;
+        this->combine_dirty = true;
+    }
+
+    if (this->gfx_cmd != G_SETCOMBINE_NOTEV && aflags[AFLAGS_SKIP_COMBINE_TEV] == 0) {
+        this->replace_combine_to_tev(this->gfx_p);
+    }
+}
+
+void emu64::dl_G_SETCOMBINE_TEV() {
+    if (this->print_commands != false) {
+        const char* Ad1 = this->combine_tev_alpha_name(COMBINER_TEV_GET_Ad1(this->gfx.words));
+        const char* Ac1 = this->combine_tev_alpha_name(COMBINER_TEV_GET_Ac1(this->gfx.words));
+        const char* Ab1 = this->combine_tev_alpha_name(COMBINER_TEV_GET_Ab1(this->gfx.words));
+        const char* Aa1 = this->combine_tev_alpha_name(COMBINER_TEV_GET_Aa1(this->gfx.words));
+
+        const char* d1 = this->combine_tev_color_name(COMBINER_TEV_GET_d1(this->gfx.words));
+        const char* c1 = this->combine_tev_color_name(COMBINER_TEV_GET_c1(this->gfx.words));
+        const char* b1 = this->combine_tev_color_name(COMBINER_TEV_GET_b1(this->gfx.words));
+        const char* a1 = this->combine_tev_color_name(COMBINER_TEV_GET_a1(this->gfx.words));
+
+        const char* Ad0 = this->combine_tev_alpha_name(COMBINER_TEV_GET_Ad0(this->gfx.words));
+        const char* Ac0 = this->combine_tev_alpha_name(COMBINER_TEV_GET_Ac0(this->gfx.words));
+        const char* Ab0 = this->combine_tev_alpha_name(COMBINER_TEV_GET_Ab0(this->gfx.words));
+        const char* Aa0 = this->combine_tev_alpha_name(COMBINER_TEV_GET_Aa0(this->gfx.words));
+
+        const char* d0 = this->combine_tev_color_name(COMBINER_GET_d0(this->gfx.words));
+        const char* c0 = this->combine_tev_color_name(COMBINER_GET_c0(this->gfx.words));
+        const char* b0 = this->combine_tev_color_name(COMBINER_GET_b0(this->gfx.words));
+        const char* a0 = this->combine_tev_color_name(COMBINER_GET_a0(this->gfx.words));
+
+        this->Printf0(
+            "gsDPSetCombineTev(%s,%s,%s,%s, %s,%s,%s,%s, %s,%s,%s,%s, %s,%s,%s,%s),",
+            a0, b0, c0, d0,
+            Aa0, Ab0, Ac0, Ad0,
+            a1, b1, c1, d1,
+            Aa1, Ab1, Ac1, Ad1
+        );
+    }
+
+    /* Update combiner settings only if it changed */
+    if (((this->combiner_low ^ this->gfx.words.w1) | (this->combiner_high ^ this->gfx.words.w0)) != 0) {
+        this->combiner_low = this->gfx.words.w1;
+        this->combiner_high = this->gfx.words.w0;
+        this->combine_dirty = true;
+    }
+}
+
+void emu64::dl_G_SETOTHERMODE_H() {
+    u8 print_commands = this->print_commands;
+    u32 len = this->gfx.setothermodeH.len + 1;
+    u32 data = this->gfx.setothermodeH.data;
+    u32 sft = (32 - this->gfx.setothermodeH.sft) - len;
+
+    bool found = false;
+    if (print_commands & EMU64_PRINT_LEVEL2_FLAG != 0) {
+        for (int i = 0; i < NUM_OTHERMODE_HIGH_CMDS; i++) {
+            OthermodeParameterInfo info = h_tbl[i];
+            if (info.shift == sft) {
+                for (int opt = 0; opt < 4; opt++) {
+                    if (*((int*)((int)&info.opt0Val + opt * 8)) == data) {
+                        #ifdef EMU64_DEBUG
+
+                        if (print_commands != 0) {
+                            this->Printf2("gsDP%s(%s),", info.name, *((char**)((int)&info.opt0 + opt * 8)));
+                        }
+
+                        #endif
+                        found = true;
+                        break;
+                    }
+                }
+            }
+
+            if (found) break;
+        }
+
+        #ifdef EMU64_DEBUG
+
+        if (!found && print_commands != 0) {
+            this->Printf2("gsSPSetOtherModeH(%d, %d, 0x%08x),", sft, len, data);
+        }
+
+        #endif
+    }
+
+    data |= (this->othermode_high & (1 - (1 << len) << sft) - 1u);
+    if (this->othermode_high != data) {
+        this->othermode_high = data;
+        this->othermode_high_dirty = true;
+    }
+}
+
+void emu64::dl_G_SETOTHERMODE_L() {
+    u8 print_commands = this->print_commands;
+    u32 len = this->gfx.setothermodeL.len + 1;
+    u32 data = this->gfx.setothermodeL.data;
+    u32 sft = (32 - this->gfx.setothermodeL.sft) - len;
+
+    bool found = false;
+    if (print_commands & EMU64_PRINT_LEVEL2_FLAG != 0) {
+        if (sft == G_MDSFT_RENDERMODE) {
+            #ifdef EMU64_DEBUG
+
+            if (print_commands != 0) {
+                this->Printf2("\ngsDPSetRenderBlender(\n");
+            }
+
+            #endif
+
+            u32 c1 = (data >> 18) & 0x3333;
+            u32 c2 = (data >> 16) & 0x3333;
+
+            for (int i = 0; i < NUM_RENDERMODE_FLAGS; i++) {
+                if ((data & flags[i].mask) == flags[i].value) {
+                    this->Printf("%s|", flags[i].name);
+                }
+            }
+
+            this->Printf(
+                "\nGBL_c1(%s, %s, %s, %s)|",
+                m[0][c1 >> 12],
+                m[1][(c1 >> 8) & 3],
+                m[2][(c1 >> 4) & 3],
+                m[3][c1 & 3]
+            );
+            this->Printf(
+                "\nGBL_c2(%s, %s, %s, %s)",
+                m[0][c2 >> 12],
+                m[1][(c2 >> 8) & 3],
+                m[2][(c2 >> 4) & 3],
+                m[3][c2 & 3]
+            );
+
+            #ifdef EMU64_DEBUG
+
+            if (this->print_commands != false) {
+                this->Printf2("\n),");
+            }
+
+            #endif
+        }
+        else {
+            for (int i = 0; i < NUM_OTHERMODE_LOW_CMDS; i++) {
+                OthermodeParameterInfo info = l_tbl[i];
+                if (info.shift == sft) {
+                    for (int opt = 0; opt < 4; opt++) {
+                        if (*((int*)((int)&info.opt0Val + opt * 8)) == data) {
+                            #ifdef EMU64_DEBUG
+
+                            if (print_commands != 0) {
+                                this->Printf2("gsDP%s(%s),", info.name, *((char**)((int)&info.opt0 + opt * 8)));
+                            }
+
+                            #endif
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (found) break;
+            }
+        }
+
+        #ifdef EMU64_DEBUG
+
+        if (!found && print_commands != 0) {
+            this->Printf2("gsSPSetOtherModeL(%d, %d, 0x%08x),", sft, len, data);
+        }
+
+        #endif
+    }
+
+    data |= (this->othermode_low & (1 - (1 << len) << sft) - 1u);
+    if (this->othermode_low != data) {
+        this->fog_dirty = true;
+        this->othermode_low = data;
+        this->othermode_low_dirty = true;
     }
 }
 

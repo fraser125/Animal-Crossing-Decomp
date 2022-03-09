@@ -9,7 +9,7 @@ void emu64_print::Printf0(const char* fmt, ...) {
 }
 
 void emu64_print::Printf(const char* fmt, ...) {
-    if ((this->flags & EMU64_PRINT_LEVEL0_FLAG) != 0) {
+    if ((this->print_flags & EMU64_PRINT_LEVEL0_FLAG) != 0) {
         va_list v;
         va_start(v, fmt);
         vprintf(fmt, v);
@@ -18,7 +18,7 @@ void emu64_print::Printf(const char* fmt, ...) {
 }
 
 void emu64_print::Printf1(const char* fmt, ...) {
-    if ((this->flags & EMU64_PRINT_LEVEL1_FLAG) != 0) { 
+    if ((this->print_flags & EMU64_PRINT_LEVEL1_FLAG) != 0) { 
         va_list v;
         va_start(v, fmt);
         vprintf(fmt, v);
@@ -27,7 +27,7 @@ void emu64_print::Printf1(const char* fmt, ...) {
 }
 
 void emu64_print::Printf2(const char* fmt, ...) {
-    if ((this->flags & EMU64_PRINT_LEVEL2_FLAG) != 0) { 
+    if ((this->print_flags & EMU64_PRINT_LEVEL2_FLAG) != 0) { 
         va_list v;
         va_start(v, fmt);
         vprintf(fmt, v);
@@ -36,7 +36,7 @@ void emu64_print::Printf2(const char* fmt, ...) {
 }
 
 void emu64_print::Printf3(const char* fmt, ...) {
-    if ((this->flags & EMU64_PRINT_LEVEL3_FLAG) != 0) { 
+    if ((this->print_flags & EMU64_PRINT_LEVEL3_FLAG) != 0) { 
         va_list v;
         va_start(v, fmt);
         vprintf(fmt, v);
