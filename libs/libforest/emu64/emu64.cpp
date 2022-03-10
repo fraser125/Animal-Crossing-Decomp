@@ -3,6 +3,7 @@
 #include "emu64.h"
 #include "libultra/ultra.h"
 #include <MSL_Common/Include/stdio.h>
+#include <MSL_Common/Include/math.h>
 
 /* Debug info for other mode high cmds */
 #define NUM_OTHERMODE_HIGH_CMDS 11
@@ -134,6 +135,14 @@ static char* dolfmttbl2[4][5] = {
     { "RGB4A3", "YUV", "CI", "IA", "RGB565" },
     { "RGBA8888", "Z", "CI?", "IA?", "RGB?" }
 };
+
+static MatrixInfo gmtxtbl[] = {
+    { G_MTX_PROJECTION, "G_MTX_PROJECTION", "G_MTX_MODELVIEW" },
+    { G_MTX_LOAD, "G_MTX_LOAD", "G_MTX_MUL" },
+    { G_MTX_PUSH, "G_MTX_PUSH", "G_MTX_NOPUSH" }
+};
+
+static char* kakko = "/\\/\\||||||||\\/\\/";
 
 static tmem tmem_map[TMEM_ENTRIES];
 
@@ -1656,5 +1665,176 @@ void emu64::dl_G_NOOP() {
     default:
         EMU64_LOG_QUIET("gsDPNoOpTag3(%02x, %08x, %04x),", tag, this->gfx.words.w1, (u16)(this->gfx.words.w0));
         break;
+    }
+}
+
+#define DECIMAL16b2FLOAT(dec)((f32)(dec) * (1 / 65536))
+
+void emu64::dl_G_MTX() {
+    /* TODO: Lots of changes in e+ to add */
+    if (EMU64_IS_PRINT_ENABLED(this)) {
+        u32 mtx_addr = this->gfx_p->dma.addr;
+        EMU64_LOG_VERBOSE("gsSPMatrix(%s, 0", this->segchk(mtx_addr));
+
+        u8 param = (u8)this->gfx_p->dma.len;
+        for (int i = 0; i < ARRAY_SIZE(gmtxtbl); i++) {
+            EMU64_LOG_VERBOSE(
+                "|%s",
+                ((param ^ G_MTX_PUSH) & gmtxtbl[i].flag) == 0 ? gmtxtbl[i].disabled : gmtxtbl[i].enabled
+            );
+        }
+
+        EMU64_LOG_VERBOSE("),");
+
+        if ((this->print_commands & EMU64_PRINT_LEVEL3_FLAG) != 0) {
+            EMU64_LOG_VERBOSE("%08x %08x %08x\n", mtx_addr, this->seg2k0(mtx_addr), this->seg2k0(mtx_addr));
+            Mtx_t* mtx = (Mtx_t*)this->seg2k0(mtx_addr);
+            for (int i = 0; i < 4; i++) {
+                for (int x = 0; x < 4; x++) {
+                    EMU64_LOG_NORMAL("%10.3f", mtx[i][x]);
+                }
+
+                EMU64_LOG_NORMAL("\n", (char)((u8*)kakko)[3 + i * 4]);
+            }
+        }
+    }
+
+    if (this->disable_polygons == false) {
+        #ifdef EMU64_DEBUG
+        u32 start = osGetCount();
+        #endif
+
+        Gdma* mtx_dma = (Gdma*)this->gfx_p;
+        Mtx_t* mtx = (Mtx_t*)this->seg2k0(mtx_dma->addr); /* Matrix is in N64 s16.16 format. (First 8 elements are s16 integer components, second 8 elements are s16 fractional components) */
+        Mtx44 mtx44; /* float-based matrix */
+        Mtx mtx34;
+
+        /* Convert our s16.u16 matrix into a f32 matrix. */
+        s16* mtx_integer = (s16*)mtx;
+        u16* mtx_fractional = ((u16*)mtx_integer) + 16;
+        for (int i = 0; i < 4; i++) {
+            mtx44[0][i] = (f32)mtx_integer[i * 4 + 0] + DECIMAL16b2FLOAT(mtx_fractional[i * 4 + 0]);
+            mtx44[1][i] = (f32)mtx_integer[i * 4 + 1] + DECIMAL16b2FLOAT(mtx_fractional[i * 4 + 1]);
+            mtx44[2][i] = (f32)mtx_integer[i * 4 + 2] + DECIMAL16b2FLOAT(mtx_fractional[i * 4 + 2]);
+            //mtx44[i][3] = (f32)mtx_integer[i * 4 + 3] + DECIMAL16b2FLOAT(mtx_fractional[i * 4 + 3]);
+
+            mtx34[0][i] = (f32)mtx_integer[i * 4 + 0] + DECIMAL16b2FLOAT(mtx_fractional[i * 4 + 0]);
+            mtx34[1][i] = (f32)mtx_integer[i * 4 + 1] + DECIMAL16b2FLOAT(mtx_fractional[i * 4 + 1]);
+            mtx34[2][i] = (f32)mtx_integer[i * 4 + 2] + DECIMAL16b2FLOAT(mtx_fractional[i * 4 + 2]);
+        }
+
+        u8 param = (u8)this->gfx_p->dma.len;
+        if (param & G_MTX_PROJECTION == G_MTX_MODELVIEW) {
+            if (param & G_MTX_PUSH == G_MTX_NOPUSH) {
+                if (this->mtx_stack_size < MTX_STACK_SIZE - 1) {
+                    this->mtx_stack_size++;
+                }
+                else {
+                    this->Printf0("gsSPMatrix StackOverflow.\n");
+                    this->err_count++;
+                }
+            }
+
+            if (param & G_MTX_LOAD == G_MTX_MUL) {
+                MTXConcat(this->model_view_mtx_stack[this->mtx_stack_size], mtx34, this->model_view_mtx_stack[this->mtx_stack_size]);
+            }
+            else {
+                bcopy(mtx34, this->model_view_mtx_stack[this->mtx_stack_size], sizeof(Mtx));
+            }
+
+            if (aflags[AFLAGS_COPY_MODELVIEW_MTX] == 0) {
+                #ifdef ANIMAL_FOREST_PLUS
+                /** Equivalent to:
+                 *   Mtx inv;
+                 *   MTXInverse(this->model_view_mtx_stack[this->mtx_stack_size], inv);
+                 *   MTXTranspose(inv, this->model_view_mtx);
+                 * 
+                 * Computes normal transformation from position transform.
+                 * Destination is this->model_view_mtx.
+                 */
+                MTXInvXpose(this->model_view_mtx_stack[this->mtx_stack_size], this->model_view_mtx);
+                #else
+                /* For some reason they just copy it in AC. e+ handles it differently. */
+                for (int i = 0; i < 3; i++) {
+                    Mtx* src = &this->model_view_mtx_stack[mtx_stack_size];
+                    this->model_view_mtx[i][0] = *src[i][0];
+                    this->model_view_mtx[i][1] = *src[i][1];
+                    this->model_view_mtx[i][2] = *src[i][2];
+                    this->model_view_mtx[i][3] = 0.0f;
+                }
+                #endif
+            }
+            else {
+                MTXCopy(this->model_view_mtx_stack[this->mtx_stack_size], this->model_view_mtx);
+                this->model_view_mtx[0][3] = 0.0f;
+                this->model_view_mtx[1][3] = 0.0f;
+                this->model_view_mtx[2][3] = 0.0f;
+            }
+
+            if (aflags[AFLAGS_SKIP_MTX_NORMALIZATION] == 0 || this->geometry_mode & G_TEXTURE_GEN != 0) {
+                /* Normalize matrix */
+                for (int i = 0; i < 3; i++) {
+                    f32 col_x = this->model_view_mtx[i][0];
+                    f32 col_y = this->model_view_mtx[i][1];
+                    f32 col_z = this->model_view_mtx[i][2];
+                    f32 mag_square = col_x * col_x + col_y * col_y + col_z * col_z;
+                    if (mag_square > 0.0f) {
+                        f32 magnitude_inv = 1.0f / sqrtf(mag_square);
+
+                        // Three rounds of Newtonian iteration
+                        f32 temp = magnitude_inv * 0.5f * (3.0f - mag_square * magnitude_inv * magnitude_inv);
+                        temp = temp * 0.5f * (3.0f - mag_square * temp * temp);
+                        mag_square = mag_square * temp * 0.5f * (3.0f - mag_square * temp * temp);
+                    }
+
+                    f32 normalize = 1.0f / mag_square;
+                    this->model_view_mtx[i][0] *= normalize;
+                    this->model_view_mtx[i][1] *= normalize;
+                    this->model_view_mtx[i][2] *= normalize;
+                }
+            }
+
+            GXLoadNrmMtxImm(this->model_view_mtx, GX_PNMTX1);
+        }
+        else { /* Projection */
+            if (param & G_MTX_LOAD == G_MTX_MUL) {
+                bcopy(mtx44, &this->position_mtx, sizeof(Mtx)); /* Last row of Mtx44 is ignored */
+            }
+            else {
+                if (mtx[15] == 0) { /* If the last entry is 0, this should be a perspective projection. Otherwise, it's likely an orthographic projection. */
+                    this->near = mtx44[2][3] * ((mtx44[2][2] + 1.0f) / (mtx44[2][2] - 1.0f) - 1.0f) * 0.5f;
+                    this->far = this->near * ((mtx44[2][2] - 1.0f) / (mtx44[2][2] + 1.0f) + 1.0f);
+                    mtx44[2][2] = this->near / (this->near - this->far);
+                    mtx44[2][3] = (this->near * this->far) / (this->near - this->far);
+                    bcopy(mtx34, this->original_projection_mtx, sizeof(Mtx));
+                    bcopy(mtx44, this->position_mtx, sizeof(Mtx44));
+                    this->projection_type = GX_PERSPECTIVE;
+                }
+                else { /* Orthographic projection */
+                    this->near = (mtx44[2][3] + 1.0f) / mtx44[2][2];
+                    this->far = (mtx44[2][3] - 1.0f) / mtx44[2][2];
+                    mtx44[2][2] = 1.0f / (this->near - this->far);
+                    mtx44[2][3] = this->far / (this->near - this->far);
+                    bcopy(mtx34, this->original_projection_mtx, sizeof(Mtx));
+                    bcopy(mtx44, this->position_mtx, sizeof(Mtx44));
+                    this->projection_type = GX_ORTHOGRAPHIC;
+                }
+
+                MTXIdentity(this->position_mtx);
+                this->projection_mtx_dirty = true;
+                this->fog_dirty = true;
+            }
+        }
+
+        this->position_mtx_dirty = true;
+        if (this->position_mtx_dirty != false) {
+            this->position_mtx_dirty = false;
+            MTXConcat(position_mtx, this->model_view_mtx_stack[mtx_stack_size], this->position_mtx_stack[mtx_stack_size]);
+            GXLoadPosMtxImm(this->position_mtx_stack[this->mtx_stack_size], GX_PNMTX1);
+        }
+
+        #ifdef EMU64_DEBUG
+        this->mtx_time += (osGetCount() - start);
+        #endif
     }
 }

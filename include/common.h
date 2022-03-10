@@ -9,6 +9,8 @@ extern "C" {
 
 typedef u32 size_t;
 
+#define ARRAY_SIZE(arr)(sizeof(arr)/sizeof(arr[0]))
+
 #ifdef _LANGUAGE_C_PLUS_PLUS
 }
 #endif

@@ -15,6 +15,7 @@
 #define NUM_TEX_OBJS 4
 #define TMEM_ENTRIES 128
 #define NUM_TLUTS 16
+#define MTX_STACK_SIZE 10
 
 /* Debug/Print Definitions */
 #define EMU64_PRINT_FLAG_ENABLE 1
@@ -60,13 +61,11 @@ static char s[256];
 
 /* Macros for various log levels */
 
-#ifdef EMU64_DEBUG
 #define EMU64_LOG_NORMAL(fmt, args...) do { \
-    if (this->print_commands != false) { \
-        this->Printf(fmt, ##args); \
-    } \
+    this->Printf(fmt, ##args); \
 } while(0)
 
+#ifdef EMU64_DEBUG
 #define EMU64_LOG_QUIET(fmt, args...) do { \
     if (this->print_commands != false) { \
         this->Printf1(fmt, ##args); \
@@ -85,7 +84,6 @@ static char s[256];
     } \
 } while(0)
 #else
-#define EMU64_LOG_NORMAL(fmt, args...)
 #define EMU64_LOG_QUIET(fmt, args...)
 #define EMU64_LOG_VERBOSE(fmt, args...)
 #define EMU64_LOG_INFO(fmt, args...)
@@ -124,6 +122,12 @@ typedef struct {
     u32 value;
     u32 mask;
 } RendermodeInfo;
+
+typedef struct {
+    u32 flag;
+    char* enabled;
+    char* disabled;
+} MatrixInfo;
 
 typedef struct {
     void* img_addr; /* Texture RAM address */
@@ -220,6 +224,7 @@ public:
     void dl_G_RDPTILESYNC();
     void dl_G_RDPLOADSYNC();
     void dl_G_NOOP();
+    void dl_G_MTX();
 
     /* Static Members */
     static char* warningString[EMU64_WARNING_COUNT];
@@ -308,11 +313,28 @@ private:
     bool geometry_mode_dirty;
     bool projection_mtx_dirty;
     bool tex_dirty;
-    bool unk_4b0;
+    bool position_mtx_dirty;
     bool tex_tile_dirty[NUM_TILES];
 
-    //...
+    Mtx original_projection_mtx;
+    Mtx position_mtx;
+    Mtx model_view_mtx_stack[MTX_STACK_SIZE];
+    Mtx position_mtx_stack[MTX_STACK_SIZE];
+    Mtx44 projection_mtx;
+
+    /* 0x92C */
+    f32 near; /* Near clipping plane */
+    f32 far; /* Far clipping plane */
+    Mtx model_view_mtx;
+
+    /* 0x994 */
+    int mtx_stack_size;
+
+    /* 0x9A8 */
     Mtx44 ortho_mtx;
+
+    /* 0x9E8 */
+    GXProjectionType projection_type;
 
     //...
 
