@@ -17,6 +17,9 @@ extern "C" {
 #define G_SETCOMBINE_TEV 0xD0
 #define G_SETTILE_DOLPHIN 0xD2
 
+#define G_OFF 0
+#define G_ON 1
+
 /* Triangle/Quad vertex bit size */
 #define POLY_5b 0 /* 5 bits per vertex index (0 - 31) */
 #define POLY_7b 1 /* 7 bits per vertex index (0 - 127) */
@@ -284,6 +287,17 @@ typedef struct {
     
     unsigned int tlut_addr:32;
 } Gloadtlut_dolphin;
+
+typedef struct {
+    unsigned char cmd:8;
+    unsigned char xparam:8;
+    unsigned int pad:2;
+    unsigned char level:3;
+    unsigned char tile:3;
+    unsigned char on:8; /* Should be 7 bits w/ 1 bit padding, but emulator doesn't do this */
+    unsigned short s:16;
+    unsigned short t:16;
+} Gtexture_internal;
 
 /* Combiner Structs */
 typedef struct {

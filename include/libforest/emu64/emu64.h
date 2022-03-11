@@ -18,6 +18,9 @@
 #define MTX_STACK_SIZE 10
 #define VTX_COUNT 128
 
+#define TEXTURE_SCALE 32.0f
+#define TEXTURE_SCALE_CONV TEXTURE_SCALE * 65536.0f
+
 /* Debug/Print Definitions */
 #define EMU64_PRINT_FLAG_ENABLE 1
 
@@ -266,6 +269,8 @@ public:
     void dl_G_TRI2();
     void dl_G_QUAD();
     void dl_G_CULLDL();
+    void dl_G_BRANCH_Z();
+    void dl_G_TEXTURE();
 
     /* Static Members */
     static char* warningString[EMU64_WARNING_COUNT];
@@ -370,9 +375,9 @@ private:
 
     /* 0x994 */
     int mtx_stack_size;
-    Gfx texture_gfx; /* TODO: rename */
-
-    /* 0x9A8 */
+    Gtexture_internal texture_gfx;
+    f32 texture_scale_s; /* x-scale */
+    f32 texture_scale_t; /* y-scale */
     Mtx44 ortho_mtx;
 
     /* 0x9E8 */

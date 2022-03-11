@@ -505,7 +505,7 @@ EMU64_INLINE void emu64::setup_1tri_2tri_1quad(u32 v0) {
         GXSetVtxAttrFmt(GX_VTXFMT0, GX_VA_CLR0, GX_CLR_RGBA, GX_RGBA8, 0);
     }
 
-    if ((u8)(this->texture_gfx.words.w0 & 0xFF) != 0) {
+    if (this->texture_gfx.on != G_OFF) {
         GXSetVtxDesc(GX_VA_TEX0, GX_DIRECT);
         GXSetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX0, GX_CLR_RGBA, GX_RGBA4, 0);
     }
@@ -801,7 +801,7 @@ void emu64::set_position(u32 vtx) {
     GXColor1u32(emu_vtx->color.raw);
 
     /* If texture is on, write texture coordinates */
-    if ((u8)this->texture_gfx.words.w0 != 0) {
+    if (this->texture_gfx.on != G_OFF) {
         GXTexCoord2s16(emu_vtx->tex_coords.s, emu_vtx->tex_coords.t);
     }
 }

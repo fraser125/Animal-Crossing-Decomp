@@ -2041,7 +2041,7 @@ void emu64::dl_G_TRI1() {
     }
 
     if (this->disable_polygons == false && EMU64_CAN_DRAW_POLYGON()) {
-        this->dirty_check((this->texture_gfx.words.w0 >> 8) & 7, (this->texture_gfx.words.w0 >> 11) & 7, TRUE);
+        this->dirty_check(this->texture_gfx.tile, this->texture_gfx.level, TRUE);
         this->setup_1tri_2tri_1quad(v0);
         this->draw_1tri_2tri_1quad(3, v0, v1, v2);
     }
@@ -2065,7 +2065,7 @@ void emu64::dl_G_TRIN() {
     u32 start = osGetCount();
     #endif
 
-    this->dirty_check((this->texture_gfx.words.w0 >> 8) & 7, (this->texture_gfx.words.w0 >> 11) & 7, TRUE);
+    this->dirty_check(this->texture_gfx.tile, this->texture_gfx.level, TRUE);
     this->setup_1tri_2tri_1quad((this->gfx_p->words.w1 >> 4) & 0x1F);
     u32 n_faces = ((this->gfx_p->words.w0 >> 17) & 0x7F) + 1;
 
@@ -2200,7 +2200,7 @@ void emu64::dl_G_QUADN() {
     u32 start = osGetCount();
     #endif
 
-    this->dirty_check((this->texture_gfx.words.w0 >> 8) & 7, (this->texture_gfx.words.w0 >> 11) & 7, TRUE);
+    this->dirty_check(this->texture_gfx.tile, this->texture_gfx.level, TRUE);
     this->setup_1tri_2tri_1quad((this->gfx_p->words.w1 >> 4) & 0x1F);
     u32 n_faces = ((this->gfx_p->words.w0 >> 17) & 0x7F) + 1;
 
@@ -2344,7 +2344,7 @@ void emu64::dl_G_TRI2() {
             i++;
         } while (true);
 
-        this->dirty_check((this->texture_gfx.words.w0 >> 8) & 7, (this->texture_gfx.words.w0 >> 11) & 7, TRUE);
+        this->dirty_check(this->texture_gfx.tile, this->texture_gfx.level, TRUE);
         this->setup_1tri_2tri_1quad((this->gfx_p->words.w0 >> 17) & 0x7F);
 
         #ifdef EMU64_DEBUG
@@ -2418,7 +2418,7 @@ void emu64::dl_G_TRI2() {
         #endif
 
         if (this->disable_polygons == false && EMU64_CAN_DRAW_POLYGON()) {
-            this->dirty_check((this->texture_gfx.words.w0 >> 8) & 7, (this->texture_gfx.words.w0 >> 11) & 7, TRUE);
+            this->dirty_check(this->texture_gfx.tile, this->texture_gfx.level, TRUE);
             this->setup_1tri_2tri_1quad(v0);
             this->draw_1tri_2tri_1quad(6, v0, v1, v2, v3, v4, v5);
         }
@@ -2601,5 +2601,52 @@ void emu64::dl_G_CULLDL() {
         }
 
         this->cullDL_outside_obj_count++;
+    }
+}
+
+void emu64::dl_G_BRANCH_Z() {
+    this->work_ptr = this->seg2k0(this->rdpHalf_1);
+    EMU64_LOG_QUIET(
+        "gsSPBranchLessZraw(%s, %d, 0x%08x),",
+        this->segchk(this->rdpHalf_1),
+        (this->gfx.words.w0 / 2) & 0x7FF,
+        this->gfx.words.w1
+    );
+
+    this->gfx_p = (Gfx*)((int)this->work_ptr - sizeof(Gfx));
+    /* Translation: gsSPBranchLessZraw isn't implemented yet */
+    EMU64_LOG_NORMAL("gsSPBranchLessZrawはまだインプリメントされていません\n");
+}
+
+void emu64::dl_G_TEXTURE() {
+    Gtexture_internal* texture = (Gtexture_internal*)this->gfx_p;
+    if (this->print_commands != false) {
+        if (texture->xparam == 0) {
+            EMU64_LOG_VERBOSE(
+                "gsSPTexture(%d, %d, %d, %d, %s),",
+                texture->s, texture->t,
+                texture->level,
+                texture->tile,
+                texture->on ? "G_ON" : "G_OFF"
+            );
+        }
+        else {
+            EMU64_LOG_VERBOSE(
+                "gsSPTextureL(%d, %d, %d, %d, %d, %s),",
+                texture->s, texture->t,
+                texture->level,
+                texture->xparam,
+                texture->tile,
+                texture->on ? "G_ON" : "G_OFF"
+            );
+        }
+    }
+
+    Gfx* t = (Gfx*)&this->texture_gfx;
+    if (((t->words.w0 ^ this->gfx_p->words.w0) | (t->words.w1 ^ this->gfx_p->words.w1)) != 0) {
+        this->texture_gfx = *texture;
+        this->tex_dirty = true;
+        this->texture_scale_s = this->texture_gfx.s == 0 ? TEXTURE_SCALE : TEXTURE_SCALE_CONV / (f32)this->texture_gfx.s;
+        this->texture_scale_t = this->texture_gfx.t == 0 ? TEXTURE_SCALE : TEXTURE_SCALE_CONV / (f32)this->texture_gfx.t;
     }
 }
