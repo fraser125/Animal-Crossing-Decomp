@@ -114,6 +114,26 @@ static RendermodeInfo flags[NUM_RENDERMODE_FLAGS] = {
     { "FORCE_BL", FORCE_BL, FORCE_BL }
 };
 
+#define NUM_GEOMETRYMODE_FLAGS 16
+static GeometryModeParameterInfo geomtbl[NUM_GEOMETRYMODE_FLAGS] = {
+    { G_ZBUFFER, "G_ZBUFFER", G_ZBUFFER },
+    { G_TEXTURE_ENABLE, "G_TEXTURE_ENABLE", G_TEXTURE_ENABLE },
+    { G_SHADE, "G_SHADE", G_SHADE },
+    { G_SHADING_SMOOTH, "G_SHADING_SMOOTH", G_SHADING_SMOOTH },
+    { G_CULL_FRONT, "G_CULL_FRONT", G_CULL_FRONT },
+    { G_CULL_BACK, "G_CULL_BACK", G_CULL_BACK },
+    { G_FOG, "G_FOG", G_FOG },
+    { G_LIGHTING, "G_LIGHTING", G_LIGHTING },
+    { G_TEXTURE_GEN, "G_TEXTURE_GEN", G_TEXTURE_GEN },
+    { G_TEXTURE_GEN_LINEAR, "G_TEXTURE_GEN_LINEAR", G_TEXTURE_GEN_LINEAR },
+    { G_LOD, "G_LOD", G_LOD },
+    { G_LIGHTING_POSITIONAL, "G_LIGHTING_POSITIONAL", G_LIGHTING_POSITIONAL },
+    { G_DECAL_EQUAL, "G_DECAL_EQUAL", G_DECAL_ALWAYS },
+    { G_DECAL_GEQUAL, "G_DECAL_GEQUAL", G_DECAL_ALWAYS },
+    { G_DECAL_ALWAYS, "G_DECAL_ALWAYS", G_DECAL_ALWAYS },
+    { G_DECAL_SPECIAL, "G_DECAL_SPECIAL", G_DECAL_SPECIAL }
+};
+
 #define NUM_BL_OPTS 4
 static char* m[NUM_BL_OPTS][NUM_BL_OPTS] = {
     { "G_BL_CLR_IN", "G_BL_CLR_MEM", "G_BL_CLR_BL", "G_BL_CLR_FOG" },
@@ -1827,9 +1847,9 @@ void emu64::dl_G_MTX() {
             }
         }
 
-        this->position_mtx_dirty = true;
-        if (this->position_mtx_dirty != false) {
-            this->position_mtx_dirty = false;
+        this->model_view_mtx_dirty = true;
+        if (this->model_view_mtx_dirty != false) {
+            this->model_view_mtx_dirty = false;
             MTXConcat(position_mtx, this->model_view_mtx_stack[mtx_stack_size], this->position_mtx_stack[mtx_stack_size]);
             GXLoadPosMtxImm(this->position_mtx_stack[this->mtx_stack_size], NONSHARED_MTX);
         }
@@ -2620,6 +2640,7 @@ void emu64::dl_G_BRANCH_Z() {
 
 void emu64::dl_G_TEXTURE() {
     Gtexture_internal* texture = (Gtexture_internal*)this->gfx_p;
+    #ifdef EMU64_DEBUG
     if (this->print_commands != false) {
         if (texture->xparam == 0) {
             EMU64_LOG_VERBOSE(
@@ -2641,6 +2662,7 @@ void emu64::dl_G_TEXTURE() {
             );
         }
     }
+    #endif
 
     Gfx* t = (Gfx*)&this->texture_gfx;
     if (((t->words.w0 ^ this->gfx_p->words.w0) | (t->words.w1 ^ this->gfx_p->words.w1)) != 0) {
@@ -2648,5 +2670,167 @@ void emu64::dl_G_TEXTURE() {
         this->tex_dirty = true;
         this->texture_scale_s = this->texture_gfx.s == 0 ? TEXTURE_SCALE : TEXTURE_SCALE_CONV / (f32)this->texture_gfx.s;
         this->texture_scale_t = this->texture_gfx.t == 0 ? TEXTURE_SCALE : TEXTURE_SCALE_CONV / (f32)this->texture_gfx.t;
+    }
+}
+
+void emu64::dl_G_POPMTX() {
+    u32 n = this->gfx_p->words.w1 >> 6;
+
+    #ifdef EMU64_DEBUG
+    if (this->print_commands != false) {
+        if (n == 1) {
+            EMU64_LOG_VERBOSE("gsSPPopMatrix(G_MTX_MODELVIEW),");
+        }
+        else {
+            EMU64_LOG_VERBOSE("gsSPPopMatrix(G_MTX_MODELVIEW, %d),", n);
+        }
+    }
+    #endif
+
+    this->mtx_stack_size -= n;
+    this->model_view_mtx_dirty = true;
+}
+
+void emu64::dl_G_GEOMETRYMODE() {
+    u32 clear = this->gfx.words.w0 & 0x00FFFFFF;
+    u32 set = this->gfx.words.w1 & 0x00FFFFFF;
+
+    #ifdef EMU64_DEBUG
+    if (this->print_commands != false) {
+        if (clear == 0) {
+            EMU64_LOG_VERBOSE("gsSPLoadGeometryMode(");
+            bool set_empty = true;
+            for (int i = 0; i < NUM_GEOMETRYMODE_FLAGS; i++) {
+                if (set & geomtbl[i].mask == geomtbl[i].value) {
+                    if (set_empty) {
+                        set_empty = false;
+                    }
+                    else {
+                        EMU64_LOG_NORMAL("|");
+                    }
+
+                    EMU64_LOG_NORMAL("%s", geomtbl[i].name);
+                }
+            }
+
+            if (set_empty) {
+                EMU64_LOG_NORMAL("0");
+            }
+            
+            EMU64_LOG_VERBOSE("),");
+        }
+        else if (set == 0) {
+            EMU64_LOG_VERBOSE("gsSPClearGeometryMode(");
+            bool clear_empty = true;
+            for (int i = 0; i < NUM_GEOMETRYMODE_FLAGS; i++) {
+                if (clear & geomtbl[i].mask == geomtbl[i].value) {
+                    if (clear_empty) {
+                        clear_empty = false;
+                    }
+                    else {
+                        EMU64_LOG_NORMAL("|");
+                    }
+
+                    EMU64_LOG_NORMAL("%s", geomtbl[i].name);
+                }
+            }
+
+            if (clear_empty) {
+                EMU64_LOG_NORMAL("0");
+            }
+            
+            EMU64_LOG_VERBOSE("),");
+        }
+        else if (clear == 0xFFFFFF) {
+            EMU64_LOG_VERBOSE("gsSPSetGeometryMode(");
+            bool set_empty = true;
+            for (int i = 0; i < NUM_GEOMETRYMODE_FLAGS; i++) {
+                if (set & geomtbl[i].mask == geomtbl[i].value) {
+                    if (set_empty) {
+                        set_empty = false;
+                    }
+                    else {
+                        EMU64_LOG_NORMAL("|");
+                    }
+
+                    EMU64_LOG_NORMAL("%s", geomtbl[i].name);
+                }
+            }
+
+            if (set_empty) {
+                EMU64_LOG_NORMAL("0");
+            }
+            
+            EMU64_LOG_VERBOSE("),");
+        }
+        else {
+            EMU64_LOG_VERBOSE("gsSPGeometryMode(");
+            bool clear_empty = true;
+            for (int i = 0; i < NUM_GEOMETRYMODE_FLAGS; i++) {
+                if (~clear & geomtbl[i].mask == geomtbl[i].value) {
+                    if (clear_empty) {
+                        clear_empty = false;
+                    }
+                    else {
+                        EMU64_LOG_NORMAL("|");
+                    }
+
+                    EMU64_LOG_NORMAL("%s", geomtbl[i].name);
+                }
+            }
+
+            if (clear_empty) {
+                EMU64_LOG_NORMAL("0");
+            }
+            
+            EMU64_LOG_VERBOSE(", ");
+
+            bool set_empty = true;
+            for (int i = 0; i < NUM_GEOMETRYMODE_FLAGS; i++) {
+                if (set & geomtbl[i].mask == geomtbl[i].value) {
+                    if (set_empty) {
+                        set_empty = false;
+                    }
+                    else {
+                        EMU64_LOG_NORMAL("|");
+                    }
+
+                    EMU64_LOG_NORMAL("%s", geomtbl[i].name);
+                }
+            }
+
+            if (set_empty) {
+                EMU64_LOG_NORMAL("0");
+            }
+            
+            EMU64_LOG_VERBOSE("),");            
+        }
+    }
+    #endif
+
+    u32 gmode = this->geometry_mode;
+    set |= gmode & clear;
+    if (gmode != set) {
+        if ((gmode ^ set) & (G_LIGHTING | G_LIGHTING_POSITIONAL) != 0) {
+            this->lighting_dirty = true;
+        }
+
+        if ((gmode ^ set) & G_FOG != 0) {
+            this->fog_dirty = true;
+        }
+
+        if ((gmode ^ set) & G_TEXTURE_GEN != 0) {
+            this->tex_tile_dirty[0] = true;
+            this->tex_tile_dirty[1] = true;
+            this->tex_tile_dirty[2] = true;
+            this->tex_tile_dirty[3] = true;
+            this->tex_tile_dirty[4] = true;
+            this->tex_tile_dirty[5] = true;
+            this->tex_tile_dirty[6] = true;
+            this->tex_tile_dirty[7] = true;
+        }
+
+        this->geometry_mode = set;
+        this->geometry_mode_dirty = true;
     }
 }

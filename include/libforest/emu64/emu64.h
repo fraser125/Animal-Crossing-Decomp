@@ -149,6 +149,12 @@ typedef struct {
 } OthermodeParameterInfo;
 
 typedef struct {
+    u32 value;
+    char* name;
+    u32 mask;
+} GeometryModeParameterInfo;
+
+typedef struct {
     char* name;
     u32 value;
     u32 mask;
@@ -271,6 +277,8 @@ public:
     void dl_G_CULLDL();
     void dl_G_BRANCH_Z();
     void dl_G_TEXTURE();
+    void dl_G_POPMTX();
+    void dl_G_GEOMETRYMODE();
 
     /* Static Members */
     static char* warningString[EMU64_WARNING_COUNT];
@@ -359,9 +367,12 @@ private:
     bool geometry_mode_dirty;
     bool projection_mtx_dirty;
     bool tex_dirty;
-    bool position_mtx_dirty;
+    bool model_view_mtx_dirty;
     bool tex_tile_dirty[NUM_TILES];
 
+    /* 0x4C2 */
+    bool lighting_dirty;
+    
     Mtx original_projection_mtx;
     Mtx position_mtx;
     Mtx model_view_mtx_stack[MTX_STACK_SIZE];
