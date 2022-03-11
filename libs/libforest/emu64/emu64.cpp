@@ -2307,3 +2307,127 @@ void emu64::dl_G_QUADN() {
     #endif
     this->rdp_pipe_sync_needed = true;
 }
+
+void emu64::dl_G_TRI2() {
+    u32 n_verts;
+    u32 commands;
+
+    /**
+     * NOTE: Looks like the devs made an optimization by counting up all TRI2 & TRI1
+     * calls in sequence and executing them in one call. Probably an early version of
+     * TRIN/TRIN_INDEPEND which seem to dominate AC's display list polygon calls.
+     */
+
+    /* Count up all the vertices */
+    if (this->disable_polygons == false && aflags[AFLAGS_SKIP_TRI2_COUNT_VERTS] == 0 &&
+        aflags[AFLAGS_MAX_POLYGONS] == 0 && aflags[AFLAGS_2TRIS] == 0) {
+        #ifdef ANIMAL_FOREST_PLUS
+        osGetCount(); /* The devs left this here by mistake */
+        #endif
+
+        n_verts = 0;
+        commands = 0;
+        int i = 0;
+        do {
+            int cmd = this->gfx_p[i].tri.cmd;
+            if (cmd == G_TRI2) {
+                n_verts += 6;
+            }
+            else if (cmd == G_TRI1) {
+                n_verts += 3;
+            }
+            else {
+                break;
+            }
+            commands++;
+            i++;
+        } while (true);
+
+        this->dirty_check((this->texture_gfx.words.w0 >> 8) & 7, (this->texture_gfx.words.w0 >> 11) & 7, TRUE);
+        this->setup_1tri_2tri_1quad((this->gfx_p->words.w0 >> 17) & 0x7F);
+
+        #ifdef EMU64_DEBUG
+        u32 start = osGetCount();
+        #endif
+
+        if (aflags[AFLAGS_2TRIS] == 0) {
+            GXBegin(GX_TRIANGLES, GX_VTXFMT0, n_verts);
+        }
+
+        for (u32 i = 0; i < commands; i++) {
+            Gfx* g = &this->gfx_p[i];
+            u32 w0 = g->words.w0;
+            u32 w1 = g->words.w1;
+
+            u32 v0 = (w0 >> 17) & 0x7F;
+            u32 v1 = (w0 >> 9) & 0x7F;
+            u32 v2 = (w0 >> 1) & 0x7F;
+            this->set_position3(v0, v1, v2, aflags[AFLAGS_2TRIS]);
+            if (g->tri.cmd == G_TRI2) {
+                u32 v3 = (w1 >> 17) & 0x7F;
+                u32 v4 = (w1 >> 9) & 0x7F;
+                u32 v5 = (w1 >> 1) & 0x7F;
+
+                EMU64_LOG_VERBOSE(
+                    "gsSP2Triangles(%d, %d, %d, 0, %d, %d, %d, 0),",
+                    v0, v1, v2,
+                    v3, v4, v5
+                );
+
+                this->set_position3(v3, v4, v5, aflags[AFLAGS_2TRIS]);
+            }
+            else {
+                EMU64_LOG_VERBOSE(
+                    "gsSP1Triangle(%d, %d, %d, 0),",
+                    v0, v1, v2
+                );
+            }
+        }
+
+        this->gfx_p += (commands - 1);
+        #ifdef EMU64_DEBUG
+        this->poly_time += (osGetCount() - start);
+        #endif
+    }
+    else {
+        u32 w0 = this->gfx_p->words.w0;
+        u32 w1 = this->gfx_p->words.w1;
+
+        u32 v0 = (w0 >> 17) & 0x7F;
+        u32 v1 = (w0 >> 9) & 0x7F;
+        u32 v2 = (w0 >> 1) & 0x7F;
+        u32 v3 = (w1 >> 17) & 0x7F;
+        u32 v4 = (w1 >> 9) & 0x7F;
+        u32 v5 = (w1 >> 1) & 0x7F;
+
+        #ifdef EMU64_DEBUG
+        u32 start = osGetCount();
+        #endif
+
+        EMU64_LOG_VERBOSE(
+            "gsSP2Triangles(%d, %d, %d, 0, %d, %d, %d, 0),",
+            v0, v1, v2,
+            v3, v4, v5
+        );
+
+        #ifdef EMU64_DEBUG
+        if (aflags[AFLAGS_MAX_POLYGONS] != 0 && this->print_commands != false) {
+            this->Printf2(" [%d] @@@", this->polygons);
+        }
+        #endif
+
+        if (this->disable_polygons == false && EMU64_CAN_DRAW_POLYGON()) {
+            this->dirty_check((this->texture_gfx.words.w0 >> 8) & 7, (this->texture_gfx.words.w0 >> 11) & 7, TRUE);
+            this->setup_1tri_2tri_1quad(v0);
+            this->draw_1tri_2tri_1quad(6, v0, v1, v2, v3, v4, v5);
+        }
+
+        this->double_triangles++;
+        this->poly_time++;
+        #ifdef EMU64_DEBUG
+        this->poly_time += (osGetCount() - start);
+        #endif
+    }
+
+    this->rdp_pipe_sync_needed = true;
+}
