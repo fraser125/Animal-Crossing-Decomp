@@ -215,7 +215,7 @@ EMU64_INLINE void emu64::emu64_change_ucode(void* addr) {
     if (this->ucode_len == 0) {
         #ifdef EMU64_DEBUG
         if (this->print_commands != false) {
-            this->Printf1("### マイクロコード情報がありません\n");
+            this->Printf1("### マイクロコード情報がありません\n"); /* Translation: No microcode info */
         }
         #endif
     }
@@ -227,7 +227,7 @@ EMU64_INLINE void emu64::emu64_change_ucode(void* addr) {
             }
         }
 
-        this->Printf0("### マイクロコードが一致しなかった\n");
+        this->Printf0("### マイクロコードが一致しなかった\n"); /* Translation: Microcode didn't match */
         this->err_count++;
         this->num_unknown_ucodes++;
         this->ucode_p = nullptr;
@@ -746,6 +746,7 @@ void emu64::dl_G_LOADTLUT() {
                         #ifdef ANIMAL_CROSSING
                         this->Printf0("\x1B[41;37mパレット(%08x)のアライメントが３２バイトになっていません\n\x1B[m", tlut_addr);
                         #else /* Present in DnM+ */
+                        /* Translation: Palette (%08x) alignment isn't 32 bytes */
                         this->Printf0("パレット(%08x)のアライメントが３２バイトになっていません\n", tlut_addr);
                         #endif
 
@@ -786,6 +787,7 @@ void emu64::dl_G_LOADTLUT() {
                 #ifdef EMU64_DEBUG
 
                 if (this->print_commands != false) {
+                    /* Translation: ### Same TLUT address %08x %d */
                     this->Printf3("### 同じTLUTアドレスです %08x %d\n", addr, tlut_name);
                 }
 

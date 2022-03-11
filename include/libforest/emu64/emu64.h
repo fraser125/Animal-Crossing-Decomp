@@ -7,7 +7,9 @@
 #include "texture_cache.h"
 #include <dolphin/gx.h>
 #include <dolphin/mtx.h>
+#include <MSL_Common/Include/algorithm.h>
 
+#define NUM_COMMANDS 64
 #define NUM_SEGMENTS 16
 #define DL_MAX_STACK_LEVEL 18
 #define DL_HISTORY_COUNT 16
@@ -215,6 +217,77 @@ static inline f32 fastcast_float(s16* in) {
     return (f32)*in;
     #endif
 }
+
+/* Pointer-to-Member-Function type */
+typedef void (emu64::*dl_func)();
+
+/* Display list PTMF lookup table. Will be initialized by compiler in static initializer function. */
+static dl_func dl_func_tbl[NUM_COMMANDS] = {
+    &emu64::dl_G_SETTEXEDGEALPHA,
+    &emu64::dl_G_SETCOMBINE_NOTEV,
+    &emu64::dl_G_SETCOMBINE_TEV,
+    &emu64::dl_G_NOOP,
+    &emu64::dl_G_SETTILE_DOLPHIN,
+    &emu64::dl_G_NOOP,
+    &emu64::dl_G_NOOP,
+    &emu64::dl_G_SPECIAL_1,
+    &emu64::dl_G_NOOP,
+    &emu64::dl_G_TEXTURE,
+    &emu64::dl_G_POPMTX,
+    &emu64::dl_G_GEOMETRYMODE,
+    &emu64::dl_G_MTX,
+    &emu64::dl_G_MOVEWORD,
+    &emu64::dl_G_MOVEMEM,
+    &emu64::dl_G_LOAD_UCODE,
+    &emu64::dl_G_DL,
+    &emu64::dl_G_ENDDL,
+    &emu64::dl_G_SPNOOP,
+    &emu64::dl_G_RDPHALF_1,
+    &emu64::dl_G_SETOTHERMODE_L,
+    &emu64::dl_G_SETOTHERMODE_H,
+    &emu64::dl_G_TEXRECT,
+    &emu64::dl_G_NOOP,
+    &emu64::dl_G_RDPLOADSYNC,
+    &emu64::dl_G_RDPPIPESYNC,
+    &emu64::dl_G_RDPTILESYNC,
+    &emu64::dl_G_RDPFULLSYNC,
+    &emu64::dl_G_NOOP,
+    &emu64::dl_G_NOOP,
+    &emu64::dl_G_NOOP,
+    &emu64::dl_G_SETSCISSOR,
+    &emu64::dl_G_SETPRIMDEPTH,
+    &emu64::dl_G_RDPSETOTHERMODE,
+    &emu64::dl_G_LOADTLUT,
+    &emu64::dl_G_NOOP,
+    &emu64::dl_G_SETTILESIZE,
+    &emu64::dl_G_LOADBLOCK,
+    &emu64::dl_G_LOADTILE,
+    &emu64::dl_G_SETTILE,
+    &emu64::dl_G_FILLRECT,
+    &emu64::dl_G_SETFILLCOLOR,
+    &emu64::dl_G_SETFOGCOLOR,
+    &emu64::dl_G_SETBLENDCOLOR,
+    &emu64::dl_G_SETPRIMCOLOR,
+    &emu64::dl_G_SETENVCOLOR,
+    &emu64::dl_G_SETCOMBINE,
+    &emu64::dl_G_SETTIMG,
+    &emu64::dl_G_SETZIMG,
+    &emu64::dl_G_SETCIMG,
+    &emu64::dl_G_NOOP,
+    &emu64::dl_G_VTX,
+    &emu64::dl_G_MODIFYVTX,
+    &emu64::dl_G_CULLDL,
+    &emu64::dl_G_BRANCH_Z,
+    &emu64::dl_G_TRI1,
+    &emu64::dl_G_TRI2,
+    &emu64::dl_G_QUAD,
+    &emu64::dl_G_LINE3D,
+    &emu64::dl_G_TRIN,
+    &emu64::dl_G_TRIN_INDEPEND,
+    &emu64::dl_G_NOOP,
+    &emu64::dl_G_NOOP,
+    &emu64::dl_G_QUADN
+};
 
 class emu64_print {
 public:
