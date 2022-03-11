@@ -94,6 +94,15 @@ extern "C" {
 #define G_DECAL_ALWAYS 0x30
 #define G_DECAL_SPECIAL 0x40
 
+/* Indicies for G_SPECIAL_1 */
+#define G_SPECIAL_NONE 0
+#define G_SPECIAL_UNKNOWN 1
+#define G_SPECIAL_TA_MODE 2
+
+/* Texture Adjust Modes (used in G_SPECIAL1) */
+#define G_TA_N64 0
+#define G_TA_DOLPHIN 1
+
 /* Combiner Param Ids */
 #define COMBINER_PARAM_A 1
 #define COMBINER_PARAM_B 2

@@ -3094,3 +3094,17 @@ void emu64::dl_G_MOVEMEM() {
         this->Printf0("未知の命令に出くわした\n"); /* Came across an unknown command */
     }
 }
+
+void emu64::dl_G_SPECIAL_1() {
+    u8 mode = (u8)(this->gfx.words.w0 >> 16);
+    if (mode == G_SPECIAL_TA_MODE) {
+        EMU64_LOG_VERBOSE("gsDPSetTextureAdjustMode(%s),", (u16)(this->gfx.words.w0) == 0 ? "G_TA_N64" : "G_TA_DOLPHIN");
+        this->texture_adjust_mode = (u16)this->gfx.words.w0;
+    }
+    else {
+        EMU64_LOG_VERBOSE(
+            "gsDPSpecial_1(0x%02x, 0x%04x, 0x%08x),",
+            mode, (u16)this->gfx.words.w0, this->gfx.words.w1
+        );
+    }
+}

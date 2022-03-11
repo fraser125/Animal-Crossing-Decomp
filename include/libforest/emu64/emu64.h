@@ -321,6 +321,7 @@ public:
     void dl_G_GEOMETRYMODE();
     void dl_G_MOVEWORD();
     void dl_G_MOVEMEM();
+    void dl_G_SPECIAL_1();
 
     /* Static Members */
     static char* warningString[EMU64_WARNING_COUNT];
@@ -473,6 +474,9 @@ private:
     /* 0xE18 */
     bool using_nonshared_mtx;
     Vertex vertices[VTX_COUNT];
+
+    /* 0x201C */
+    u8 texture_adjust_mode;
 
     /* 0x2020 */
     u32 resolved_addresses;
