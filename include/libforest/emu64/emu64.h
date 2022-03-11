@@ -250,6 +250,7 @@ public:
     void dl_G_TRIN();
     void dl_G_QUADN();
     void dl_G_TRI2();
+    void dl_G_QUAD();
 
     /* Static Members */
     static char* warningString[EMU64_WARNING_COUNT];

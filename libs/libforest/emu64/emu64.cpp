@@ -2431,3 +2431,34 @@ void emu64::dl_G_TRI2() {
 
     this->rdp_pipe_sync_needed = true;
 }
+
+void emu64::dl_G_QUAD() {
+    u32 v0 = (this->gfx_p->words.w0 >> 17) & 0x7F;
+    u32 v1 = (this->gfx_p->words.w0 >> 9) & 0x7F;
+    u32 v2 = (this->gfx_p->words.w0 >> 1) & 0x7F;
+    u32 v3 = (this->gfx_p->words.w1 >> 1) & 0x7F;
+
+    #ifdef EMU64_DEBUG
+    u32 start = osGetCount();
+    #endif
+
+    EMU64_LOG_VERBOSE(
+        "gsSP1Quadrangle(%d, %d, %d, %d, 0),",
+        v0, v1, v2, v3
+    );
+
+    if (aflags[AFLAGS_MAX_POLYGONS] != 0 && this->print_commands != false) {
+        this->Printf2(" [%d] @@@", this->polygons);
+    }
+
+    if (this->disable_polygons == false && EMU64_CAN_DRAW_POLYGON()) {
+        this->setup_1tri_2tri_1quad(v0);
+        this->draw_1tri_2tri_1quad(4, v0, v1, v2, v3);
+    }
+
+    this->polygons++;
+    this->quads++;
+    #ifdef EMU64_DEBUG
+    this->poly_time += (osGetCount() - start);
+    #endif
+}
