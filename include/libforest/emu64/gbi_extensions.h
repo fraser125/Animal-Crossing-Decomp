@@ -306,6 +306,30 @@ typedef struct {
     unsigned int data;
 } Gmoveword;
 
+typedef struct {
+    unsigned char cmd:8;
+    unsigned int length:8;
+    unsigned int offset:8;
+    unsigned int index:8;
+
+    unsigned int data;
+} Gmovemem;
+
+typedef struct {
+    unsigned char col[3];
+    unsigned char kc;
+    unsigned char colc[3];
+    unsigned char k1;
+    signed short pos[3]; /* position of light */
+    unsigned char kq;
+} Light_pos_t;
+
+typedef union {
+    Light_t l;
+    Light_pos_t p;
+    long long int force_align[2];
+} Light_new;
+
 /* Combiner Structs */
 typedef struct {
     unsigned int pad0:4;

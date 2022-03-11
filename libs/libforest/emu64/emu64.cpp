@@ -2945,3 +2945,152 @@ void emu64::dl_G_MOVEWORD() {
         break;
     }
 }
+
+void emu64::dl_G_MOVEMEM() {
+    Gmovemem* movemem = (Gmovemem*)this->gfx_p;
+    u8 param = movemem->index;
+    if (param == G_MV_LIGHT) {
+        u8 offset = movemem->offset;
+        if (offset == G_MVO_LOOKATY / 8) {
+            EMU64_LOG_VERBOSE("gsSPLookAtY(%s),", this->segchk(movemem->data));
+            LookAt* la = (LookAt*)this->seg2k0(movemem->data);
+            EMU64_LOG_INFO(
+                " /* {%3d,%3d,%3d} */",
+                la->l->l.dir[0], la->l->l.dir[1], la->l->l.dir[2]
+            );
+            this->lookAt.y.x = la->l->l.dir[0];
+            this->lookAt.y.y = la->l->l.dir[1];
+            this->lookAt.y.z = la->l->l.dir[2];
+        }
+        else if (offset < G_MVO_LOOKATY / 8 && offset == G_MVO_LOOKATX / 8) {
+            EMU64_LOG_VERBOSE("gsSPLookAtX(%s),", this->segchk(movemem->data));
+            LookAt* la = (LookAt*)this->seg2k0(movemem->data);
+            EMU64_LOG_INFO(
+                " /* {%3d,%3d,%3d} */",
+                la->l->l.dir[0], la->l->l.dir[1], la->l->l.dir[2]
+            );
+            this->lookAt.x.x = la->l->l.dir[0];
+            this->lookAt.x.y = la->l->l.dir[1];
+            this->lookAt.x.z = la->l->l.dir[2];
+        }
+        else {
+            Light_new* light = (Light_new*)this->seg2k0(movemem->data);
+            int idx = movemem->offset * 8 - 24;
+            idx /= 24; /* Idx should be 1 - 8. There's more bithacks going on here, but I think it's compiler generated */
+            EMU64_LOG_VERBOSE("gsSPLight(%s, %d),", this->segchk(movemem->data), idx);
+            EMU64_LOG_INFO("no = %d color=[%3d %3d %3d],", idx, light->l.col[0], light->l.col[1], light->l.col[2]);
+            
+            /* Convert index to 0 based */
+            idx = (idx - 1) & (NUM_LIGHTS - 1);
+            #ifdef ANIMAL_FOREST_PLUS
+            this->lighting_dirty = true;
+            #else
+            this->lights_dirty = true;
+            #endif
+
+            this->lights[idx].color.r = light->l.col[0];
+            this->lights[idx].color.g = light->l.col[1];
+            this->lights[idx].color.b = light->l.col[2];
+
+            if (light->l.pad1 == 0) {
+                f32 position_mult = 10000.0f;
+                #ifdef ANIMAL_FOREST_PLUS
+                if (aflags[AFLAGS_LIGHT_POSITION_MULTIPLIER] != 0) {
+                    position_mult = (f32)(aflags[AFLAGS_LIGHT_POSITION_MULTIPLIER]) / 100.0f;
+                }
+                #endif
+
+                EMU64_LOG_INFO(
+                    " normal=[%+4d %+4d %+4d] pad1=%d",
+                    light->l.dir[0], light->l.dir[1], light->l.dir[2],
+                    light->l.pad1
+                );
+
+                this->lights[idx].position.x = fastcast_float(&light->l.dir[0]) * position_mult;
+                this->lights[idx].position.y = fastcast_float(&light->l.dir[1]) * position_mult;
+                this->lights[idx].position.z = fastcast_float(&light->l.dir[2]) * position_mult;
+                this->lights[idx].attenuation.kc = 0.0f;
+                this->lights[idx].attenuation.k1 = 0.0f;
+                this->lights[idx].attenuation.kq = 0.0f;
+            }
+            else {
+                EMU64_LOG_INFO(
+                    " position=[%+6d %+6d %+6d],",
+                    light->p.pos[0], light->p.pos[1], light->p.pos[2]
+                );
+                EMU64_LOG_INFO(
+                    " kc=%3d kl=%3d kq=%3d",
+                    light->p.kc, light->p.k1, light->p.kq
+                );
+
+                this->lights[idx].position.x = fastcast_float(&light->p.pos[0]);
+                this->lights[idx].position.y = fastcast_float(&light->p.pos[1]);
+                this->lights[idx].position.z = fastcast_float(&light->p.pos[2]);
+                this->lights[idx].attenuation.kc = fastcast_float(&light->p.kc) * (1.0f/256.0f) * 16.0f + 0.5f;
+                this->lights[idx].attenuation.k1 = fastcast_float(&light->p.k1) * (1.0f/256.0f) * 0.5f;
+                this->lights[idx].attenuation.kq = fastcast_float(&light->p.kq) * (1.0f/256.0f) * 0.000488f;
+
+                #ifdef ANIMAL_FOREST_PLUS
+                if (aflags[AFLAGS_LIGHT_MOVE_TO_MODEL_SPACE] != 0) {
+                    MTXMultVec(this->position_mtx_stack[this->mtx_stack_size], &this->lights[idx].position, &this->lights[idx].position);
+                }
+                #endif
+            }
+            EMU64_LOG_INFO("\n");
+        }
+    }
+    else {
+        if (param < G_MV_LIGHT) {
+            if (param == G_MV_VIEWPORT) {
+                Vp_t* vp = (Vp_t*)this->seg2k0(movemem->data);
+                this->work_ptr = vp;
+
+                #ifdef EMU64_DEBUG
+                if (this->print_commands != false) {
+                    EMU64_LOG_VERBOSE("gsSPViewport(%s),", this->segchk(movemem->data));
+                    EMU64_LOG_QUIET(
+                        "\t# vscale=[%d %d %d %d], ",
+                        vp->vscale[0], vp->vscale[1], vp->vscale[2], vp->vscale[3]
+                    );
+                    EMU64_LOG_QUIET(
+                        "vtrans=[%d %d %d %d] ",
+                        vp->vtrans[0], vp->vtrans[1], vp->vtrans[2], vp->vtrans[3]
+                    );
+                }
+                #endif
+
+                if (this->disable_polygons != false) return;
+
+                f32 nearz = ((f32)(vp->vscale[2] - vp->vtrans[2]) * 2.0f) / 1023.0f;
+                f32 farz = ((f32)vp->vscale[2] * 2.0f) / 1023.0f;
+                f32 wd = (f32)vp->vscale[0] * 0.5;
+                f32 ht = (f32)vp->vscale[1] * 0.5;
+                f32 left = ((f32)(vp->vtrans[0] - vp->vscale[0]) * 0.5);
+                f32 top = ((f32)(vp->vtrans[1] - vp->vscale[1]) * 0.5);
+
+                EMU64_LOG_INFO(
+                    "GXSetViewport %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f\n",
+                    left, top, wd, ht, nearz, farz
+                );
+
+                GXSetViewport(left, top, wd, ht, nearz, farz);
+                return;
+            }
+        }
+        else if (param == G_MV_MATRIX) {
+            EMU64_LOG_VERBOSE("gsSPForceMatrix(%s),", this->segchk(movemem->data));
+            this->gfx_p++; /* Generates two commands */
+            this->Printf0("gsSPForceMatrixはサポートしてません\n"); /* Translation: gsSPForceMatrix isn't supported */
+            return;
+        }
+
+        /* Invalid/Unknown MOVEMEM command */
+        EMU64_LOG_QUIET(
+            "gsMoveMem(%s, %d, %d, %d), /* ### what? */",
+            this->segchk(movemem->data), ((movemem->length >> 3) + 1) * 8, movemem->index, movemem->offset
+        );
+
+        this->num_unknown_cmds++;
+        this->Printf0("未知の命令に出くわした\n"); /* Came across an unknown command */
+    }
+}

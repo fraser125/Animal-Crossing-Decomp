@@ -146,7 +146,7 @@ typedef struct {
     u8 unk[12];
 
     struct {
-        f32 k0, k1, k2;
+        f32 kc, k1, kq; /*kc = k0, kq = k2 */
     } attenuation;
 } EmuLight;
 
@@ -191,6 +191,30 @@ typedef struct {
     u8 tlut_name; /* Palette/TLUT idx */
     u8 pad;
 } emu64_texture_info;
+
+static inline f32 fastcast_float(s8* in) {
+    #if !defined(_WIN32) && defined(GEKKO)
+    return __OSs8tof32(in);
+    #else
+    return (f32)*in;
+    #endif
+}
+
+static inline f32 fastcast_float(u8* in) {
+    #if !defined(_WIN32) && defined(GEKKO)
+    return __OSu8tof32(in);
+    #else
+    return (f32)*in;
+    #endif
+}
+
+static inline f32 fastcast_float(s16* in) {
+    #if !defined(_WIN32) && defined(GEKKO)
+    return __OSs16tof32(in);
+    #else
+    return (f32)*in;
+    #endif
+}
 
 class emu64_print {
 public:
@@ -296,6 +320,7 @@ public:
     void dl_G_POPMTX();
     void dl_G_GEOMETRYMODE();
     void dl_G_MOVEWORD();
+    void dl_G_MOVEMEM();
 
     /* Static Members */
     static char* warningString[EMU64_WARNING_COUNT];
@@ -399,6 +424,16 @@ private:
     Mtx model_view_mtx_stack[MTX_STACK_SIZE];
     Mtx position_mtx_stack[MTX_STACK_SIZE];
     Mtx44 projection_mtx;
+
+    /* 0x924 */
+    struct {
+        struct {
+            s8 x, y, z;
+        } x;
+        struct {
+            s8 x, y, z;
+        } y;
+    } lookAt;
 
     /* 0x92C */
     f32 near; /* Near clipping plane */
