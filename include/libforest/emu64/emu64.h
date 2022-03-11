@@ -17,6 +17,7 @@
 #define NUM_TLUTS 16
 #define MTX_STACK_SIZE 10
 #define VTX_COUNT 128
+#define NUM_LIGHTS 8
 
 #define TEXTURE_SCALE 32.0f
 #define TEXTURE_SCALE_CONV TEXTURE_SCALE * 65536.0f
@@ -56,6 +57,10 @@
 #endif
 
 static char s[256];
+static char s1[256];
+static char s2[256];
+static char s3[256];
+
 
 /* C++ */
 
@@ -133,6 +138,17 @@ typedef struct {
     Vec normal;
     EmuColor color;
 } Vertex;
+
+typedef struct {
+    EmuColor color;
+    Vec position;
+
+    u8 unk[12];
+
+    struct {
+        f32 k0, k1, k2;
+    } attenuation;
+} EmuLight;
 
 typedef struct {
     char* name;
@@ -279,6 +295,7 @@ public:
     void dl_G_TEXTURE();
     void dl_G_POPMTX();
     void dl_G_GEOMETRYMODE();
+    void dl_G_MOVEWORD();
 
     /* Static Members */
     static char* warningString[EMU64_WARNING_COUNT];
@@ -352,7 +369,8 @@ private:
     EmuColor environment_color; /* GX_TEVREG2 */
     EmuColor blend_color;
     EmuColor fog_color;
-    //
+    s16 fog_zmult;
+    s16 fog_zoffset;
     EmuColor fill_color;
     EmuColor fill_tev_color; /* GX_TEVREG0 */
     bool prim_color_dirty;
@@ -370,9 +388,12 @@ private:
     bool model_view_mtx_dirty;
     bool tex_tile_dirty[NUM_TILES];
 
-    /* 0x4C2 */
+    /* 0x4C1 */
+    #ifndef ANIMAL_FOREST_PLUS
+    bool lights_dirty; /* Lighting & lights separated in AC */
+    #endif
     bool lighting_dirty;
-    
+
     Mtx original_projection_mtx;
     Mtx position_mtx;
     Mtx model_view_mtx_stack[MTX_STACK_SIZE];
@@ -398,6 +419,10 @@ private:
 
     /* 0xA20 */
     u32 rdpHalf_1;
+    EmuLight lights[NUM_LIGHTS];
+
+    /* 0xB64 */
+    u8 num_lights;
 
     /* 0xB88 */
     u32 vtx_time;

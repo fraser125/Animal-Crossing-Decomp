@@ -2834,3 +2834,114 @@ void emu64::dl_G_GEOMETRYMODE() {
         this->geometry_mode_dirty = true;
     }
 }
+
+void emu64::dl_G_MOVEWORD() {
+    Gmoveword* moveword = (Gmoveword*)this->gfx_p;
+    
+    switch (moveword->index) {
+        default:
+        {
+            EMU64_LOG_VERBOSE(
+                "gsMoveWd(%d, %d, %d), /* ### what */",
+                moveword->index,
+                moveword->offset,
+                moveword->data
+            );
+
+            this->num_unknown_cmds++;
+            this->Printf0("未知の命令に出くわした\n"); /* Translation: Came across an unknown command */
+        }
+        break;
+
+        case G_MW_NUMLIGHT:
+        {
+            u32 num_lights = moveword->data / 24;
+            EMU64_LOG_VERBOSE("gsSPNumLights(%d), ", num_lights);
+            this->num_lights = num_lights;
+            #ifdef ANIMAL_FOREST_PLUS
+            this->lighting_dirty = true;
+            #else
+            this->lights_dirty = true;
+            #endif
+        }
+        break;
+
+        case G_MW_CLIP:
+        {
+            EMU64_LOG_VERBOSE("gsSPClipRatio(FRUSTRATIO_%d), ", moveword->data == 0 ? 0 : moveword->data);
+            this->gfx_p += 3; /* gsSPClipRatio generates four moveword instructions, so skip three. Emulator will skip last one. */
+        }
+        break;
+
+        case G_MW_SEGMENT:
+        {
+            u32 segment = moveword->offset / 4;
+            EMU64_LOG_QUIET("gsSPSegmentA(%d, 0x%08x),", segment, moveword->data);
+            this->segments[segment] = (void*)(RAM_MIN + (moveword->data & 0x0FFFFFFF));
+            if (segment > NUM_SEGMENTS - 1 || (moveword->data != 0 && (moveword->data < RAM_MIN || moveword->data > RAM_MAX + 1))) {
+                sprintf(s1, "gsSPSegmentA no=%d", segment);
+                sprintf(s2, "base=%s", this->segchk(moveword->data));
+                sprintf(s3, "gfxp=%s", this->segchk((u32)this->gfx_p));
+                emu64::warningString[0] = "SPSegment found Illigal Address.";
+                emu64::warningString[1] = s1;
+                emu64::warningString[2] = s2;
+                emu64::warningString[3] = s3;
+                emu64::warningTime[0] = 600;
+                emu64::warningTime[1] = 600;
+                emu64::warningTime[2] = 600;
+                emu64::warningTime[3] = 600;
+
+                this->segment_set = true;
+                OSReport("%s\n%s\n%s\n", s1, s2, s3);
+            }
+        }
+        break;
+
+        case G_MW_FOG:
+        {
+            s16 fm = (s16)(moveword->data >> 16); /* z multiplier */
+            s16 fo = (s16)moveword->data; /* z offset */
+            int min = 500 - (fo * 500) / fm;
+            EMU64_LOG_VERBOSE("gsSPFogFactor(%d, %d),", fm, fo);
+            EMU64_LOG_VERBOSE("gsSPFogPosition(%d, %d),", min, 128000 / fm + min);
+
+            this->fog_zmult = fm;
+            this->fog_zoffset = fo;
+            this->fog_dirty = true;
+        }
+        break;
+
+        case G_MW_LIGHTCOL:
+        {
+            int light = (moveword->offset & 0xF0) >> 5;
+            
+            /* Seems like the devs used the light table index as the enum number */
+            /* TODO: This could be correct. Investigate if they changed the light definitions. */
+            #ifdef EMU64_FIX_MOVEWORD_LIGHT_NUM_LOG
+            EMU64_LOG_VERBOSE("gsSPLightColor(LIGHT_%d, %08x), ", (moveword->offset / 0x18) + 1, moveword->data);
+            #else
+            EMU64_LOG_VERBOSE("gsSPLightColor(LIGHT_%d, %08x), ", light + 1, moveword->data);
+            #endif
+
+            this->gfx_p++; /* gsSPLightColor generates two commands */
+
+            GXColor* color = (GXColor*)&moveword->data;
+            this->lights[light].color.r = color->r;
+            this->lights[light].color.g = color->g;
+            this->lights[light].color.b = color->b;
+
+            #ifdef ANIMAL_FOREST_PLUS
+            this->lighting_dirty = true;
+            #else
+            this->lights_dirty = true;
+            #endif
+        }
+        break;
+
+        case G_MW_PERSPNORM:
+        {
+            EMU64_LOG_VERBOSE("gsSPPerspNormalize(%d),", moveword->data);
+        }
+        break;
+    }
+}

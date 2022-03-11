@@ -299,6 +299,13 @@ typedef struct {
     unsigned short t:16;
 } Gtexture_internal;
 
+typedef struct {
+    unsigned char cmd:8;
+    unsigned int index:8;
+    unsigned int offset:16;
+    unsigned int data;
+} Gmoveword;
+
 /* Combiner Structs */
 typedef struct {
     unsigned int pad0:4;
