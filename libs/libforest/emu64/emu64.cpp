@@ -2069,47 +2069,49 @@ void emu64::dl_G_TRIN() {
     u32 n_faces = ((this->gfx_p->words.w0 >> 17) & 0x7F) + 1;
 
     EMU64_LOG_VERBOSE("gsSPNTriangles(%d),\n", n_faces);
-    if (aflags[AFLAGS_TRIN_AS_QUADN] == 0) {
+    if (aflags[AFLAGS_2TRIS] == 0) {
         GXBegin(GX_TRIANGLES, GX_VTXFMT0, n_faces * 3);
     }
 
     do
     {
+        if (n_faces < 1) break;
+        
         Gfx* g = this->gfx_p;
         this->gfx_p++;
-        if (g->words.w1 & TRI_BITMASK == TRI_5b) {
+        if (g->words.w1 & POLY_BITMASK == POLY_5b) {
             /* 5 bits per vertex index, first pass = 3 faces, consecutive passes = 4 faces */
-            this->set_position3(TRIN_GET_V0_5b(g), TRIN_GET_V1_5b(g), TRIN_GET_V2_5b(g), aflags[AFLAGS_TRIN_AS_QUADN]);
+            this->set_position3(POLY_GET_V0_5b(g), POLY_GET_V1_5b(g), POLY_GET_V2_5b(g), aflags[AFLAGS_2TRIS]);
             this->polygons++;
             EMU64_LOG_VERBOSE(
                 "gsSPNTriangleData1(%d, %d, %d, 0),\n",
-                TRIN_GET_V0_5b(g),
-                TRIN_GET_V1_5b(g),
-                TRIN_GET_V2_5b(g)
+                POLY_GET_V0_5b(g),
+                POLY_GET_V1_5b(g),
+                POLY_GET_V2_5b(g)
             );
 
             n_faces--;
             if (n_faces == 0) break;
 
-            this->set_position3(TRIN_GET_V3_5b(g), TRIN_GET_V4_5b(g), TRIN_GET_V5_5b(g), aflags[AFLAGS_TRIN_AS_QUADN]);
+            this->set_position3(POLY_GET_V3_5b(g), POLY_GET_V4_5b(g), POLY_GET_V5_5b(g), aflags[AFLAGS_2TRIS]);
             this->polygons++;
             EMU64_LOG_VERBOSE(
                 "gsSPNTriangleData1(%d, %d, %d, 0),\n",
-                TRIN_GET_V3_5b(g),
-                TRIN_GET_V4_5b(g),
-                TRIN_GET_V5_5b(g)
+                POLY_GET_V3_5b(g),
+                POLY_GET_V4_5b(g),
+                POLY_GET_V5_5b(g)
             );
 
             n_faces--;
             if (n_faces == 0) break;
 
-            this->set_position3(TRIN_GET_V6_5b(g), TRIN_GET_V7_5b(g), TRIN_GET_V7_5b(g), aflags[AFLAGS_TRIN_AS_QUADN]);
+            this->set_position3(POLY_GET_V6_5b(g), POLY_GET_V7_5b(g), POLY_GET_V7_5b(g), aflags[AFLAGS_2TRIS]);
             this->polygons++;
             EMU64_LOG_VERBOSE(
                 "gsSPNTriangleData1(%d, %d, %d, 0),\n",
-                TRIN_GET_V6_5b(g),
-                TRIN_GET_V7_5b(g),
-                TRIN_GET_V8_5b(g)
+                POLY_GET_V6_5b(g),
+                POLY_GET_V7_5b(g),
+                POLY_GET_V8_5b(g)
             );
 
             n_faces--;
@@ -2120,13 +2122,13 @@ void emu64::dl_G_TRIN() {
                 first_pass == false;
             }
             else {
-                this->set_position3(TRIN_GET_V9_5b(g), TRIN_GET_V10_5b(g), TRIN_GET_V11_5b(g), aflags[AFLAGS_TRIN_AS_QUADN]);
+                this->set_position3(POLY_GET_V9_5b(g), POLY_GET_V10_5b(g), POLY_GET_V11_5b(g), aflags[AFLAGS_2TRIS]);
                 this->polygons++;
                 EMU64_LOG_VERBOSE(
                     "gsSPNTriangleData1(%d, %d, %d, 0),\n",
-                    TRIN_GET_V9_5b(g),
-                    TRIN_GET_V10_5b(g),
-                    TRIN_GET_V11_5b(g)
+                    POLY_GET_V9_5b(g),
+                    POLY_GET_V10_5b(g),
+                    POLY_GET_V11_5b(g)
                 );
 
                 n_faces--;
@@ -2134,25 +2136,25 @@ void emu64::dl_G_TRIN() {
         }
         else {
             /* 7 bits per vertex index, max 3 faces per Gfx */
-            this->set_position3(TRIN_GET_V0_7b(g), TRIN_GET_V1_7b(g), TRIN_GET_V2_7b(g), aflags[AFLAGS_TRIN_AS_QUADN]);
+            this->set_position3(POLY_GET_V0_7b(g), POLY_GET_V1_7b(g), POLY_GET_V2_7b(g), aflags[AFLAGS_2TRIS]);
             this->polygons++;
             EMU64_LOG_VERBOSE(
                 "gsSPNTriangleData1(%d, %d, %d, 0),\n",
-                TRIN_GET_V0_7b(g),
-                TRIN_GET_V1_7b(g),
-                TRIN_GET_V2_7b(g)
+                POLY_GET_V0_7b(g),
+                POLY_GET_V1_7b(g),
+                POLY_GET_V2_7b(g)
             );
 
             n_faces--;
             if (n_faces == 0) break;
 
-            this->set_position3(TRIN_GET_V3_7b(g), TRIN_GET_V4_7b(g), TRIN_GET_V5_7b(g), aflags[AFLAGS_TRIN_AS_QUADN]);
+            this->set_position3(POLY_GET_V3_7b(g), POLY_GET_V4_7b(g), POLY_GET_V5_7b(g), aflags[AFLAGS_2TRIS]);
             this->polygons++;
             EMU64_LOG_VERBOSE(
                 "gsSPNTriangleData1(%d, %d, %d, 0),\n",
-                TRIN_GET_V3_7b(g),
-                TRIN_GET_V4_7b(g),
-                TRIN_GET_V5_7b(g)
+                POLY_GET_V3_7b(g),
+                POLY_GET_V4_7b(g),
+                POLY_GET_V5_7b(g)
             );
 
             n_faces--;
@@ -2163,13 +2165,129 @@ void emu64::dl_G_TRIN() {
                 first_pass == false;
             }
             else {
-                this->set_position3(TRIN_GET_V6_7b(g), TRIN_GET_V7_7b(g), TRIN_GET_V8_7b(g), aflags[AFLAGS_TRIN_AS_QUADN]);
+                this->set_position3(POLY_GET_V6_7b(g), POLY_GET_V7_7b(g), POLY_GET_V8_7b(g), aflags[AFLAGS_2TRIS]);
                 this->polygons++;
                 EMU64_LOG_VERBOSE(
                     "gsSPNTriangleData1(%d, %d, %d, 0),\n",
-                    TRIN_GET_V6_7b(g),
-                    TRIN_GET_V7_7b(g),
-                    TRIN_GET_V8_7b(g)
+                    POLY_GET_V6_7b(g),
+                    POLY_GET_V7_7b(g),
+                    POLY_GET_V8_7b(g)
+                );
+
+                n_faces--;
+            }
+        }
+    } while (n_faces != 0);
+    
+    #ifdef ANIMAL_FOREST_EPLUS
+    if (aflags[AFLAGS_POLY_AS_QUADN] == 0) {
+        GXEnd();
+    }
+    #endif
+
+    this->gfx_p += (int)n_faces - 1; /* Should equate to gfx_p--, as the emulator will increment it once. */
+    #ifdef EMU64_DEBUG
+    this->poly_time += (osGetCount() - start);
+    #endif
+    this->rdp_pipe_sync_needed = true;
+}
+
+void emu64::dl_G_QUADN() {
+    bool first_pass = true;
+
+    #ifdef EMU64_DEBUG
+    u32 start = osGetCount();
+    #endif
+
+    this->dirty_check((this->texture_gfx.words.w0 >> 8) & 7, (this->texture_gfx.words.w0 >> 11) & 7, TRUE);
+    this->setup_1tri_2tri_1quad((this->gfx_p->words.w1 >> 4) & 0x1F);
+    u32 n_faces = ((this->gfx_p->words.w0 >> 17) & 0x7F) + 1;
+
+    EMU64_LOG_VERBOSE("gsSPNQuadrangles(%d),\n", n_faces);
+    if (aflags[AFLAGS_2TRIS] == 0) {
+        GXBegin(GX_QUADS, GX_VTXFMT0, n_faces * 4);
+    }
+
+    do
+    {
+        if (n_faces < 1) break;
+
+        Gfx* g = this->gfx_p;
+        this->gfx_p++;
+        if (g->words.w1 & POLY_BITMASK == POLY_5b) {
+            /* 5 bits per vertex index, first pass = 2 faces, consecutive passes = 3 faces */
+            this->set_position4(POLY_GET_V0_5b(g), POLY_GET_V1_5b(g), POLY_GET_V2_5b(g), POLY_GET_V3_5b(g), aflags[AFLAGS_2TRIS]);
+            this->polygons++;
+            EMU64_LOG_VERBOSE(
+                "gsSPNQuadrangleData1(%d, %d, %d, %d, 0),\n",
+                POLY_GET_V0_5b(g),
+                POLY_GET_V1_5b(g),
+                POLY_GET_V2_5b(g),
+                POLY_GET_V3_5b(g)
+            );
+
+            n_faces--;
+            if (n_faces == 0) break;
+
+            this->set_position4(POLY_GET_V4_5b(g), POLY_GET_V5_5b(g), POLY_GET_V6_5b(g), POLY_GET_V7_5b(g), aflags[AFLAGS_2TRIS]);
+            this->polygons++;
+            EMU64_LOG_VERBOSE(
+                "gsSPNQuadrangleData1(%d, %d, %d, %d, 0),\n",
+                POLY_GET_V4_5b(g),
+                POLY_GET_V5_5b(g),
+                POLY_GET_V6_5b(g),
+                POLY_GET_V7_5b(g)
+            );
+
+            n_faces--;
+            if (n_faces == 0) break;
+
+            /* Only 2 faces on the first pass */
+            if (first_pass) {
+                first_pass == false;
+            }
+            else {
+                this->set_position4(POLY_GET_V8_5b(g), POLY_GET_V9_5b(g), POLY_GET_V10_5b(g), POLY_GET_V11_5b(g), aflags[AFLAGS_2TRIS]);
+                this->polygons++;
+                EMU64_LOG_VERBOSE(
+                    "gsSPNQuadrangleData1(%d, %d, %d, %d, 0),\n",
+                    POLY_GET_V8_5b(g),
+                    POLY_GET_V9_5b(g),
+                    POLY_GET_V10_5b(g),
+                    POLY_GET_V11_5b(g)
+                );
+
+                n_faces--;
+            }
+        }
+        else {
+            /* 7 bits per vertex index, max 2 faces per Gfx */
+            this->set_position4(POLY_GET_V0_7b(g), POLY_GET_V1_7b(g), POLY_GET_V2_7b(g), POLY_GET_V3_7b(g), aflags[AFLAGS_2TRIS]);
+            this->polygons++;
+            EMU64_LOG_VERBOSE(
+                "gsSPNQuadrangleData1(%d, %d, %d, %d, 0),\n",
+                POLY_GET_V0_7b(g),
+                POLY_GET_V1_7b(g),
+                POLY_GET_V2_7b(g),
+                POLY_GET_V3_7b(g)
+            );
+
+            n_faces--;
+            if (n_faces == 0) break;
+
+            /* Only 1 face on the first pass */
+            if (first_pass) {
+                first_pass == false;
+            }
+            else {
+                this->set_position4(POLY_GET_V4_7b(g), POLY_GET_V5_7b(g), POLY_GET_V6_7b(g), POLY_GET_V7_7b(g), aflags[AFLAGS_2TRIS]);
+                this->polygons++;
+                EMU64_LOG_VERBOSE(
+                    "gsSPNQuadrangleData1(%d, %d, %d, %d, 0),\n",
+                    POLY_GET_V4_7b(g),
+                    POLY_GET_V5_7b(g),
+                    POLY_GET_V6_7b(g),
+                    POLY_GET_V7_7b(g)
                 );
 
                 n_faces--;
@@ -2183,7 +2301,7 @@ void emu64::dl_G_TRIN() {
     }
     #endif
 
-    this->gfx_p += n_faces - 1; /* Should equate to gfx_p--, as the emulator will increment it once. */
+    this->gfx_p += (int)n_faces - 1; /* Should equate to gfx_p--, as the emulator will increment it once. */
     #ifdef EMU64_DEBUG
     this->poly_time += (osGetCount() - start);
     #endif

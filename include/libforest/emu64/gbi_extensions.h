@@ -17,46 +17,45 @@ extern "C" {
 #define G_SETCOMBINE_TEV 0xD0
 #define G_SETTILE_DOLPHIN 0xD2
 
-/* Triangle vertex bit size */
-#define TRI_5b 0 /* 5 bits per vertex index (0 - 31) */
-#define TRI_7b 1 /* 7 bits per vertex index (0 - 127) */
-#define TRI_BITMASK 1
+/* Triangle/Quad vertex bit size */
+#define POLY_5b 0 /* 5 bits per vertex index (0 - 31) */
+#define POLY_7b 1 /* 7 bits per vertex index (0 - 127) */
+#define POLY_BITMASK 1
 
 /* First face, 5 bits */
-#define TRIN_GET_V0_5b(g)((g->words.w1 >> 4) & 0x1F)
-#define TRIN_GET_V1_5b(g)((g->words.w1 >> 9) & 0x1F)
-#define TRIN_GET_V2_5b(g)((g->words.w1 >> 14) & 0x1F)
+#define POLY_GET_V0_5b(g)((g->words.w1 >> 4) & 0x1F)
+#define POLY_GET_V1_5b(g)((g->words.w1 >> 9) & 0x1F)
+#define POLY_GET_V2_5b(g)((g->words.w1 >> 14) & 0x1F)
 
 /* Second face, 5 bits */
-#define TRIN_GET_V3_5b(g)((g->words.w1 >> 19) & 0x1F)
-#define TRIN_GET_V4_5b(g)((g->words.w1 >> 24) & 0x1F)
-#define TRIN_GET_V5_5b(g)((((g->words.w1 >> 29) & 7) | ((g->words.w0 & 3) << 3)) & 0x1F)
+#define POLY_GET_V3_5b(g)((g->words.w1 >> 19) & 0x1F)
+#define POLY_GET_V4_5b(g)((g->words.w1 >> 24) & 0x1F)
+#define POLY_GET_V5_5b(g)((((g->words.w1 >> 29) & 7) | ((g->words.w0 & 3) << 3)) & 0x1F)
 
 /* Third face, 5 bits */
-#define TRIN_GET_V6_5b(g)((g->words.w0 >> 2) & 0x1F)
-#define TRIN_GET_V7_5b(g)((g->words.w0 >> 7) & 0x1F)
-#define TRIN_GET_V8_5b(g)((g->words.w0 >> 12) & 0x1F)
+#define POLY_GET_V6_5b(g)((g->words.w0 >> 2) & 0x1F)
+#define POLY_GET_V7_5b(g)((g->words.w0 >> 7) & 0x1F)
+#define POLY_GET_V8_5b(g)((g->words.w0 >> 12) & 0x1F)
 
 /* Fourth face, 5 bits */
-#define TRIN_GET_V9_5b(g)((g->words.w0 >> 17) & 0x1F)
-#define TRIN_GET_V10_5b(g)((g->words.w0 >> 22) & 0x1F)
-#define TRIN_GET_V11_5b(g)((g->words.w0 >> 27) & 0x1F)
+#define POLY_GET_V9_5b(g)((g->words.w0 >> 17) & 0x1F)
+#define POLY_GET_V10_5b(g)((g->words.w0 >> 22) & 0x1F)
+#define POLY_GET_V11_5b(g)((g->words.w0 >> 27) & 0x1F)
 
 /* First face, 7 bits */
-#define TRIN_GET_V0_7b(g)((g->words.w1 >> 1) & 0x7F)
-#define TRIN_GET_V1_7b(g)((g->words.w1 >> 8) & 0x7F)
-#define TRIN_GET_V2_7b(g)((g->words.w1 >> 15) & 0x7F)
+#define POLY_GET_V0_7b(g)((g->words.w1 >> 1) & 0x7F)
+#define POLY_GET_V1_7b(g)((g->words.w1 >> 8) & 0x7F)
+#define POLY_GET_V2_7b(g)((g->words.w1 >> 15) & 0x7F)
 
 /* Second face, 7 bits */
-#define TRIN_GET_V3_7b(g)((g->words.w1 >> 22) & 0x7F)
-#define TRIN_GET_V4_7b(g)((((g->words.w1 >> 29) & 7) | ((g->words.w0 & 0xF) << 3)) & 0x7F)
-#define TRIN_GET_V5_7b(g)((g->words.w0 >> 4) & 0x7F)
+#define POLY_GET_V3_7b(g)((g->words.w1 >> 22) & 0x7F)
+#define POLY_GET_V4_7b(g)((((g->words.w1 >> 29) & 7) | ((g->words.w0 & 0xF) << 3)) & 0x7F)
+#define POLY_GET_V5_7b(g)((g->words.w0 >> 4) & 0x7F)
 
 /* Third face, 7 bits */
-#define TRIN_GET_V6_7b(g)((g->words.w0 >> 11) & 0x7F)
-#define TRIN_GET_V7_7b(g)((g->words.w0 >> 18) & 0x7F)
-#define TRIN_GET_V8_7b(g)((g->words.w0 >> 25) & 0x7F)
-
+#define POLY_GET_V6_7b(g)((g->words.w0 >> 11) & 0x7F)
+#define POLY_GET_V7_7b(g)((g->words.w0 >> 18) & 0x7F)
+#define POLY_GET_V8_7b(g)((g->words.w0 >> 25) & 0x7F)
 
 /* Vertex matrix types */
 #define SHARED_MTX GX_PNMTX0

@@ -19,7 +19,7 @@
 #define AFLAGS_FORCE_VTX_FLAG_COPY 17
 #define AFLAGS_MIN_POLYGONS 19
 #define AFLAGS_MAX_POLYGONS 20
-#define AFLAGS_TRIN_AS_QUADN 22 /* Could also be AFLAGS_TRIN_2TRIS */
+#define AFLAGS_2TRIS 22 /* Draws the current polygon as two triangles */
 #define AFLAGS_SKIP_MTX_NORMALIZATION 23
 #define AFLAGS_COPY_MODELVIEW_MTX 25
 #define AFLAGS_SKIP_COMBINE_TEV 27

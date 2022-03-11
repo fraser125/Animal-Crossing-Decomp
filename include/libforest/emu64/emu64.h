@@ -187,7 +187,8 @@ public:
     void texture_gen(int tex);
     void texture_matrix();
     void set_position(u32 vtx);
-    EMU64_INLINE void set_position3(u32 v0, u32 v1, u32 v2, BOOL quad);
+    EMU64_INLINE void set_position3(u32 v0, u32 v1, u32 v2, BOOL two_tris);
+    EMU64_INLINE void set_position4(u32 v0, u32 v1, u32 v2, u32 v3, BOOL two_tris);
     EMU64_INLINE void setup_1tri_2tri_1quad(u32 v0);
     void draw_1tri_2tri_1quad(unsigned int n_verts, ...);
     void fill_rectangle(f32 ux, f32 uy, f32 lx, f32 ly);
@@ -247,6 +248,7 @@ public:
     void dl_G_TRI1();
     void dl_G_TRIN_INDEPEND();
     void dl_G_TRIN();
+    void dl_G_QUADN();
 
     /* Static Members */
     static char* warningString[EMU64_WARNING_COUNT];

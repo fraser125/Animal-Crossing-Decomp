@@ -806,9 +806,8 @@ void emu64::set_position(u32 vtx) {
     }
 }
 
-/* NOTE: quad is actually "two_tris". The result is practically the same. */
-EMU64_INLINE void emu64::set_position3(u32 v0, u32 v1, u32 v2, BOOL quad) {
-    if (quad != FALSE) {
+EMU64_INLINE void emu64::set_position3(u32 v0, u32 v1, u32 v2, BOOL two_tris) {
+    if (two_tris != FALSE) {
         GXBegin(GX_QUADS, GX_VTXFMT0, 4);
     }
 
@@ -823,7 +822,33 @@ EMU64_INLINE void emu64::set_position3(u32 v0, u32 v1, u32 v2, BOOL quad) {
         this->set_position(v0);
     }
 
-    if (quad != FALSE) {
+    if (two_tris != FALSE) {
+        this->set_position(v0);
+        #ifdef ANIMAL_FOREST_EPLUS
+        GXEnd();
+        #endif
+    }
+}
+
+EMU64_INLINE void emu64::set_position4(u32 v0, u32 v1, u32 v2, u32 v3, BOOL two_tris) {
+    if (two_tris != FALSE) {
+        GXBegin(GX_QUADS, GX_VTXFMT0, 4);
+    }
+
+    if (EMU64_CAN_DRAW_POLYGON()) {
+        this->set_position(v0);
+        this->set_position(v1);
+        this->set_position(v2);
+        this->set_position(v3);
+    }
+    else {
+        this->set_position(v0);
+        this->set_position(v0);
+        this->set_position(v0);
+        this->set_position(v0);
+    }
+
+    if (two_tris != FALSE) {
         this->set_position(v0);
         #ifdef ANIMAL_FOREST_EPLUS
         GXEnd();
