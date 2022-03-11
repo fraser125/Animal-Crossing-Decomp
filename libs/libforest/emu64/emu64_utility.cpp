@@ -1,5 +1,6 @@
 /* Note: They used .c file extensions for C++ files */
 #include "emu64.h"
+#include "mtx_extensions.h"
 #include "boot.h"
 #include "ultra.h"
 #include <stdio.h>
@@ -472,4 +473,360 @@ int emu64::replace_combine_to_tev(Gfx* g) {
 
     g->setcombine.cmd = G_SETCOMBINE_NOTEV;
     return -1;
+}
+
+EMU64_INLINE void emu64::setup_1tri_2tri_1quad(u32 v0) {
+    #ifdef EMU64_DEBUG
+    u32 start = osGetCount();
+    #endif
+
+    if (this->vertices[v0].flag & MTX_NONSHARED == MTX_SHARED) {
+        EMU64_LOG_VERBOSE("setup_1tri_2tri_1quad シェアード\n"); /* Translation: setup_1tri_2tri_1quad shared */
+        GXSetCurrentMtx(SHARED_MTX);
+        this->using_nonshared_mtx = false;
+    }
+    else {
+        EMU64_LOG_VERBOSE("setup_1tri_2tri_1quad ノンシェアード\n"); /* Translation: setup_1tri_2tri_1quad nonshared */
+        GXSetCurrentMtx(NONSHARED_MTX);
+        this->using_nonshared_mtx = true;
+    }
+
+    GXClearVtxDesc();
+    GXSetVtxDesc(GX_VA_POS, GX_DIRECT);
+    GXSetVtxAttrFmt(GX_VTXFMT0, GX_VA_POS, GX_CLR_RGBA, GX_F32, 0);
+    if (this->geometry_mode & G_LIGHTING == 0) {
+        GXSetVtxDesc(GX_VA_CLR0, GX_DIRECT);
+        GXSetVtxAttrFmt(GX_VTXFMT0, GX_VA_CLR0, GX_CLR_RGBA, GX_RGBA8, 0);
+    }
+    else {
+        GXSetVtxDesc(GX_VA_NRM, GX_DIRECT);
+        GXSetVtxAttrFmt(GX_VTXFMT0, GX_VA_NRM, GX_CLR_RGB, GX_F32, 0);
+        GXSetVtxDesc(GX_VA_CLR0, GX_DIRECT);
+        GXSetVtxAttrFmt(GX_VTXFMT0, GX_VA_CLR0, GX_CLR_RGBA, GX_RGBA8, 0);
+    }
+
+    if ((u8)(this->texture_gfx.words.w0 & 0xFF) != 0) {
+        GXSetVtxDesc(GX_VA_TEX0, GX_DIRECT);
+        GXSetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX0, GX_CLR_RGBA, GX_RGBA4, 0);
+    }
+
+    #ifdef EMU64_DEBUG
+    this->setup_poly_time += (osGetCount() - start);
+    #endif
+}
+
+void emu64::set_position(u32 vtx) {
+    #ifdef ANIMAL_FOREST_PLUS
+    typedef struct {
+        f32 offset;
+        bool set;
+    } decal_off_t;
+
+    
+    static decal_off_t decal_offy;
+    static decal_off_t decal_offz;
+    #endif
+
+    Vertex* emu_vtx = &this->vertices[vtx];
+    if (this->using_nonshared_mtx != false && emu_vtx->flag & MTX_NONSHARED == MTX_SHARED) {
+        /* Translation: The nonshared triangle group is broken because a shared vertex is mixed in with the nonshared triangle group! */
+        this->Printf0("非シェアードの三角形群にシェアードの頂点が混ざっているので破綻しました!\n");
+    }
+
+    if (emu_vtx->flag & MTX_NONSHARED != MTX_SHARED) {
+        if (this->using_nonshared_mtx == false) {
+            #ifdef ANIMAL_FOREST_PLUS
+            MTXMultVec(this->position_mtx_stack[this->mtx_stack_size], &emu_vtx->position, &emu_vtx->position);
+            MTXMultVec(this->model_view_mtx, &emu_vtx->normal, &emu_vtx->normal);
+            #else
+            if (aflags[AFLAGS_USE_GUVECMULT] == 0) {
+                MTXMultVec(this->position_mtx_stack[this->mtx_stack_size], &emu_vtx->position, &emu_vtx->position);
+                MTXMultVec(this->model_view_mtx, &emu_vtx->normal, &emu_vtx->normal);
+            }
+            else {
+                guMtxXFM1F_dol(
+                    this->position_mtx_stack[this->mtx_stack_size],
+                    emu_vtx->position.x, emu_vtx->position.y, emu_vtx->position.z,
+                    &emu_vtx->position.x, &emu_vtx->position.y, &emu_vtx->position.z
+                );
+                guMtxXFM1F_dol(
+                    this->model_view_mtx,
+                    emu_vtx->normal.x, emu_vtx->normal.y, emu_vtx->normal.z,
+                    &emu_vtx->normal.x, &emu_vtx->normal.y, &emu_vtx->normal.z
+                );
+            }
+            #endif
+            emu_vtx->flag |= MTX_NONSHARED;
+            /* Translation: Nonshared vertices are mixed with the shared triangle group */
+            EMU64_LOG_VERBOSE("シェアードの三角形群に非シェアードの頂点が混ざっている\n");
+        }
+        else if (this->geometry_mode & G_TEXTURE_GEN != 0) {
+            #ifdef ANIMAL_FOREST_PLUS
+            MTXMultVec(this->model_view_mtx, &emu_vtx->normal, &emu_vtx->normal);
+            #else
+            if (aflags[AFLAGS_USE_GUVECMULT] == 0) {
+                MTXMultVec(this->model_view_mtx, &emu_vtx->normal, &emu_vtx->normal);
+            }
+            else {
+                guMtxXFM1F_dol(
+                    this->model_view_mtx,
+                    emu_vtx->normal.x, emu_vtx->normal.y, emu_vtx->normal.z,
+                    &emu_vtx->normal.x, &emu_vtx->normal.y, &emu_vtx->normal.z
+                );
+            }
+            #endif
+            /* Translation: Reflection mapping applied to nonshared vertex */
+            EMU64_LOG_VERBOSE("シェアードじゃない反射マッピングの頂点\n");
+        }
+    }
+    
+    if (this->othermode_low & ZMODE_DEC == ZMODE_DEC && this->geometry_mode & G_ZBUFFER != 0 && this->geometry_mode & G_DECAL_EQUAL == 0) {
+        #ifdef ANIMAL_FOREST_PLUS
+        if (aflags[AFLAGS_SKIP_PROJECTION_TRANSFORM] == 0) {
+            
+            if (decal_offz.set == false) {
+                decal_offz.offset = 0.0001f;
+                decal_offz.set = true;
+            }
+
+            Vec pos;
+            if (emu_vtx->flag & MTX_NONSHARED == MTX_SHARED) {
+                pos = emu_vtx->position;
+            }
+            else {
+                MTXMultVec(this->position_mtx_stack[this->mtx_stack_size], &emu_vtx->position, &pos);
+            }
+
+            if (aflags[AFLAGS_DECAL_OFFSETZ_VALUE] != 0) {
+                pos.x = 176.0f;
+                decal_offz.offset = (f32)(-(aflags[AFLAGS_DECAL_OFFSETZ_VALUE] + 1));
+            }
+
+            /* Apply projection matrix transformation */
+            f32 tx, ty, tz, tw;
+            if (this->projection_type == GX_PERSPECTIVE) {
+                tx = this->projection_mtx[0][0] * pos.x + this->projection_mtx[0][2] * pos.z;
+                ty = this->projection_mtx[1][1] * pos.y + this->projection_mtx[1][2] * pos.z;
+                tz = this->projection_mtx[2][2] * pos.z + this->projection_mtx[2][3];
+                tw = -pos.z;
+            }
+            else { /* GX_ORTHOGRAPHIC */
+                tx = this->projection_mtx[0][0] * pos.x + this->projection_mtx[0][3];
+                ty = this->projection_mtx[1][1] * pos.y + this->projection_mtx[1][3];
+                tz = this->projection_mtx[2][2] * pos.z + this->projection_mtx[2][3];
+                tw = 1.0f;
+            }
+
+            tz /= tw;
+
+            if (this->geometry_mode & G_DECAL_ALWAYS == 0) {
+                tz -= decal_offz.offset;
+            }
+            else if (this->geometry_mode & G_DECAL_ALWAYS == G_DECAL_GEQUAL) {
+                tz += decal_offz.offset;
+            }
+
+            f32 w;
+            guMtxXFM1F_dol6w(
+                this->projection_mtx,
+                this->projection_type,
+                (tx / tw) * tw, (ty / tw) * tw, tz * tw, tw,
+                &pos.x, &pos.y, &pos.z, &w
+            );
+
+            pos.x /= w;
+            pos.y /= w;
+            pos.z /= w;
+
+            if (emu_vtx->flag & MTX_NONSHARED != MTX_SHARED) {
+                GXPosition3f32(pos.x, pos.y, pos.z);
+            }
+            else {
+                w /= w; /* w =... 1? */
+                f32 fx, fy, fz;
+                guMtxXFM1F_dol7(
+                    this->position_mtx_stack[this->mtx_stack_size],
+                    pos.x, pos.y, pos.z,
+                    &fx, &fy, &fz
+                );
+                GXPosition3f32(fx, fy, fz);
+            }
+        }
+        else {
+            if (decal_offy.set == false) {
+                decal_offy.offset = 4.0f;
+                decal_offy.set = true;
+            }
+
+            if (decal_offz.set == false) {
+                decal_offz.offset = 1.1f;
+                decal_offz.set = true;
+            }
+
+            if (aflags[AFLAGS_DECAL_OFFSET_MODE] == 0) {
+                if (this->geometry_mode & G_DECAL_ALWAYS == 0) {
+                    GXPosition3f32(
+                        emu_vtx->position.x,
+                        emu_vtx->position.y + decal_offy.offset,
+                        emu_vtx->position.z + decal_offz.offset
+                    );
+                }
+                else if (this->geometry_mode & G_DECAL_ALWAYS == G_DECAL_GEQUAL) {
+                    GXPosition3f32(
+                        emu_vtx->position.x,
+                        emu_vtx->position.y - decal_offy.offset,
+                        emu_vtx->position.z - decal_offz.offset
+                    );
+                }
+                else {
+                    GXPosition3f32(
+                        emu_vtx->position.x,
+                        emu_vtx->position.y,
+                        emu_vtx->position.z
+                    );
+                }
+            }
+            else if (aflags[AFLAGS_DECAL_OFFSET_MODE] == 1) {
+                GXPosition3f32(
+                    emu_vtx->position.x,
+                    emu_vtx->position.y + decal_offy.offset,
+                    emu_vtx->position.z + decal_offz.offset
+                );
+            }
+            else if (aflags[AFLAGS_DECAL_OFFSET_MODE] == 2) {
+                GXPosition3f32(
+                    emu_vtx->position.x,
+                    emu_vtx->position.y - decal_offy.offset,
+                    emu_vtx->position.z - decal_offz.offset
+                );
+            }
+            else {
+                GXPosition3f32(
+                    emu_vtx->position.x,
+                    emu_vtx->position.y,
+                    emu_vtx->position.z
+                );
+            }
+        }
+        #else /* AC & e+ */
+        Vec pos;
+        if (emu_vtx->flag & MTX_NONSHARED == MTX_SHARED) {
+            pos = emu_vtx->position;
+        }
+        else if (aflags[AFLAGS_USE_GUVECMULT] == 0) {
+            MTXMultVec(this->position_mtx_stack[this->mtx_stack_size], &emu_vtx->position, &pos);
+        }
+        else {
+            guMtxXFM1F_dol(
+                this->position_mtx_stack[this->mtx_stack_size],
+                emu_vtx->position.x, emu_vtx->position.y, emu_vtx->position.z,
+                &pos.x, &pos.y, &pos.z
+            );
+        }
+
+        f32 x, y, z, w;
+        if (aflags[AFLAGS_SKIP_W_CALCULATION] == 0) {
+            guMtxXFM1F_dol2w(
+                this->projection_mtx,
+                this->projection_type,
+                pos.x, pos.y, pos.z,
+                &x, &y, &z, &w
+            );
+            z /= w;
+        }
+        else {
+            guMtxXFM1F_dol2(
+                this->projection_mtx,
+                this->projection_type,
+                pos.x, pos.y, pos.z,
+                &x, &y, &z
+            );
+            w = 1.0f;
+        }
+
+        if (this->geometry_mode & G_DECAL_ALWAYS == 0) {
+            z -= 0.0001f;
+        }
+        else if (this->geometry_mode & G_DECAL_ALWAYS == G_DECAL_GEQUAL) {
+            z += 0.0001f;
+        }
+
+        z *= w;
+        if (aflags[AFLAGS_PROJECTION_CALC_W] == 0) {
+            guMtxXFM1F_dol6w1(
+                this->projection_mtx,
+                this->projection_type,
+                x, y, z, w,
+                &pos.x, &pos.y, &pos.z
+            );
+        }
+        else {
+            f32 ow;
+            guMtxXFM1F_dol6w(
+                this->projection_mtx,
+                this->projection_type,
+                x, y, z, w,
+                &pos.x, &pos.y, &pos.z, &ow
+            );
+
+            pos.x /= ow;
+            pos.y /= ow;
+            pos.z /= ow;
+        }
+
+        if (emu_vtx->flag & MTX_NONSHARED == MTX_SHARED) {
+            GXPosition3f32(pos.x, pos.y, pos.z);
+        }
+        else {
+            f32 fx, fy, fz;
+            guMtxXFM1F_dol7(
+                this->position_mtx_stack[this->mtx_stack_size],
+                pos.x, pos.y, pos.z,
+                &fx, &fy, &fz
+            );
+            GXPosition3f32(fx, fy, fz);
+        }
+        #endif
+    }
+    else {
+        GXPosition3f32(emu_vtx->position.x, emu_vtx->position.y, emu_vtx->position.z);
+    }
+
+    /* If geometry mode lighting is enabled, write vertex normals */
+    if (this->geometry_mode & G_LIGHTING != 0) {
+        GXNormal3f32(emu_vtx->normal.x, emu_vtx->normal.y, emu_vtx->normal.z);
+    }
+
+    /* Vertex color */
+    GXColor1u32(emu_vtx->color.raw);
+
+    /* If texture is on, write texture coordinates */
+    if ((u8)this->texture_gfx.words.w0 != 0) {
+        GXTexCoord2s16(emu_vtx->tex_coords.s, emu_vtx->tex_coords.t);
+    }
+}
+
+/* NOTE: quad is actually "two_tris". The result is practically the same. */
+EMU64_INLINE void emu64::set_position3(u32 v0, u32 v1, u32 v2, BOOL quad) {
+    if (quad != FALSE) {
+        GXBegin(GX_QUADS, GX_VTXFMT0, 4);
+    }
+
+    if (EMU64_CAN_DRAW_POLYGON()) {
+        this->set_position(v0);
+        this->set_position(v1);
+        this->set_position(v2);
+    }
+    else {
+        this->set_position(v0);
+        this->set_position(v0);
+        this->set_position(v0);
+    }
+
+    if (quad != FALSE) {
+        this->set_position(v0);
+        #ifdef ANIMAL_FOREST_EPLUS
+        GXEnd();
+        #endif
+    }
 }

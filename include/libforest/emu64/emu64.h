@@ -16,6 +16,7 @@
 #define TMEM_ENTRIES 128
 #define NUM_TLUTS 16
 #define MTX_STACK_SIZE 10
+#define VTX_COUNT 128
 
 /* Debug/Print Definitions */
 #define EMU64_PRINT_FLAG_ENABLE 1
@@ -24,6 +25,7 @@
 #define EMU64_PRINT_LEVEL1_FLAG 4
 #define EMU64_PRINT_LEVEL2_FLAG 8
 #define EMU64_PRINT_LEVEL3_FLAG 16
+#define EMU64_PRINT_LEVEL4_FLAG 32
 
 #define EMU64_WARNING_COUNT 10
 #define EMU64_WARN_IDX_DL 4
@@ -92,6 +94,8 @@ static char s[256];
 #define SEG_2_SEGADDR(seg)(seg << SEGMENT_SHIFT)
 #define SEG_EQUALS(seg_addr, seg)(seg_addr == SEG_2_SEGADDR(seg))
 
+#define EMU64_CAN_DRAW_POLYGON()(aflags[AFLAGS_MAX_POLYGONS] == 0 || (aflags[AFLAGS_MIN_POLYGONS] <= this->polygons && this->polygons < aflags[AFLAGS_MAX_POLYGONS]))
+
 typedef union {
     GXColor color;
     struct {
@@ -102,6 +106,17 @@ typedef union {
     };
     u32 raw;
 } EmuColor;
+
+typedef struct {
+    Vec position;
+    u16 flag;
+    struct {
+        s16 s, t;
+    } tex_coords;
+    short pad;
+    Vec normal;
+    EmuColor color;
+} Vertex;
 
 typedef struct {
     char* name;
@@ -171,12 +186,13 @@ public:
     void zmode();
     void texture_gen(int tex);
     void texture_matrix();
-    void set_position(unsigned int vtx);
-    void draw_1tri_2tr_1quad(unsigned int type, ...);
+    void set_position(u32 vtx);
+    EMU64_INLINE void set_position3(u32 v0, u32 v1, u32 v2, BOOL quad);
+    EMU64_INLINE void setup_1tri_2tri_1quad(u32 v0);
+    void draw_1tri_2tri_1quad(unsigned int n_verts, ...);
     void fill_rectangle(f32 ux, f32 uy, f32 lx, f32 ly);
     void draw_rectangle(Gtexrect2* rect);
     void dirty_check(int tile, int nTiles, int doTextureMatrix);
-
     const char* segchk(u32 segment);
     EMU64_INLINE void printInfo();
     EMU64_INLINE void* seg2k0(u32 segment);
@@ -225,6 +241,12 @@ public:
     void dl_G_RDPLOADSYNC();
     void dl_G_NOOP();
     void dl_G_MTX();
+    void dl_G_VTX();
+    void dl_G_MODIFYVTX();
+    void dl_G_LINE3D();
+    void dl_G_TRI1();
+    void dl_G_TRIN_INDEPEND();
+    void dl_G_TRIN();
 
     /* Static Members */
     static char* warningString[EMU64_WARNING_COUNT];
@@ -329,6 +351,7 @@ private:
 
     /* 0x994 */
     int mtx_stack_size;
+    Gfx texture_gfx; /* TODO: rename */
 
     /* 0x9A8 */
     Mtx44 ortho_mtx;
@@ -341,13 +364,20 @@ private:
     /* 0xA20 */
     u32 rdpHalf_1;
 
-    /* 0xB90 */
+    /* 0xB88 */
+    u32 vtx_time;
+    u32 setup_poly_time;
     u32 loadblock_time;
     u32 loadtlut_time;
     u32 mtx_time;
+    u32 poly_time;
 
     /*  0xDF0 */
     u32 tex_cache_find_time;
+
+    /* 0xE18 */
+    bool using_nonshared_mtx;
+    Vertex vertices[VTX_COUNT];
 
     /* 0x2020 */
     u32 resolved_addresses;

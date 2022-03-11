@@ -1794,7 +1794,7 @@ void emu64::dl_G_MTX() {
                 }
             }
 
-            GXLoadNrmMtxImm(this->model_view_mtx, GX_PNMTX1);
+            GXLoadNrmMtxImm(this->model_view_mtx, NONSHARED_MTX);
         }
         else { /* Projection */
             if (param & G_MTX_LOAD == G_MTX_MUL) {
@@ -1830,11 +1830,362 @@ void emu64::dl_G_MTX() {
         if (this->position_mtx_dirty != false) {
             this->position_mtx_dirty = false;
             MTXConcat(position_mtx, this->model_view_mtx_stack[mtx_stack_size], this->position_mtx_stack[mtx_stack_size]);
-            GXLoadPosMtxImm(this->position_mtx_stack[this->mtx_stack_size], GX_PNMTX1);
+            GXLoadPosMtxImm(this->position_mtx_stack[this->mtx_stack_size], NONSHARED_MTX);
         }
 
         #ifdef EMU64_DEBUG
         this->mtx_time += (osGetCount() - start);
         #endif
     }
+}
+
+void emu64::dl_G_VTX() {
+    #ifdef EMU64_DEBUG
+    u32 start = osGetCount();
+    #endif
+
+    u32 vn = (this->gfx.words.w0 >> 1) & 0x7F; /* nth vertex */
+    u32 n = (this->gfx.words.w0 >> 12) & 0xFF; /* number of vertices */
+
+    this->total_vertices += n;
+    
+    u32 v0 = vn - n; /* first vertex to load */
+
+    this->vtx_load_calls++;
+
+    if (EMU64_IS_PRINT_ENABLED(this)) {
+        EMU64_LOG_VERBOSE("gsSPVertex(%s, %d, %d),", this->segchk(this->gfx.dma.addr), n, v0);
+        if (this->print_commands & EMU64_PRINT_LEVEL3_FLAG != 0) {
+            this->work_ptr = this->seg2k0(this->gfx.dma.addr);
+            Vtx* vtx_p = (Vtx*)this->work_ptr;
+            for (int i = 0; i < n; i++) {
+                if (this->geometry_mode & G_LIGHTING == 0) {
+                    EMU64_LOG_NORMAL(
+                        "\n{{%6d, %6d, %6d, %d, %6d, %6d, %4d, %4d, %4d, %3d}}, /* vn%02d */",
+                        vtx_p[i].n.ob[0], vtx_p[i].n.ob[1], vtx_p[i].n.ob[2], /* Position */
+                        vtx_p[i].n.flag, /* Flag */
+                        vtx_p[i].n.tc[0], vtx_p[i].n.tc[1], /* Texture Coordinates */
+                        vtx_p[i].n.n[0], vtx_p[i].n.n[1], vtx_p[i].n.n[2], /* Normal */
+                        vtx_p[i].n.a, /* Alpha */
+                        v0 + i /* Vertex # */
+                    );
+                }
+                else {
+                    EMU64_LOG_NORMAL(
+                        "\n{{%6d, %6d, %6d, %d, %6d, %6d, %4d, %4d, %4d, %3d}}, /* vc%02d */",
+                        vtx_p[i].v.ob[0], vtx_p[i].v.ob[1], vtx_p[i].v.ob[2], /* Position */
+                        vtx_p[i].v.flag, /* Flag */
+                        vtx_p[i].v.tc[0], vtx_p[i].v.tc[1], /* Texture Coordinates */
+                        vtx_p[i].v.cn[0], vtx_p[i].v.cn[1], vtx_p[i].v.cn[2], vtx_p[i].v.cn[3], /* Color */
+                        v0 + i /* Vertex # */
+                    );
+                }
+            }
+        }
+    }
+
+    if (this->disable_polygons == false) {
+        Vtx* vtx_p = (Vtx*)this->seg2k0(this->gfx.dma.addr);
+        Vertex* emu_vtx_p = &this->vertices[v0];
+
+        Mtx& position_mtx = this->position_mtx_stack[this->mtx_stack_size];
+        if (this->print_commands & EMU64_PRINT_LEVEL4_FLAG != 0) {
+
+            /* NOTE: They print a 4x4 matrix, but position matrix is only 3x4. */
+            for (int row = 0; row < 4; row++) {
+                for (int col = 0; col < 4; col++) {
+                    EMU64_LOG_NORMAL("%10.3f", position_mtx[row][col]);
+                }
+
+                EMU64_LOG_NORMAL("\n", kakko[row * 4 + 3]); /* kakko is unused here */
+            }
+        }
+
+        for (; n != 0; n--) {
+            /* Convert position */
+            emu_vtx_p->position.x = (f32)vtx_p->n.ob[0];
+            emu_vtx_p->position.y = (f32)vtx_p->n.ob[1];
+            emu_vtx_p->position.z = (f32)vtx_p->n.ob[2];
+
+            /* Flag */
+            #ifdef ANIMAL_FOREST_PLUS
+            if (aflags[AFLAGS_FORCE_VTX_FLAG_COPY] == 0) {
+                emu_vtx_p->flag = vtx_p->n.flag & MTX_NONSHARED;
+            }
+            else {
+                emu_vtx_p->flag = MTX_SHARED;
+            }
+            #else /* AC & e+ */
+            if (aflags[AFLAGS_FORCE_VTX_FLAG_COPY] == 0 && this->geometry_mode & G_TEXTURE_GEN != 0) {
+                emu_vtx_p->flag = MTX_SHARED;
+            }
+            else {
+                emu_vtx_p->flag = vtx_p->n.flag & MTX_NONSHARED;
+            }
+            #endif
+
+            /* Texture Coordinates */
+            emu_vtx_p->tex_coords.s = vtx_p->n.tc[0];
+            emu_vtx_p->tex_coords.t = vtx_p->n.tc[1];
+
+            /* Normal */
+            emu_vtx_p->normal.x = vtx_p->n.n[0];
+            emu_vtx_p->normal.y = vtx_p->n.n[1];
+            emu_vtx_p->normal.z = vtx_p->n.n[2];
+
+            /* Check vertex normal modification type. In AC/e+ only VECNormalize is utilized. */
+            if (aflags[AFLAGS_VTX_NORMAL_MODIFY_TYPE] == 0) {
+                VECNormalize(&emu_vtx_p->normal, &emu_vtx_p->normal);
+            }
+            else if (aflags[AFLAGS_VTX_NORMAL_MODIFY_TYPE] == 2) {
+                emu_vtx_p->normal.x *= (1.0f/120.0f);
+                emu_vtx_p->normal.y *= (1.0f/120.0f);
+                emu_vtx_p->normal.z *= (1.0f/120.0f);
+            }
+            else if (aflags[AFLAGS_VTX_NORMAL_MODIFY_TYPE] == 3) {
+                emu_vtx_p->normal.x *= (1.0f/128.0f);
+                emu_vtx_p->normal.y *= (1.0f/128.0f);
+                emu_vtx_p->normal.z *= (1.0f/128.0f);
+            }
+            
+            /* Convert vectors to correct space */
+            if (emu_vtx_p->flag & MTX_NONSHARED == MTX_SHARED) {
+                MTXMultVec(position_mtx, &emu_vtx_p->position, &emu_vtx_p->position); /* Position -> Projection Matrix */
+                MTXMultVec(this->model_view_mtx, &emu_vtx_p->normal, &emu_vtx_p->normal); /* Normal -> View Matrix */
+            }
+
+            /* Color */
+            emu_vtx_p->color.raw = *(u32*)(&vtx_p->v.cn[0]);
+
+            vtx_p++;
+            emu_vtx_p++;
+        }
+    }
+
+    #ifdef EMU64_DEBUG
+    this->vtx_time += (osGetCount() - start);
+    #endif
+}
+
+void emu64::dl_G_MODIFYVTX() {
+    #ifdef EMU64_DEBUG
+
+    if (this->print_commands != false) {
+        u8 where = (u8)(this->gfx.words.w0 >> 16);
+        const char* s_where;
+        if (where == G_MWO_POINT_RGBA) {
+            s_where = "RGBA";
+        }
+        else if (where == G_MWO_POINT_ST) {
+            s_where = "ST";
+        }
+        else if (where == G_MWO_POINT_XYSCREEN) {
+            s_where = "XYSCREEN";
+        }
+        else if (where == G_MWO_POINT_ZSCREEN) {
+            s_where = "ZSCREEN";
+        }
+        else {
+            s_where = "???";
+        }
+
+        this->Printf2(
+            "gsSPModifyVertex(%d, G_MWO_POINT_%s, %08x),",
+            (u16)(this->gfx.words.w0),
+            s_where,
+            this->gfx.words.w1
+        );
+    }
+
+    #endif
+
+    /* This may be broken. They use the "where" component instead of adding one. */
+    #ifdef EMU64_FIX_MODIFYVTX_LOADED_COUNT
+    this->total_vertices++;
+    #else
+    this->total_vertices += (u8)(this->gfx.words.w0 >> 16);
+    #endif
+
+    this->vtx_load_calls++;
+    this->Printf0("gsSPModifyVertexはサポートされていません\n"); /* Translation: gsSPModifyVertex is unsupported */
+}
+
+void emu64::dl_G_LINE3D() {
+    u8 wd = (u8)this->gfx.words.w0;
+    if (wd == 0) {
+        EMU64_LOG_VERBOSE("gsSPLine3D(%d, %d),", (u8)(this->gfx.words.w0 >> 16), (u8)(this->gfx.words.w0 >> 8));
+    }
+    else {
+        EMU64_LOG_VERBOSE("gsSPLineW3D(%d, %d, %d),", (u8)(this->gfx.words.w0 >> 16), (u8)(this->gfx.words.w0 >> 8), wd);
+    }
+
+    this->lines++;
+    this->Printf0("gsSPLine3Dはサポートされていません"); /* Translation: gsSPLine3D is unsupported */
+}
+
+void emu64::dl_G_TRI1() {
+    Gwords* tri = (Gwords*)this->gfx_p;
+    u32 v0 = (tri->w0 >> 17) & 0x7F;
+    u32 v1 = (tri->w0 >> 9) & 0x7F;
+    u32 v2 = (tri->w0 >> 1) & 0x7F;
+
+    #ifdef EMU64_DEBUG
+    u32 start = osGetCount();
+    #endif
+
+    EMU64_LOG_VERBOSE("gsSP1Triangle(%d, %d, %d, 0),", v0, v1, v2);
+
+    if (aflags[AFLAGS_MAX_POLYGONS] != 0) {
+        EMU64_LOG_VERBOSE( " [%d] @@@", this->polygons);
+    }
+
+    if (this->disable_polygons == false && EMU64_CAN_DRAW_POLYGON()) {
+        this->dirty_check((this->texture_gfx.words.w0 >> 8) & 7, (this->texture_gfx.words.w0 >> 11) & 7, TRUE);
+        this->setup_1tri_2tri_1quad(v0);
+        this->draw_1tri_2tri_1quad(3, v0, v1, v2);
+    }
+
+    this->triangles++;
+    this->polygons++;
+
+    #ifdef EMU64_DEBUG
+    this->poly_time += (osGetCount() - start);
+    #endif
+}
+
+void emu64::dl_G_TRIN_INDEPEND() {
+    this->dl_G_TRIN();
+}
+
+void emu64::dl_G_TRIN() {
+    bool first_pass = true;
+
+    #ifdef EMU64_DEBUG
+    u32 start = osGetCount();
+    #endif
+
+    this->dirty_check((this->texture_gfx.words.w0 >> 8) & 7, (this->texture_gfx.words.w0 >> 11) & 7, TRUE);
+    this->setup_1tri_2tri_1quad((this->gfx_p->words.w1 >> 4) & 0x1F);
+    u32 n_faces = ((this->gfx_p->words.w0 >> 17) & 0x7F) + 1;
+
+    EMU64_LOG_VERBOSE("gsSPNTriangles(%d),\n", n_faces);
+    if (aflags[AFLAGS_TRIN_AS_QUADN] == 0) {
+        GXBegin(GX_TRIANGLES, GX_VTXFMT0, n_faces * 3);
+    }
+
+    do
+    {
+        Gfx* g = this->gfx_p;
+        this->gfx_p++;
+        if (g->words.w1 & TRI_BITMASK == TRI_5b) {
+            /* 5 bits per vertex index, first pass = 3 faces, consecutive passes = 4 faces */
+            this->set_position3(TRIN_GET_V0_5b(g), TRIN_GET_V1_5b(g), TRIN_GET_V2_5b(g), aflags[AFLAGS_TRIN_AS_QUADN]);
+            this->polygons++;
+            EMU64_LOG_VERBOSE(
+                "gsSPNTriangleData1(%d, %d, %d, 0),\n",
+                TRIN_GET_V0_5b(g),
+                TRIN_GET_V1_5b(g),
+                TRIN_GET_V2_5b(g)
+            );
+
+            n_faces--;
+            if (n_faces == 0) break;
+
+            this->set_position3(TRIN_GET_V3_5b(g), TRIN_GET_V4_5b(g), TRIN_GET_V5_5b(g), aflags[AFLAGS_TRIN_AS_QUADN]);
+            this->polygons++;
+            EMU64_LOG_VERBOSE(
+                "gsSPNTriangleData1(%d, %d, %d, 0),\n",
+                TRIN_GET_V3_5b(g),
+                TRIN_GET_V4_5b(g),
+                TRIN_GET_V5_5b(g)
+            );
+
+            n_faces--;
+            if (n_faces == 0) break;
+
+            this->set_position3(TRIN_GET_V6_5b(g), TRIN_GET_V7_5b(g), TRIN_GET_V7_5b(g), aflags[AFLAGS_TRIN_AS_QUADN]);
+            this->polygons++;
+            EMU64_LOG_VERBOSE(
+                "gsSPNTriangleData1(%d, %d, %d, 0),\n",
+                TRIN_GET_V6_5b(g),
+                TRIN_GET_V7_5b(g),
+                TRIN_GET_V8_5b(g)
+            );
+
+            n_faces--;
+            if (n_faces == 0) break;
+
+            /* Only 3 faces on the first pass */
+            if (first_pass) {
+                first_pass == false;
+            }
+            else {
+                this->set_position3(TRIN_GET_V9_5b(g), TRIN_GET_V10_5b(g), TRIN_GET_V11_5b(g), aflags[AFLAGS_TRIN_AS_QUADN]);
+                this->polygons++;
+                EMU64_LOG_VERBOSE(
+                    "gsSPNTriangleData1(%d, %d, %d, 0),\n",
+                    TRIN_GET_V9_5b(g),
+                    TRIN_GET_V10_5b(g),
+                    TRIN_GET_V11_5b(g)
+                );
+
+                n_faces--;
+            }
+        }
+        else {
+            /* 7 bits per vertex index, max 3 faces per Gfx */
+            this->set_position3(TRIN_GET_V0_7b(g), TRIN_GET_V1_7b(g), TRIN_GET_V2_7b(g), aflags[AFLAGS_TRIN_AS_QUADN]);
+            this->polygons++;
+            EMU64_LOG_VERBOSE(
+                "gsSPNTriangleData1(%d, %d, %d, 0),\n",
+                TRIN_GET_V0_7b(g),
+                TRIN_GET_V1_7b(g),
+                TRIN_GET_V2_7b(g)
+            );
+
+            n_faces--;
+            if (n_faces == 0) break;
+
+            this->set_position3(TRIN_GET_V3_7b(g), TRIN_GET_V4_7b(g), TRIN_GET_V5_7b(g), aflags[AFLAGS_TRIN_AS_QUADN]);
+            this->polygons++;
+            EMU64_LOG_VERBOSE(
+                "gsSPNTriangleData1(%d, %d, %d, 0),\n",
+                TRIN_GET_V3_7b(g),
+                TRIN_GET_V4_7b(g),
+                TRIN_GET_V5_7b(g)
+            );
+
+            n_faces--;
+            if (n_faces == 0) break;
+
+            /* Only 2 faces on the first pass */
+            if (first_pass) {
+                first_pass == false;
+            }
+            else {
+                this->set_position3(TRIN_GET_V6_7b(g), TRIN_GET_V7_7b(g), TRIN_GET_V8_7b(g), aflags[AFLAGS_TRIN_AS_QUADN]);
+                this->polygons++;
+                EMU64_LOG_VERBOSE(
+                    "gsSPNTriangleData1(%d, %d, %d, 0),\n",
+                    TRIN_GET_V6_7b(g),
+                    TRIN_GET_V7_7b(g),
+                    TRIN_GET_V8_7b(g)
+                );
+
+                n_faces--;
+            }
+        }
+    } while (n_faces != 0);
+    
+    #ifdef ANIMAL_FOREST_EPLUS
+    if (aflags[AFLAGS_TRIN_AS_QUADN] == 0) {
+        GXEnd();
+    }
+    #endif
+
+    this->gfx_p += n_faces - 1; /* Should equate to gfx_p--, as the emulator will increment it once. */
+    #ifdef EMU64_DEBUG
+    this->poly_time += (osGetCount() - start);
+    #endif
+    this->rdp_pipe_sync_needed = true;
 }
