@@ -76,6 +76,14 @@ extern "C" {
 #define G_TAG_CLOSEDISP 8
 #define G_TAG_FILL 9
 
+/* Vertex Culling Flags */
+#define G_CULL_X_LESSTHAN 0x100 /* x component left of culling plane */
+#define G_CULL_X_GREATERTHAN 0x200 /* x component right of culling plane */
+#define G_CULL_Y_LESSTHAN 0x400 /* y component below culling plane */
+#define G_CULL_Y_GREATERTHAN 0x800 /* y component above culling plane */
+#define G_CULL_Z_LESSTHAN 0x1000 /* z component behind culling plane */
+#define G_CULL_Z_GREATERTHAN 0x2000 /* z component farther than culling plane */
+
 /* Extra Geometry Mode Flags */
 #define G_LIGHTING_POSITIONAL 0x400000
 #define G_DECAL_EQUAL 0x20

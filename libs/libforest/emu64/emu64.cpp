@@ -2,6 +2,7 @@
 
 #include "emu64.h"
 #include "libultra/ultra.h"
+#include "mtx_extensions.h"
 #include <MSL_Common/Include/stdio.h>
 #include <MSL_Common/Include/math.h>
 
@@ -2461,4 +2462,144 @@ void emu64::dl_G_QUAD() {
     #ifdef EMU64_DEBUG
     this->poly_time += (osGetCount() - start);
     #endif
+}
+
+void emu64::dl_G_CULLDL() {
+    f32 ox, oy, oz;
+    u16 vstart = (u16)this->gfx.words.w0 / 2;
+    u16 vend = (u16)this->gfx.words.w1 / 2;
+
+    EMU64_LOG_QUIET(
+        "gsSPCullDisplayList(%d, %d),",
+        vstart, vend
+    );
+
+    EMU64_LOG_VERBOSE("vn mask   x     y    z  \n");
+
+    u16 culldl_bits = G_CULL_Z_GREATERTHAN | G_CULL_Z_LESSTHAN |
+        G_CULL_Y_GREATERTHAN | G_CULL_Y_LESSTHAN |
+        G_CULL_X_GREATERTHAN | G_CULL_X_LESSTHAN; /* 0x3F00 */
+
+    while (vstart <= vend) {
+        Vertex* vtx = &this->vertices[vstart];
+
+        /* Vertex position -> camera space calculations */
+        if (vtx->flag & MTX_NONSHARED == MTX_SHARED) {
+            #ifdef EMU64_DEBUG
+            if (this->print_commands != false) {
+                this->print_guMtxXFM1F_dol2(
+                    this->projection_mtx,
+                    this->projection_type,
+                    vtx->position.x, vtx->position.y, vtx->position.z
+                );
+            }
+            #endif
+
+            guMtxXFM1F_dol2(
+                this->projection_mtx,
+                this->projection_type,
+                vtx->position.x, vtx->position.y, vtx->position.z,
+                &ox, &oy, &oz
+            );
+        }
+        else {
+            /* MTX_NONSHARED */
+            Vec oVec;
+            if (aflags[AFLAGS_USE_GUVECMULT] == 0) {
+                MTXMultVec(this->position_mtx_stack[this->mtx_stack_size], &vtx->position, &oVec);
+            }
+            else {
+                guMtxXFM1F_dol(
+                    this->position_mtx_stack[this->mtx_stack_size],
+                    vtx->position.x, vtx->position.y, vtx->position.z,
+                    &oVec.x, &oVec.y, &oVec.z
+                );
+            }
+
+            #ifdef EMU64_DEBUG
+            if (this->print_commands != false) {
+                this->print_guMtxXFM1F_dol2(
+                    this->projection_mtx,
+                    this->projection_type,
+                    oVec.x, oVec.y, oVec.z
+                );
+            }
+            #endif
+
+            guMtxXFM1F_dol2(
+                this->projection_mtx,
+                this->projection_type,
+                oVec.x, oVec.y, oVec.z,
+                &ox, &oy, &oz
+            );
+        }
+
+        /* Assign culling flags to vertex */
+        if (ox >= -1.0f) {
+            if (ox > 1.0f) {
+                vtx->flag |= G_CULL_X_GREATERTHAN;
+            }
+        }
+        else {
+            vtx->flag |= G_CULL_X_LESSTHAN;
+        }
+
+        if (oy >= -1.0f) {
+            if (oy > 1.0f) {
+                vtx->flag |= G_CULL_Y_GREATERTHAN;
+            }
+        }
+        else {
+            vtx->flag |= G_CULL_Y_LESSTHAN;
+        }
+
+        if (oz >= -1.0f) {
+            if (oz > 1.0f) {
+                vtx->flag |= G_CULL_Z_GREATERTHAN;
+            }
+        }
+        else {
+            vtx->flag |= G_CULL_Z_LESSTHAN;
+        }
+
+        EMU64_LOG_VERBOSE(
+            "%2d %04x %1d%1d%1d%1d%1d%1d %1d %6.3f %6.3f %6.3f  %8.2f %8.2f %8.2f \n",
+            vstart,
+            vtx->flag,
+            vtx->cull_z_greater, vtx->cull_z_lesser,
+            vtx->cull_y_greater, vtx->cull_y_lesser,
+            vtx->cull_x_greater, vtx->cull_x_lesser,
+            vtx->nonshared,
+            ox, oy, oz
+            /* The devs seem to have forgotten to add the last three float values */
+            #ifdef EMU64_FIX_CULL_INFO_LOG
+            , vtx->position.x, vtx->position.y, vtx->position.z /* Not sure if this is correct. */
+            #endif
+        );
+        
+        /* Update culled state */
+        culldl_bits &= vtx->flag;
+
+        /* TODO: An optimization here would be to break immediately if culling occurs? */
+        /* I'm not sure if these flags are checked anywhere else. */
+    }
+
+    this->cullDL_calls++;
+    if (culldl_bits == 0) {
+        EMU64_LOG_VERBOSE("カリングされませんでした\n"); /* Translation: Wasn't culled */
+        this->cullDL_visible_obj_count++;
+    }
+    else {
+        EMU64_LOG_VERBOSE("カリングされました mask=%02x\n", culldl_bits); /* Translation: Was culled mask=%02x */
+
+        if (this->DL_stack_level < 1) {
+            this->end_dl = true;
+        }
+        else {
+            this->DL_stack_level--;
+            this->gfx_p = this->DL_stack[DL_stack_level] - 1;
+        }
+
+        this->cullDL_outside_obj_count++;
+    }
 }

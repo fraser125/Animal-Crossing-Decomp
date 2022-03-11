@@ -109,7 +109,20 @@ typedef union {
 
 typedef struct {
     Vec position;
-    u16 flag;
+    union {
+        struct {
+            u32 _pad0:2;
+            bool cull_z_greater:1;
+            bool cull_z_lesser:1;
+            bool cull_y_greater:1;
+            bool cull_y_lesser:1;
+            bool cull_x_greater:1;
+            bool cull_x_lesser:1;
+            u32 _pad1:7;
+            bool nonshared:1;
+        };
+        u16 flag;
+    };
     struct {
         s16 s, t;
     } tex_coords;
@@ -204,6 +217,7 @@ public:
     const char* combine_name(u32 param, u32 type);
     EMU64_INLINE const char* combine_tev_alpha_name(u32 param);
     const char* combine_tev_color_name(u32 param);
+    EMU64_INLINE void print_guMtxXFM1F_dol2(Mtx44 mtx, GXProjectionType type, f32 x, f32 y, f32 z);
 
     /* F3DZEX2 microcode implementations */
     void dl_G_SPNOOP();
@@ -251,6 +265,7 @@ public:
     void dl_G_QUADN();
     void dl_G_TRI2();
     void dl_G_QUAD();
+    void dl_G_CULLDL();
 
     /* Static Members */
     static char* warningString[EMU64_WARNING_COUNT];

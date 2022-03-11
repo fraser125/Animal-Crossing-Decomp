@@ -855,3 +855,38 @@ EMU64_INLINE void emu64::set_position4(u32 v0, u32 v1, u32 v2, u32 v3, BOOL two_
         #endif
     }
 }
+
+EMU64_INLINE void emu64::print_guMtxXFM1F_dol2(Mtx44 mtx, GXProjectionType type, f32 x, f32 y, f32 z) {
+    if (type == GX_PERSPECTIVE) {
+        f32 zInv = -1.0f / z;
+
+        EMU64_LOG_VERBOSE(
+            "%8.3f * %8.3f * %8.3f - %8.3f = %8.3f\n",
+            mtx[0][0], x, zInv, mtx[0][2], (zInv * mtx[0][0] * x) - mtx[0][2]
+        );
+        EMU64_LOG_VERBOSE(
+            "%8.3f * %8.3f * %8.3f - %8.3f = %8.3f\n",
+            mtx[1][1], y, zInv, mtx[1][2], (zInv * mtx[1][1] * y) - mtx[1][2]
+        );
+        EMU64_LOG_VERBOSE(
+            "%8.3f            * %8.3f - %8.3f = %8.3f\n",
+            mtx[2][3], zInv, mtx[2][2], (mtx[2][3] * zInv) - mtx[2][2]
+        );
+    }
+    else {
+        /* GX_ORTHOGRAPHIC */
+        
+        EMU64_LOG_VERBOSE(
+            "%8.3f * %8.3f + %8.3f = %8.3f\n",
+            mtx[0][0], x, mtx[0][3], (mtx[0][3] + (mtx[0][0] * x))
+        );
+        EMU64_LOG_VERBOSE(
+            "%8.3f * %8.3f + %8.3f = %8.3f\n",
+            mtx[1][1], y, mtx[1][3], (mtx[1][3] + (mtx[1][1] * y))
+        );
+        EMU64_LOG_VERBOSE(
+            "%8.3f * %8.3f + %8.3f = %8.3f\n",
+            mtx[2][2], x, mtx[2][3], (mtx[2][3] + (mtx[2][2] * z))
+        );
+    }
+}
