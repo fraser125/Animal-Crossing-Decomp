@@ -38,6 +38,12 @@
 
 #define EMU64_WARN_TIME 600
 
+/* Run modes */
+#define EMU64_RUN_MODE_SKIP -1
+#define EMU64_RUN_MODE_NORMAL 0
+#define EMU64_RUN_MODE_VERBOSE EMU64_PRINT_LEVEL0_FLAG | EMU64_PRINT_LEVEL1_FLAG | EMU64_PRINT_LEVEL2_FLAG | \
+    EMU64_PRINT_LEVEL3_FLAG | EMU64_PRINT_LEVEL4_FLAG
+
 #define SEGMENT_SHIFT 24
 
 #define SOFTSPRITE_MTX_SEG 0x07
@@ -313,6 +319,8 @@ public:
     void emu64_init();
     void panic(char* msg, char* file, int line);
     u32 emu64_taskstart_r(Gfx* dl_p);
+    void emu64_taskstart(Gfx* dl_p);
+    void emu64_set_verbose(int verbose);
     void textile_conv(u8* src, u8* dst, unsigned int param_3, unsigned int fmt, unsigned int siz, unsigned int param_6, unsigned int param_7, unsigned int param_8, unsigned int param_9, unsigned int param_10);
     int replace_combine_to_tev(Gfx* g);
     int combine_auto();
@@ -534,6 +542,9 @@ private:
 
     /* 0xB64 */
     u8 num_lights;
+
+    /* 0xB80 */
+    u32 task_time;
 
     /* 0xB88 */
     u32 vtx_time;

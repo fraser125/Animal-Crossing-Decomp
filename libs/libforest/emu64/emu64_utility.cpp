@@ -890,3 +890,8 @@ EMU64_INLINE void emu64::print_guMtxXFM1F_dol2(Mtx44 mtx, GXProjectionType type,
         );
     }
 }
+
+void emu64::emu64_set_verbose(int verbose) {
+    this->print_flags = (u8)verbose;
+    this->print_commands = (u8)verbose;
+}

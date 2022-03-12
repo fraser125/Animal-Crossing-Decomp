@@ -6,6 +6,10 @@
 #include <MSL_Common/Include/stdio.h>
 #include <MSL_Common/Include/math.h>
 
+#ifdef GEKKO
+#include <dolphin/base/PPCArch.h>
+#endif
+
 #ifdef ANIMAL_FOREST_EPLUS
 #include <OSFastCast.h>
 #endif
@@ -307,6 +311,7 @@ void emu64::dl_G_DL() {
         #ifdef EMU64_DEBUG
 
         if (this->print_commands) {
+            /* Translation: ### seriously? */
             this->Printf1("gsGXCallDisplayList(%s,%d), /* ### マジ？ */", segchk(gfx->dma.addr), gfx->dma.len);
         }
 
@@ -2892,10 +2897,10 @@ void emu64::dl_G_MOVEWORD() {
                 emu64::warningString[1] = s1;
                 emu64::warningString[2] = s2;
                 emu64::warningString[3] = s3;
-                emu64::warningTime[0] = 600;
-                emu64::warningTime[1] = 600;
-                emu64::warningTime[2] = 600;
-                emu64::warningTime[3] = 600;
+                emu64::warningTime[0] = EMU64_WARN_TIME;
+                emu64::warningTime[1] = EMU64_WARN_TIME;
+                emu64::warningTime[2] = EMU64_WARN_TIME;
+                emu64::warningTime[3] = EMU64_WARN_TIME;
 
                 this->segment_set = true;
                 OSReport("%s\n%s\n%s\n", s1, s2, s3);
@@ -3170,6 +3175,69 @@ u32 emu64::emu64_taskstart_r(Gfx* dl_p) {
     if (FrameCancel != FALSE) {
         this->Printf0("フレームキャンセル\n"); /* Translation: Frame cancellation */
     }
-    
+
     return this->err_count;
+}
+
+void emu64::emu64_taskstart(Gfx* dl_p) {
+    static struct {
+        u8 value;
+        bool set;
+    } flag;
+
+    if (flag.set == false) {
+        flag.value = 0;
+        flag.set = true;
+    }
+    
+    #ifdef GEKKO
+    PPCSync();
+    #endif
+
+    if ((int)aflags[AFLAGS_RUN_MODE] != EMU64_RUN_MODE_SKIP) {
+        if (aflags[AFLAGS_RUN_MODE] != EMU64_RUN_MODE_NORMAL) {
+            this->emu64_set_verbose(aflags[AFLAGS_RUN_MODE]);
+            aflags.set(AFLAGS_RUN_MODE, EMU64_RUN_MODE_NORMAL);
+        }
+
+        #ifdef EMU64_DEBUG
+        u32 start = osGetCount();
+        #endif
+
+        this->emu64_taskstart_r(dl_p);
+
+        #ifdef EMU64_DEBUG
+        this->task_time += (osGetCount() - start);
+        #endif
+
+        if (aflags[AFLAGS_JUTREPORT_SEGMENT_STATS] == TRUE) {
+            //JW_JUTReport(40, 100, 1, "%d/%d/%d/%d/%d", this->resolved_addresses, this->_2024, this->_2028, this->_202C, this->abnormal_addresses);
+        }
+
+        if (aflags[AFLAGS_PRINT_COMMAND_INFO] != 0) {
+            aflags.set(AFLAGS_PRINT_COMMAND_INFO, 0);
+            for (int i = 0; i < NUM_COMMANDS; i++) {
+                if (this->command_info[i].calls != 0) {
+                    this->Printf0(
+                        "%02X %6d %4d %6d\n",
+                        (u8)(i + G_FIRST_CMD), /* Command */
+                        this->command_info[i].time, /* Total time */
+                        this->command_info[i].calls, /* Total calls */
+                        this->command_info[i].time / this->command_info[i].time /* Average command time */
+                    );
+                }
+            }
+        }
+
+        if (emu64::displayWarning != false) {
+            for (int i = 0; i < EMU64_WARNING_COUNT; i++) {
+                if (emu64::warningString[i] != nullptr) {
+                    //JW_JUTReport(40, i * 16 + 80, 1, "%s", emu64::warningString[i]);
+                    if (emu64::warningTime[i] == 0) {
+                        emu64::warningString[i] = nullptr;
+                    }
+                }
+            }
+        }
+    }
 }
