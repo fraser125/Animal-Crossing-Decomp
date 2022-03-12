@@ -63,6 +63,7 @@ static char s1[256];
 static char s2[256];
 static char s3[256];
 
+static u8 FrameCancel;
 
 /* C++ */
 
@@ -311,6 +312,7 @@ class emu64 : public emu64_print {
 public:
     void emu64_init();
     void panic(char* msg, char* file, int line);
+    u32 emu64_taskstart_r(Gfx* dl_p);
     void textile_conv(u8* src, u8* dst, unsigned int param_3, unsigned int fmt, unsigned int siz, unsigned int param_6, unsigned int param_7, unsigned int param_8, unsigned int param_9, unsigned int param_10);
     int replace_combine_to_tev(Gfx* g);
     int combine_auto();
@@ -404,21 +406,21 @@ public:
 private:
     u8 print_commands;
     bool disable_polygons;
-    int err_count;
-    int unk_08; /* ??? */
-    unsigned int total_vertices;
-    int vtx_load_calls;
-    unsigned int triangles;
-    unsigned int double_triangles;
-    unsigned int quads;
-    unsigned int lines;
-    unsigned int load_ucode_calls;
-    unsigned int num_unknown_cmds;
-    unsigned int num_unknown_ucodes;
+    u32 err_count;
+    u32 cmds_processed; /* ??? */
+    u32 total_vertices;
+    u32 vtx_load_calls;
+    u32 triangles;
+    u32 double_triangles;
+    u32 quads;
+    u32 lines;
+    u32 load_ucode_calls;
+    u32 num_unknown_cmds;
+    u32 num_unknown_ucodes;
     int polygons;
-    unsigned int cullDL_calls;
-    unsigned int cullDL_outside_obj_count;
-    unsigned int cullDL_visible_obj_count;
+    u32 cullDL_calls;
+    u32 cullDL_outside_obj_count;
+    u32 cullDL_visible_obj_count;
     Gfx* gfx_p;
     Gfx gfx;
     u8 gfx_cmd;
@@ -541,6 +543,12 @@ private:
     u32 mtx_time;
     u32 poly_time;
 
+    /* 0xBF8 */
+    struct {
+        u32 time;
+        u32 calls;
+    } command_info[NUM_COMMANDS];
+
     /*  0xDF0 */
     u32 tex_cache_find_time;
 
@@ -562,8 +570,10 @@ private:
     bool segment_set;
 
     /* 0x2038 */
-    Gfx*dl_history[DL_HISTORY_COUNT];
+    Gfx* dl_history[DL_HISTORY_COUNT];
     u8 dl_history_start;
+
+    /* 0x2078 */
 };
 
 static emu64 emu64_class;

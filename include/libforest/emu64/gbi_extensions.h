@@ -20,6 +20,8 @@ extern "C" {
 #define G_OFF 0
 #define G_ON 1
 
+#define G_FIRST_CMD G_SETTEXEDGEALPHA
+
 /* Triangle/Quad vertex bit size */
 #define POLY_5b 0 /* 5 bits per vertex index (0 - 31) */
 #define POLY_7b 1 /* 7 bits per vertex index (0 - 127) */

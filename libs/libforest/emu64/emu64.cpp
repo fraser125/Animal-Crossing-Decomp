@@ -6,6 +6,10 @@
 #include <MSL_Common/Include/stdio.h>
 #include <MSL_Common/Include/math.h>
 
+#ifdef ANIMAL_FOREST_EPLUS
+#include <OSFastCast.h>
+#endif
+
 /* Debug info for other mode high cmds */
 #define NUM_OTHERMODE_HIGH_CMDS 11
 static OthermodeParameterInfo h_tbl[] = {
@@ -3109,4 +3113,63 @@ void emu64::dl_G_SPECIAL_1() {
             mode, (u16)this->gfx.words.w0, this->gfx.words.w1
         );
     }
+}
+
+u32 emu64::emu64_taskstart_r(Gfx* dl_p) {
+    this->gfx_p = dl_p;
+    EMU64_LOG_INFO("*** emu64taskstart ***\n");
+    #ifdef ANIMAL_FOREST_EPLUS
+    OSInitFastCast();
+    #endif
+    this->end_dl = false;
+
+    while (true) {
+        if (this->end_dl != false || FrameCancel != FALSE) break;
+
+        this->cmds_processed++;
+        EMU64_LOG_QUIET("%08x:", this->gfx_p);
+        this->gfx = *this->gfx_p;
+        this->gfx_cmd = this->gfx.dma.cmd;
+        this->dl_history[this->dl_history_start] = this->gfx_p;
+        this->dl_history_start++;
+        if (this->dl_history_start > DL_HISTORY_COUNT - 1) {
+            this->dl_history_start = 0;
+        }
+
+        this->work_ptr = nullptr;
+
+        if (this->print_commands != false) {
+            EMU64_LOG_QUIET("%08x-%08x:", this->gfx.words.w0, this->gfx.words.w1);
+            for (int i = 0; i < this->DL_stack_level; i++) {
+                EMU64_LOG_QUIET(" ");
+            }
+        }
+
+        u8 cmd_index = this->gfx_cmd - G_FIRST_CMD;
+        if (cmd_index > NUM_COMMANDS - 1) {
+            this->Printf0("予期しないコマンドがありました。中断します。\n"); /* Found an unexpected command. Interrupting. */
+            break;
+        }
+
+        dl_func func = dl_func_tbl[cmd_index];
+        if (func != nullptr) {
+            #ifdef EMU64_DEBUG
+            u32 start = osGetCount();
+            #endif
+            (this->*func)();
+            #ifdef EMU64_DEBUG
+            this->command_info[cmd_index].time += (osGetCount() - start);
+            #endif
+            this->command_info[cmd_index].calls++;
+        }
+
+        EMU64_LOG_QUIET("\n");
+        this->gfx_p++;
+    }
+
+    if (FrameCancel != FALSE) {
+        this->Printf0("フレームキャンセル\n"); /* Translation: Frame cancellation */
+    }
+    
+    return this->err_count;
 }
