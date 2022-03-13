@@ -57,6 +57,52 @@
 #define TLUT_FORMAT_NONE 0
 #define TLUT_FORMAT_RGB5A3 0x8000
 
+/* Dirty Flag Indicies */
+#ifdef ANIMAL_FOREST_PLUS
+#define NUM_DIRTY_FLAGS 31
+#else
+#define NUM_DIRTY_FLAGS 32
+#endif
+
+#define DIRTY_FLAG_PRIM_COLOR 0
+#define DIRTY_FLAG_ENV_COLOR 1
+#define DIRTY_FLAG_BLEND_COLOR 2
+#define DIRTY_FLAG_FOG 3
+#define DIRTY_FLAG_FILL_COLOR 4
+#define DIRTY_FLAG_TEV_FILL_COLOR 5
+#define DIRTY_FLAG_COMBINE 6
+#define DIRTY_FLAG_OTHERMODE_HIGH 7
+#define DIRTY_FLAG_OTHERMODE_LOW 8
+#define DIRTY_FLAG_GEOMETRYMODE 9
+#define DIRTY_FLAG_PROJ_MTX 10
+#define DIRTY_FLAG_TEXTURE 11
+#define DIRTY_FLAG_MODELVIEW_MTX 12
+#define DIRTY_FLAG_TILE0 13
+#define DIRTY_FLAG_TILE1 14
+#define DIRTY_FLAG_TILE2 15
+#define DIRTY_FLAG_TILE3 16
+#define DIRTY_FLAG_TILE4 17
+#define DIRTY_FLAG_TILE5 18
+#define DIRTY_FLAG_TILE6 19
+#define DIRTY_FLAG_TILE7 20
+#define DIRTY_FLAG_21 21
+#define DIRTY_FLAG_22 22
+#define DIRTY_FLAG_23 23
+#define DIRTY_FLAG_24 24
+#define DIRTY_FLAG_25 25
+#define DIRTY_FLAG_26 26
+#define DIRTY_FLAG_27 27
+#define DIRTY_FLAG_28 28
+/* Animal Forest+ doesn't have a separate flag for Lights */
+#ifdef ANIMAL_FOREST_PLUS
+#define DIRTY_FLAG_LIGHTING 29
+#define DIRTY_FLAG_TEXTURE_MTX 30
+#else
+#define DIRTY_FLAG_LIGHTS 29
+#define DIRTY_FLAG_LIGHTING 30
+#define DIRTY_FLAG_TEXTURE_MTX 31
+#endif
+
 /* Conditional inline which is present in DnM+ and DnMe+ but not AC. */
 #ifdef ANIMAL_CROSSING
 #define EMU64_INLINE inline
@@ -338,7 +384,7 @@ public:
     void draw_1tri_2tri_1quad(unsigned int n_verts, ...);
     void fill_rectangle(f32 ux, f32 uy, f32 lx, f32 ly);
     void draw_rectangle(Gtexrect2* rect);
-    void dirty_check(int tile, int nTiles, int doTextureMatrix);
+    void dirty_check(int tile, int n_tiles, BOOL do_texture_matrix);
     const char* segchk(u32 segment);
     EMU64_INLINE void printInfo();
     EMU64_INLINE void* seg2k0(u32 segment);
@@ -482,26 +528,7 @@ private:
     s16 fog_zoffset;
     EmuColor fill_color;
     EmuColor fill_tev_color; /* GX_TEVREG0 */
-    bool prim_color_dirty;
-    bool env_color_dirty;
-    bool blend_color_dirty;
-    bool fog_dirty;
-    bool fill_color_dirty;
-    bool fill_tev_color_dirty;
-    bool combine_dirty;
-    bool othermode_high_dirty;
-    bool othermode_low_dirty;
-    bool geometry_mode_dirty;
-    bool projection_mtx_dirty;
-    bool tex_dirty;
-    bool model_view_mtx_dirty;
-    bool tex_tile_dirty[NUM_TILES];
-
-    /* 0x4C1 */
-    #ifndef ANIMAL_FOREST_PLUS
-    bool lights_dirty; /* Lighting & lights separated in AC */
-    #endif
-    bool lighting_dirty;
+    bool dirty_flags[NUM_DIRTY_FLAGS];
 
     Mtx original_projection_mtx;
     Mtx position_mtx;

@@ -508,7 +508,7 @@ void emu64::dl_G_SETTILE() {
     this->use_dolphin_settile[settile->tile] = false;
     bzero(&this->settile_dolphin_cmds[settile->tile], sizeof(Gsettile_dolphin));
     this->settile_cmds[settile->tile] = *settile;
-    this->tex_tile_dirty[settile->tile] = true;
+    this->dirty_flags[DIRTY_FLAG_TILE0 + settile->tile] = true;
 }
 
 void emu64::dl_G_SETTILE_DOLPHIN() {
@@ -551,7 +551,7 @@ void emu64::dl_G_SETTILE_DOLPHIN() {
     this->texture_info[tile].height = EXPAND_HEIGHT(this->now_setimg2.ht);
 
     /* Mark texture tile as dirty */
-    this->tex_tile_dirty[tile] = true;
+    this->dirty_flags[DIRTY_FLAG_TILE0 + tile] = true;
 }
 
 void emu64::dl_G_LOADTILE() {
@@ -707,7 +707,7 @@ void emu64::dl_G_SETTILESIZE() {
         this->settilesize_dolphin_cmds[settilesize->tile].tile = settilesize->tile;
 
         /* Mark texture tile as dirty */
-        this->tex_tile_dirty[settilesize->tile] = true;
+        this->dirty_flags[DIRTY_FLAG_TILE0 + settilesize->tile] = true;
     }
 }
 
@@ -874,7 +874,7 @@ void emu64::dl_G_SETCOMBINE_NOTEV() {
     if (((this->combiner_low ^ this->gfx.words.w1) | (this->combiner_high ^ this->gfx.words.w0)) != 0) {
         this->combiner_low = this->gfx.words.w1;
         this->combiner_high = this->gfx.words.w0;
-        this->combine_dirty = true;
+        this->dirty_flags[DIRTY_FLAG_COMBINE] = true;
     }
 }
 
@@ -913,7 +913,7 @@ void emu64::dl_G_SETCOMBINE() {
     if (((this->combiner_low ^ this->gfx.words.w1) | (this->combiner_high ^ this->gfx.words.w0)) != 0) {
         this->combiner_low = this->gfx.words.w1;
         this->combiner_high = this->gfx.words.w0;
-        this->combine_dirty = true;
+        this->dirty_flags[DIRTY_FLAG_COMBINE] = true;
     }
 
     if (this->gfx_cmd != G_SETCOMBINE_NOTEV && aflags[AFLAGS_SKIP_COMBINE_TEV] == 0) {
@@ -956,7 +956,7 @@ void emu64::dl_G_SETCOMBINE_TEV() {
     if (((this->combiner_low ^ this->gfx.words.w1) | (this->combiner_high ^ this->gfx.words.w0)) != 0) {
         this->combiner_low = this->gfx.words.w1;
         this->combiner_high = this->gfx.words.w0;
-        this->combine_dirty = true;
+        this->dirty_flags[DIRTY_FLAG_COMBINE] = true;
     }
 }
 
@@ -1001,7 +1001,7 @@ void emu64::dl_G_SETOTHERMODE_H() {
     data |= (this->othermode_high & (1 - (1 << len) << sft) - 1u);
     if (this->othermode_high != data) {
         this->othermode_high = data;
-        this->othermode_high_dirty = true;
+        this->dirty_flags[DIRTY_FLAG_OTHERMODE_HIGH] = true;
     }
 }
 
@@ -1088,9 +1088,9 @@ void emu64::dl_G_SETOTHERMODE_L() {
 
     data |= (this->othermode_low & (1 - (1 << len) << sft) - 1u);
     if (this->othermode_low != data) {
-        this->fog_dirty = true;
+        this->dirty_flags[DIRTY_FLAG_FOG] = true;
         this->othermode_low = data;
-        this->othermode_low_dirty = true;
+        this->dirty_flags[DIRTY_FLAG_OTHERMODE_LOW] = true;
     }
 }
 
@@ -1215,14 +1215,14 @@ void emu64::dl_G_RDPSETOTHERMODE() {
         u32 othermode_h = this->gfx.words.w0 & 0xFFFFFF;
         if (this->othermode_high != othermode_h) {
             this->othermode_high = othermode_h;
-            this->othermode_high_dirty = true;
+            this->dirty_flags[DIRTY_FLAG_OTHERMODE_HIGH] = true;
         }
 
         if (this->othermode_low == this->gfx.words.w1) return;
 
-        this->fog_dirty = true;
+        this->dirty_flags[DIRTY_FLAG_FOG] = true;
         this->othermode_low = this->gfx.words.w1;
-        this->othermode_low_dirty = true;
+        this->dirty_flags[DIRTY_FLAG_OTHERMODE_LOW] = true;
     }
 }
 
@@ -1477,7 +1477,7 @@ void emu64::dl_G_SETENVCOLOR() {
 
     if (this->environment_color.raw != this->gfx.setcolor.color) {
         this->environment_color.raw = this->gfx.setcolor.color;
-        this->env_color_dirty = true;
+        this->dirty_flags[DIRTY_FLAG_ENV_COLOR] = true;
     }
 }
 
@@ -1499,7 +1499,7 @@ void emu64::dl_G_SETBLENDCOLOR() {
 
     if (this->blend_color.raw != this->gfx.setcolor.color) {
         this->blend_color.raw = this->gfx.setcolor.color;
-        this->blend_color_dirty = true;
+        this->dirty_flags[DIRTY_FLAG_BLEND_COLOR] = true;
     }
 }
 
@@ -1521,7 +1521,7 @@ void emu64::dl_G_SETFOGCOLOR() {
 
     if (this->fog_color.raw != this->gfx.setcolor.color) {
         this->fog_color.raw = this->gfx.setcolor.color;
-        this->fog_dirty = true;
+        this->dirty_flags[DIRTY_FLAG_FOG] = true;
     }
 }
 
@@ -1543,14 +1543,14 @@ void emu64::dl_G_SETFILLCOLOR() {
         this->fill_tev_color.g = color->g;
         this->fill_tev_color.b = color->g;
 
-        this->fill_color_dirty = true;
-        this->fill_tev_color_dirty = true;
+        this->dirty_flags[DIRTY_FLAG_FILL_COLOR] = true;
+        this->dirty_flags[DIRTY_FLAG_TEV_FILL_COLOR] = true;
     }
 }
 
 void emu64::dl_G_SETTEXEDGEALPHA() {
     this->tex_edge_alpha = (u8)(this->gfx.words.w1 & 0xFF);
-    this->othermode_low_dirty = true;
+    this->dirty_flags[DIRTY_FLAG_OTHERMODE_LOW] = true;
 }
 
 void emu64::dl_G_SETPRIMDEPTH() {
@@ -1589,13 +1589,13 @@ void emu64::dl_G_SETPRIMCOLOR() {
 
     if (this->primitive_color.raw != this->gfx.setcolor.color) {
         this->primitive_color.raw = this->gfx.setcolor.color;
-        this->prim_color_dirty = true;
+        this->dirty_flags[DIRTY_FLAG_PRIM_COLOR] = true;
     }
 
     u8 prim_level = this->gfx.setcolor.prim_level;
     if (this->fill_tev_color.a != prim_level) {
         this->fill_tev_color.a = prim_level;
-        this->fill_tev_color_dirty = true;
+        this->dirty_flags[DIRTY_FLAG_TEV_FILL_COLOR] = true;
     }
 }
 
@@ -1853,14 +1853,14 @@ void emu64::dl_G_MTX() {
                 }
 
                 MTXIdentity(this->position_mtx);
-                this->projection_mtx_dirty = true;
-                this->fog_dirty = true;
+                this->dirty_flags[DIRTY_FLAG_PROJ_MTX] = true;
+                this->dirty_flags[DIRTY_FLAG_FOG] = true;
             }
         }
 
-        this->model_view_mtx_dirty = true;
-        if (this->model_view_mtx_dirty != false) {
-            this->model_view_mtx_dirty = false;
+        this->dirty_flags[DIRTY_FLAG_MODELVIEW_MTX] = true;
+        if (this->dirty_flags[DIRTY_FLAG_MODELVIEW_MTX] != false) {
+            this->dirty_flags[DIRTY_FLAG_MODELVIEW_MTX] = false;
             MTXConcat(position_mtx, this->model_view_mtx_stack[mtx_stack_size], this->position_mtx_stack[mtx_stack_size]);
             GXLoadPosMtxImm(this->position_mtx_stack[this->mtx_stack_size], NONSHARED_MTX);
         }
@@ -2678,7 +2678,7 @@ void emu64::dl_G_TEXTURE() {
     Gfx* t = (Gfx*)&this->texture_gfx;
     if (((t->words.w0 ^ this->gfx_p->words.w0) | (t->words.w1 ^ this->gfx_p->words.w1)) != 0) {
         this->texture_gfx = *texture;
-        this->tex_dirty = true;
+        this->dirty_flags[DIRTY_FLAG_TEXTURE] = true;
         this->texture_scale_s = this->texture_gfx.s == 0 ? TEXTURE_SCALE : TEXTURE_SCALE_CONV / (f32)this->texture_gfx.s;
         this->texture_scale_t = this->texture_gfx.t == 0 ? TEXTURE_SCALE : TEXTURE_SCALE_CONV / (f32)this->texture_gfx.t;
     }
@@ -2699,7 +2699,7 @@ void emu64::dl_G_POPMTX() {
     #endif
 
     this->mtx_stack_size -= n;
-    this->model_view_mtx_dirty = true;
+    this->dirty_flags[DIRTY_FLAG_MODELVIEW_MTX] = true;
 }
 
 void emu64::dl_G_GEOMETRYMODE() {
@@ -2823,26 +2823,26 @@ void emu64::dl_G_GEOMETRYMODE() {
     set |= gmode & clear;
     if (gmode != set) {
         if ((gmode ^ set) & (G_LIGHTING | G_LIGHTING_POSITIONAL) != 0) {
-            this->lighting_dirty = true;
+            this->dirty_flags[DIRTY_FLAG_LIGHTING] = true;
         }
 
         if ((gmode ^ set) & G_FOG != 0) {
-            this->fog_dirty = true;
+            this->dirty_flags[DIRTY_FLAG_FOG] = true;
         }
 
         if ((gmode ^ set) & G_TEXTURE_GEN != 0) {
-            this->tex_tile_dirty[0] = true;
-            this->tex_tile_dirty[1] = true;
-            this->tex_tile_dirty[2] = true;
-            this->tex_tile_dirty[3] = true;
-            this->tex_tile_dirty[4] = true;
-            this->tex_tile_dirty[5] = true;
-            this->tex_tile_dirty[6] = true;
-            this->tex_tile_dirty[7] = true;
+            this->dirty_flags[DIRTY_FLAG_TILE0] = true;
+            this->dirty_flags[DIRTY_FLAG_TILE1] = true;
+            this->dirty_flags[DIRTY_FLAG_TILE2] = true;
+            this->dirty_flags[DIRTY_FLAG_TILE3] = true;
+            this->dirty_flags[DIRTY_FLAG_TILE4] = true;
+            this->dirty_flags[DIRTY_FLAG_TILE5] = true;
+            this->dirty_flags[DIRTY_FLAG_TILE6] = true;
+            this->dirty_flags[DIRTY_FLAG_TILE7] = true;
         }
 
         this->geometry_mode = set;
-        this->geometry_mode_dirty = true;
+        this->dirty_flags[DIRTY_FLAG_GEOMETRYMODE] = true;
     }
 }
 
@@ -2870,9 +2870,9 @@ void emu64::dl_G_MOVEWORD() {
             EMU64_LOG_VERBOSE("gsSPNumLights(%d), ", num_lights);
             this->num_lights = num_lights;
             #ifdef ANIMAL_FOREST_PLUS
-            this->lighting_dirty = true;
+            this->dirty_flags[DIRTY_FLAG_LIGHTING] = true;
             #else
-            this->lights_dirty = true;
+            this->dirty_flags[DIRTY_FLAG_LIGHTS] = true;
             #endif
         }
         break;
@@ -2918,7 +2918,7 @@ void emu64::dl_G_MOVEWORD() {
 
             this->fog_zmult = fm;
             this->fog_zoffset = fo;
-            this->fog_dirty = true;
+            this->dirty_flags[DIRTY_FLAG_FOG] = true;
         }
         break;
 
@@ -2942,9 +2942,9 @@ void emu64::dl_G_MOVEWORD() {
             this->lights[light].color.b = color->b;
 
             #ifdef ANIMAL_FOREST_PLUS
-            this->lighting_dirty = true;
+            this->dirty_flags[DIRTY_FLAG_LIGHTING] = true;
             #else
-            this->lights_dirty = true;
+            this->dirty_flags[DIRTY_FLAG_LIGHTS] = true;
             #endif
         }
         break;
@@ -2994,9 +2994,9 @@ void emu64::dl_G_MOVEMEM() {
             /* Convert index to 0 based */
             idx = (idx - 1) & (NUM_LIGHTS - 1);
             #ifdef ANIMAL_FOREST_PLUS
-            this->lighting_dirty = true;
+            this->dirty_flags[DIRTY_FLAG_LIGHTING] = true;
             #else
-            this->lights_dirty = true;
+            this->dirty_flags[DIRTY_FLAG_LIGHTS] = true;
             #endif
 
             this->lights[idx].color.r = light->l.col[0];
