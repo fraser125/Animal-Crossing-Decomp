@@ -7,7 +7,6 @@
 #include "texture_cache.h"
 #include <dolphin/gx.h>
 #include <dolphin/mtx.h>
-#include <MSL_Common/Include/algorithm.h>
 
 #define NUM_COMMANDS 64
 #define NUM_SEGMENTS 16
@@ -85,14 +84,14 @@
 #define DIRTY_FLAG_TILE5 18
 #define DIRTY_FLAG_TILE6 19
 #define DIRTY_FLAG_TILE7 20
-#define DIRTY_FLAG_21 21
-#define DIRTY_FLAG_22 22
-#define DIRTY_FLAG_23 23
-#define DIRTY_FLAG_24 24
-#define DIRTY_FLAG_25 25
-#define DIRTY_FLAG_26 26
-#define DIRTY_FLAG_27 27
-#define DIRTY_FLAG_28 28
+#define DIRTY_FLAG_TEXTURE0 21
+#define DIRTY_FLAG_TEXTURE1 22
+#define DIRTY_FLAG_TEXTURE2 23
+#define DIRTY_FLAG_TEXTURE3 24
+#define DIRTY_FLAG_TEXTURE4 25
+#define DIRTY_FLAG_TEXTURE5 26
+#define DIRTY_FLAG_TEXTURE6 27
+#define DIRTY_FLAG_TEXTURE7 28
 /* Animal Forest+ doesn't have a separate flag for Lights */
 #ifdef ANIMAL_FOREST_PLUS
 #define DIRTY_FLAG_LIGHTING 29
@@ -102,6 +101,16 @@
 #define DIRTY_FLAG_LIGHTING 30
 #define DIRTY_FLAG_TEXTURE_MTX 31
 #endif
+
+/* aflag dirty settings */
+#define DIRTY_SET_ALL -1
+#define DIRTY_SET_NONE 0
+#define DIRTY_SET_TILE 1
+
+/* Dirty flag macros */
+#define IS_DIRTY(flag)(this->dirty_flags[flag] != false)
+#define CLEAR_DIRTY(flag)(this->dirty_flags[flag] = false)
+#define SET_DIRTY(flag)(this->dirty_flags[flag] = true)
 
 /* Conditional inline which is present in DnM+ and DnMe+ but not AC. */
 #ifdef ANIMAL_CROSSING
@@ -152,6 +161,27 @@ static u8 FrameCancel;
 #define EMU64_LOG_QUIET(fmt, args...)
 #define EMU64_LOG_VERBOSE(fmt, args...)
 #define EMU64_LOG_INFO(fmt, args...)
+#endif
+
+#ifdef EMU64_DEBUG
+
+#define EMU64_ASSERT_EXISTS() do { \
+    if (this == nullptr) { \
+        EMU64_PANIC(((emu64*)nullptr), "this"); \
+    } \
+} while (0)
+
+#define EMU64_BEGIN_TIMED_BLOCK(name) u32 timer_##name = osGetCount(); \
+do {} while (0)
+
+#define EMU64_END_TIMED_BLOCK(name, timer_field) do { \
+    this->##timer_field = (osGetCount() - timer_##name); \
+} while (0)
+
+#else
+#define EMU64_ASSERT_EXISTS() do {} while(0)
+#define EMU64_BEGIN_TIMED_BLOCK(name) do {} while (0)
+#define EMU64_END_TIMED_BLOCK(name, timer_field) do {} while (0)
 #endif
 
 #define SEG_2_SEGADDR(seg)(seg << SEGMENT_SHIFT)
@@ -271,6 +301,26 @@ static inline f32 fastcast_float(s16* in) {
     #endif
 }
 
+/* Helper function to convert N64 texture format to Dolphin format */
+s16 emu64::fmtxtbl[8][4] = {
+    { GX_TF_CMPR, -1, GX_TF_RGB5A3, GX_TF_RGBA8 },
+    { -1, -1, -1, -1 },
+    { GX_TF_C4, GX_TF_C8, GX_TF_C14X2, -1 },
+    { -1, GX_TF_IA4, GX_TF_IA8, -1 },
+    { GX_TF_I4, GX_TF_I8, GX_TF_RGB565, -1 },
+    { GX_TF_CMPR, GX_TF_A8, GX_TF_RGB5A3, -1 },
+    { -1, GX_TF_Z8, GX_TF_Z16, GX_TF_Z24X8 },
+    { -1, -1, -1, -1 }
+};
+
+static inline s16 cvtN64ToDol(int fmt, int bit_siz) {
+    if (emu64::fmtxtbl[fmt][bit_siz] != -1) {
+        return emu64::fmtxtbl[fmt][bit_siz];
+    }
+
+    return 0;
+}
+
 /* Pointer-to-Member-Function type */
 typedef void (emu64::*dl_func)();
 
@@ -375,6 +425,9 @@ public:
     void combine();
     void setup_texture_tile(int tile);
     void zmode();
+    EMU64_INLINE void blend_mode();
+    EMU64_INLINE void alpha_compare();
+    EMU64_INLINE void cullmode();
     void texture_gen(int tex);
     void texture_matrix();
     void set_position(u32 vtx);
@@ -456,6 +509,9 @@ public:
     static char* warningString[EMU64_WARNING_COUNT];
     static int warningTime[EMU64_WARNING_COUNT];
     static bool displayWarning;
+
+    /* N64 texture format[N64 bit size] -> dol texture format */
+    static s16 fmtxtbl[8][4];
 
 private:
     u8 print_commands;
@@ -580,6 +636,34 @@ private:
     u32 loadtlut_time;
     u32 mtx_time;
     u32 poly_time;
+    u32 dirty_time;
+
+    #ifndef ANIMAL_FOREST_PLUS
+    u32 light_time;
+    u32 light_update_count;
+    #endif
+
+    u32 lighting_time;
+    u32 lighting_update_count;
+
+    u32 texture_time;
+    u32 texture_tile_all_update_count;
+    u32 texture_tile_dolphin_time;
+    u32 texture_tile_dolphin_update_count;
+    u32 texture_tile_time;
+    u32 texture_tile_update_count;
+
+    u32 texture_mtx_time;
+    u32 texture_mtx_count;
+
+    /* 0xBD0 */
+    u32 prim_color_time;
+    u32 env_color_time;
+    u32 fill_color_time;
+    u32 combine_time;
+    u32 othermode_high_time;
+    u32 othermode_low_time;
+    u32 geometry_mode_time;
 
     /* 0xBF8 */
     struct {

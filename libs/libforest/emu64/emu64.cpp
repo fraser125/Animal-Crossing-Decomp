@@ -521,7 +521,7 @@ void emu64::dl_G_SETTILE_DOLPHIN() {
             "gsDPSetTile_Dolphin(G_TF_%s,%d,%d,GX_%s,GX_%s,%d,%d),",
             dolfmttbl[settile_dolphin->dol_fmt],
             settile_dolphin->tile,
-            settile_dolphin->unk_0,
+            settile_dolphin->tlut_name,
             doltexwrapmode[settile_dolphin->wrap_s],
             doltexwrapmode[settile_dolphin->wrap_t],
             settile_dolphin->shift_s,
@@ -1756,8 +1756,8 @@ void emu64::dl_G_MTX() {
         }
 
         u8 param = (u8)this->gfx_p->dma.len;
-        if (param & G_MTX_PROJECTION == G_MTX_MODELVIEW) {
-            if (param & G_MTX_PUSH == G_MTX_NOPUSH) {
+        if ((param & G_MTX_PROJECTION) == G_MTX_MODELVIEW) {
+            if ((param & G_MTX_PUSH) == G_MTX_NOPUSH) {
                 if (this->mtx_stack_size < MTX_STACK_SIZE - 1) {
                     this->mtx_stack_size++;
                 }
@@ -1767,7 +1767,7 @@ void emu64::dl_G_MTX() {
                 }
             }
 
-            if (param & G_MTX_LOAD == G_MTX_MUL) {
+            if ((param & G_MTX_LOAD) == G_MTX_MUL) {
                 MTXConcat(this->model_view_mtx_stack[this->mtx_stack_size], mtx34, this->model_view_mtx_stack[this->mtx_stack_size]);
             }
             else {
@@ -1829,7 +1829,7 @@ void emu64::dl_G_MTX() {
             GXLoadNrmMtxImm(this->model_view_mtx, NONSHARED_MTX);
         }
         else { /* Projection */
-            if (param & G_MTX_LOAD == G_MTX_MUL) {
+            if ((param & G_MTX_LOAD) == G_MTX_MUL) {
                 bcopy(mtx44, &this->position_mtx, sizeof(Mtx)); /* Last row of Mtx44 is ignored */
             }
             else {
@@ -1891,7 +1891,7 @@ void emu64::dl_G_VTX() {
             this->work_ptr = this->seg2k0(this->gfx.dma.addr);
             Vtx* vtx_p = (Vtx*)this->work_ptr;
             for (int i = 0; i < n; i++) {
-                if (this->geometry_mode & G_LIGHTING == 0) {
+                if ((this->geometry_mode & G_LIGHTING) == 0) {
                     EMU64_LOG_NORMAL(
                         "\n{{%6d, %6d, %6d, %d, %6d, %6d, %4d, %4d, %4d, %3d}}, /* vn%02d */",
                         vtx_p[i].n.ob[0], vtx_p[i].n.ob[1], vtx_p[i].n.ob[2], /* Position */
@@ -1981,7 +1981,7 @@ void emu64::dl_G_VTX() {
             }
             
             /* Convert vectors to correct space */
-            if (emu_vtx_p->flag & MTX_NONSHARED == MTX_SHARED) {
+            if ((emu_vtx_p->flag & MTX_NONSHARED) == MTX_SHARED) {
                 MTXMultVec(position_mtx, &emu_vtx_p->position, &emu_vtx_p->position); /* Position -> Projection Matrix */
                 MTXMultVec(this->model_view_mtx, &emu_vtx_p->normal, &emu_vtx_p->normal); /* Normal -> View Matrix */
             }
@@ -2111,7 +2111,7 @@ void emu64::dl_G_TRIN() {
         
         Gfx* g = this->gfx_p;
         this->gfx_p++;
-        if (g->words.w1 & POLY_BITMASK == POLY_5b) {
+        if ((g->words.w1 & POLY_BITMASK) == POLY_5b) {
             /* 5 bits per vertex index, first pass = 3 faces, consecutive passes = 4 faces */
             this->set_position3(POLY_GET_V0_5b(g), POLY_GET_V1_5b(g), POLY_GET_V2_5b(g), aflags[AFLAGS_2TRIS]);
             this->polygons++;
@@ -2246,7 +2246,7 @@ void emu64::dl_G_QUADN() {
 
         Gfx* g = this->gfx_p;
         this->gfx_p++;
-        if (g->words.w1 & POLY_BITMASK == POLY_5b) {
+        if ((g->words.w1 & POLY_BITMASK) == POLY_5b) {
             /* 5 bits per vertex index, first pass = 2 faces, consecutive passes = 3 faces */
             this->set_position4(POLY_GET_V0_5b(g), POLY_GET_V1_5b(g), POLY_GET_V2_5b(g), POLY_GET_V3_5b(g), aflags[AFLAGS_2TRIS]);
             this->polygons++;
@@ -2515,7 +2515,7 @@ void emu64::dl_G_CULLDL() {
         Vertex* vtx = &this->vertices[vstart];
 
         /* Vertex position -> camera space calculations */
-        if (vtx->flag & MTX_NONSHARED == MTX_SHARED) {
+        if ((vtx->flag & MTX_NONSHARED) == MTX_SHARED) {
             #ifdef EMU64_DEBUG
             if (this->print_commands != false) {
                 this->print_guMtxXFM1F_dol2(
@@ -2712,7 +2712,7 @@ void emu64::dl_G_GEOMETRYMODE() {
             EMU64_LOG_VERBOSE("gsSPLoadGeometryMode(");
             bool set_empty = true;
             for (int i = 0; i < NUM_GEOMETRYMODE_FLAGS; i++) {
-                if (set & geomtbl[i].mask == geomtbl[i].value) {
+                if ((set & geomtbl[i].mask) == geomtbl[i].value) {
                     if (set_empty) {
                         set_empty = false;
                     }
@@ -2734,7 +2734,7 @@ void emu64::dl_G_GEOMETRYMODE() {
             EMU64_LOG_VERBOSE("gsSPClearGeometryMode(");
             bool clear_empty = true;
             for (int i = 0; i < NUM_GEOMETRYMODE_FLAGS; i++) {
-                if (clear & geomtbl[i].mask == geomtbl[i].value) {
+                if ((clear & geomtbl[i].mask) == geomtbl[i].value) {
                     if (clear_empty) {
                         clear_empty = false;
                     }
@@ -2756,7 +2756,7 @@ void emu64::dl_G_GEOMETRYMODE() {
             EMU64_LOG_VERBOSE("gsSPSetGeometryMode(");
             bool set_empty = true;
             for (int i = 0; i < NUM_GEOMETRYMODE_FLAGS; i++) {
-                if (set & geomtbl[i].mask == geomtbl[i].value) {
+                if ((set & geomtbl[i].mask) == geomtbl[i].value) {
                     if (set_empty) {
                         set_empty = false;
                     }
@@ -2778,7 +2778,7 @@ void emu64::dl_G_GEOMETRYMODE() {
             EMU64_LOG_VERBOSE("gsSPGeometryMode(");
             bool clear_empty = true;
             for (int i = 0; i < NUM_GEOMETRYMODE_FLAGS; i++) {
-                if (~clear & geomtbl[i].mask == geomtbl[i].value) {
+                if ((~clear & geomtbl[i].mask) == geomtbl[i].value) {
                     if (clear_empty) {
                         clear_empty = false;
                     }
@@ -2798,7 +2798,7 @@ void emu64::dl_G_GEOMETRYMODE() {
 
             bool set_empty = true;
             for (int i = 0; i < NUM_GEOMETRYMODE_FLAGS; i++) {
-                if (set & geomtbl[i].mask == geomtbl[i].value) {
+                if ((set & geomtbl[i].mask) == geomtbl[i].value) {
                     if (set_empty) {
                         set_empty = false;
                     }

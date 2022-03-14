@@ -51,6 +51,13 @@ inline void guMtxXFM1F_dol2w(
     }
 }
 
+inline f32 guMtxXFM1F_dol3(Mtx44 mtx, GXProjectionType type, f32 z) {
+    if (type == GX_PERSPECTIVE) {
+        return -mtx[2][3] / (z + mtx[2][2]);
+    }
+    return (z - mtx[2][3]) / mtx[2][2];
+}
+
 inline void guMtxXFM1F_dol6w(
     Mtx44 mtx,
     GXProjectionType type,

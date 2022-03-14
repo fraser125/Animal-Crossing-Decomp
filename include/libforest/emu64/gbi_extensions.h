@@ -257,7 +257,7 @@ typedef struct {
     unsigned int dol_fmt:4;
     unsigned int pad0:1;
     unsigned int tile:3;
-    unsigned int unk_0:4;
+    unsigned int tlut_name:4;
     unsigned int wrap_s:2;
     unsigned int wrap_t:2;
     unsigned int shift_s:4;

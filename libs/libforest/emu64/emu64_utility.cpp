@@ -1,9 +1,11 @@
 /* Note: They used .c file extensions for C++ files */
 #include "emu64.h"
 #include "mtx_extensions.h"
+#include "texture.h"
 #include "boot.h"
 #include "ultra.h"
 #include <stdio.h>
+#include <Runtime/Inc/__mem.h>
 
 static char str[64];
 
@@ -480,7 +482,7 @@ EMU64_INLINE void emu64::setup_1tri_2tri_1quad(u32 v0) {
     u32 start = osGetCount();
     #endif
 
-    if (this->vertices[v0].flag & MTX_NONSHARED == MTX_SHARED) {
+    if ((this->vertices[v0].flag & MTX_NONSHARED) == MTX_SHARED) {
         EMU64_LOG_VERBOSE("setup_1tri_2tri_1quad シェアード\n"); /* Translation: setup_1tri_2tri_1quad shared */
         GXSetCurrentMtx(SHARED_MTX);
         this->using_nonshared_mtx = false;
@@ -494,7 +496,7 @@ EMU64_INLINE void emu64::setup_1tri_2tri_1quad(u32 v0) {
     GXClearVtxDesc();
     GXSetVtxDesc(GX_VA_POS, GX_DIRECT);
     GXSetVtxAttrFmt(GX_VTXFMT0, GX_VA_POS, GX_CLR_RGBA, GX_F32, 0);
-    if (this->geometry_mode & G_LIGHTING == 0) {
+    if ((this->geometry_mode & G_LIGHTING) == 0) {
         GXSetVtxDesc(GX_VA_CLR0, GX_DIRECT);
         GXSetVtxAttrFmt(GX_VTXFMT0, GX_VA_CLR0, GX_CLR_RGBA, GX_RGBA8, 0);
     }
@@ -528,7 +530,7 @@ void emu64::set_position(u32 vtx) {
     #endif
 
     Vertex* emu_vtx = &this->vertices[vtx];
-    if (this->using_nonshared_mtx != false && emu_vtx->flag & MTX_NONSHARED == MTX_SHARED) {
+    if (this->using_nonshared_mtx != false && (emu_vtx->flag & MTX_NONSHARED) == MTX_SHARED) {
         /* Translation: The nonshared triangle group is broken because a shared vertex is mixed in with the nonshared triangle group! */
         this->Printf0("非シェアードの三角形群にシェアードの頂点が混ざっているので破綻しました!\n");
     }
@@ -580,7 +582,7 @@ void emu64::set_position(u32 vtx) {
         }
     }
     
-    if (this->othermode_low & ZMODE_DEC == ZMODE_DEC && this->geometry_mode & G_ZBUFFER != 0 && this->geometry_mode & G_DECAL_EQUAL == 0) {
+    if ((this->othermode_low & ZMODE_DEC) == ZMODE_DEC && this->geometry_mode & G_ZBUFFER != 0 && (this->geometry_mode & G_DECAL_EQUAL) == 0) {
         #ifdef ANIMAL_FOREST_PLUS
         if (aflags[AFLAGS_SKIP_PROJECTION_TRANSFORM] == 0) {
             
@@ -590,7 +592,7 @@ void emu64::set_position(u32 vtx) {
             }
 
             Vec pos;
-            if (emu_vtx->flag & MTX_NONSHARED == MTX_SHARED) {
+            if ((emu_vtx->flag & MTX_NONSHARED) == MTX_SHARED) {
                 pos = emu_vtx->position;
             }
             else {
@@ -619,10 +621,10 @@ void emu64::set_position(u32 vtx) {
 
             tz /= tw;
 
-            if (this->geometry_mode & G_DECAL_ALWAYS == 0) {
+            if ((this->geometry_mode & G_DECAL_ALWAYS) == 0) {
                 tz -= decal_offz.offset;
             }
-            else if (this->geometry_mode & G_DECAL_ALWAYS == G_DECAL_GEQUAL) {
+            else if ((this->geometry_mode & G_DECAL_ALWAYS) == G_DECAL_GEQUAL) {
                 tz += decal_offz.offset;
             }
 
@@ -664,14 +666,14 @@ void emu64::set_position(u32 vtx) {
             }
 
             if (aflags[AFLAGS_DECAL_OFFSET_MODE] == 0) {
-                if (this->geometry_mode & G_DECAL_ALWAYS == 0) {
+                if ((this->geometry_mode & G_DECAL_ALWAYS) == 0) {
                     GXPosition3f32(
                         emu_vtx->position.x,
                         emu_vtx->position.y + decal_offy.offset,
                         emu_vtx->position.z + decal_offz.offset
                     );
                 }
-                else if (this->geometry_mode & G_DECAL_ALWAYS == G_DECAL_GEQUAL) {
+                else if ((this->geometry_mode & G_DECAL_ALWAYS) == G_DECAL_GEQUAL) {
                     GXPosition3f32(
                         emu_vtx->position.x,
                         emu_vtx->position.y - decal_offy.offset,
@@ -710,7 +712,7 @@ void emu64::set_position(u32 vtx) {
         }
         #else /* AC & e+ */
         Vec pos;
-        if (emu_vtx->flag & MTX_NONSHARED == MTX_SHARED) {
+        if ((emu_vtx->flag & MTX_NONSHARED) == MTX_SHARED) {
             pos = emu_vtx->position;
         }
         else if (aflags[AFLAGS_USE_GUVECMULT] == 0) {
@@ -744,10 +746,10 @@ void emu64::set_position(u32 vtx) {
             w = 1.0f;
         }
 
-        if (this->geometry_mode & G_DECAL_ALWAYS == 0) {
+        if ((this->geometry_mode & G_DECAL_ALWAYS) == 0) {
             z -= 0.0001f;
         }
-        else if (this->geometry_mode & G_DECAL_ALWAYS == G_DECAL_GEQUAL) {
+        else if ((this->geometry_mode & G_DECAL_ALWAYS) == G_DECAL_GEQUAL) {
             z += 0.0001f;
         }
 
@@ -774,7 +776,7 @@ void emu64::set_position(u32 vtx) {
             pos.z /= ow;
         }
 
-        if (emu_vtx->flag & MTX_NONSHARED == MTX_SHARED) {
+        if ((emu_vtx->flag & MTX_NONSHARED) == MTX_SHARED) {
             GXPosition3f32(pos.x, pos.y, pos.z);
         }
         else {
@@ -894,4 +896,341 @@ EMU64_INLINE void emu64::print_guMtxXFM1F_dol2(Mtx44 mtx, GXProjectionType type,
 void emu64::emu64_set_verbose(int verbose) {
     this->print_flags = (u8)verbose;
     this->print_commands = (u8)verbose;
+}
+
+static GXColor black_color = { 0, 0, 0, 0 };
+static GXColor white_color = { 255, 255, 255, 255 };
+void emu64::dirty_check(int tile, int n_tiles, BOOL do_texture_matrix) {
+
+    if (aflags[AFLAGS_SET_DIRTY_FLAGS] != DIRTY_SET_NONE) {
+        if ((int)aflags[AFLAGS_SET_DIRTY_FLAGS] == DIRTY_SET_ALL) {
+            memset(this->dirty_flags, TRUE, NUM_DIRTY_FLAGS);
+        }
+        else if (aflags[AFLAGS_SET_DIRTY_FLAGS] < NUM_DIRTY_FLAGS + DIRTY_SET_TILE) {
+            SET_DIRTY(aflags[AFLAGS_SET_DIRTY_FLAGS] - (DIRTY_FLAG_TILE0 + DIRTY_SET_TILE));
+        }
+    }
+
+    EMU64_BEGIN_TIMED_BLOCK(dirty);
+    EMU64_ASSERT_EXISTS(); // line 4826
+
+    if (IS_DIRTY(DIRTY_FLAG_PRIM_COLOR)) {
+        EMU64_BEGIN_TIMED_BLOCK(prim);
+        CLEAR_DIRTY(DIRTY_FLAG_PRIM_COLOR);
+        GXSetTevColor(GX_TEVREG2, this->primitive_color.color);
+        EMU64_END_TIMED_BLOCK(prim, prim_color_time);
+    }
+
+    EMU64_ASSERT_EXISTS(); // line 4833
+
+    if (IS_DIRTY(DIRTY_FLAG_ENV_COLOR)) {
+        EMU64_BEGIN_TIMED_BLOCK(env);
+        CLEAR_DIRTY(DIRTY_FLAG_ENV_COLOR);
+        GXSetTevColor(GX_TEVPREV, this->environment_color.color);
+        EMU64_END_TIMED_BLOCK(env, env_color_time);
+    }
+
+    EMU64_ASSERT_EXISTS(); // line 4840
+
+    if (IS_DIRTY(DIRTY_FLAG_FOG)) {
+        /**
+         * Othermode lower's upper 16 bits are the cycle dependent "blender" register.
+         * The calculation can have two phases over two cycles, and the params are as such:
+         * P0P0|P1P1|A0A0|A1A1|M0M0|M1M1|B0B0|B1B1
+         * 
+         * The emulator is checking if the first cycle's P0 value (upper most two bits) is G_BL_CLR_FOG.
+         * This is equivalent to the standard GLB_c1 macro's m1a parameter.
+         */
+        if ((this->othermode_low >> 30) == G_BL_CLR_FOG && (this->geometry_mode & G_FOG) != 0) {
+            /* The developers checked fog_zmult twice in all versions. Maybe it should've been fog_zoffset? */
+            if (this->fog_zmult != 0 && this->fog_zmult != 0 && aflags[AFLAGS_SET_DIRTY_FLAGS] == 0) {
+                CLEAR_DIRTY(DIRTY_FLAG_FOG);
+                
+                /* N64 fog position min-max calculations */
+                int min = 500 - (this->fog_zoffset * 500) / this->fog_zmult;
+                int max = 128000 / this->fog_zmult + min;
+
+                /* Calculate startz & endz fog parameters */
+                f32 startz = guMtxXFM1F_dol3(this->projection_mtx, this->projection_type, ((f32)min - 1000.0f) / 1064.0f);
+                f32 endz = guMtxXFM1F_dol3(this->projection_mtx, this->projection_type, ((f32)max - 1000.0f) / 1016.0f);
+
+                GXSetFog(GX_FOG_PERSP_LIN, -startz, -endz, this->near, this->far, this->fog_color.color);
+            }
+        }
+        else {
+            GXSetFog(GX_FOG_NONE, 0.0f, 0.0f, 0.0f, 0.0f, this->fog_color.color);
+        }
+    }
+
+    EMU64_ASSERT_EXISTS(); // line 4864
+
+    if (IS_DIRTY(DIRTY_FLAG_TEV_FILL_COLOR) || IS_DIRTY(DIRTY_FLAG_FILL_COLOR)) {
+        EMU64_BEGIN_TIMED_BLOCK(fill);
+        CLEAR_DIRTY(DIRTY_FLAG_FILL_COLOR);
+        CLEAR_DIRTY(DIRTY_FLAG_TEV_FILL_COLOR);
+        GXSetTevColor(GX_TEVREG1, this->fill_color.color);
+        EMU64_END_TIMED_BLOCK(fill, fill_color_time);
+    }
+
+    EMU64_ASSERT_EXISTS(); // line 4872
+    if (IS_DIRTY(DIRTY_FLAG_COMBINE) || IS_DIRTY(DIRTY_FLAG_OTHERMODE_HIGH)) {
+        EMU64_BEGIN_TIMED_BLOCK(combine);
+        CLEAR_DIRTY(DIRTY_FLAG_COMBINE);
+        this->combine();
+        EMU64_END_TIMED_BLOCK(combine, combine_time);
+    }
+
+    EMU64_ASSERT_EXISTS();
+    if (IS_DIRTY(DIRTY_FLAG_OTHERMODE_HIGH)) {
+        EMU64_BEGIN_TIMED_BLOCK(othermode_h);
+        CLEAR_DIRTY(DIRTY_FLAG_OTHERMODE_HIGH);
+        EMU64_END_TIMED_BLOCK(othermode_h, othermode_high_time);
+    }
+
+    EMU64_ASSERT_EXISTS();
+    if (IS_DIRTY(DIRTY_FLAG_OTHERMODE_LOW) || IS_DIRTY(DIRTY_FLAG_GEOMETRYMODE)) {
+        this->zmode();
+        this->blend_mode();
+
+        if (IS_DIRTY(DIRTY_FLAG_OTHERMODE_LOW)) {
+            EMU64_BEGIN_TIMED_BLOCK(othermode_l);
+            CLEAR_DIRTY(DIRTY_FLAG_OTHERMODE_LOW);
+            this->alpha_compare();
+            EMU64_END_TIMED_BLOCK(othermode_l, othermode_low_time);
+        }
+
+        if (IS_DIRTY(DIRTY_FLAG_GEOMETRYMODE)) {
+            EMU64_BEGIN_TIMED_BLOCK(geometry_mode);
+            CLEAR_DIRTY(DIRTY_FLAG_GEOMETRYMODE);
+            this->cullmode();
+            EMU64_END_TIMED_BLOCK(geometry_mode, geometry_mode_time);
+        }
+    }
+
+    EMU64_ASSERT_EXISTS();
+    #ifdef ANIMAL_FOREST_PLUS
+    /* Lighting & lights block */
+    if (IS_DIRTY(DIRTY_FLAG_LIGHTING)) {
+        EMU64_BEGIN_TIMED_BLOCK(lighting);
+        CLEAR_DIRTY(DIRTY_FLAG_LIGHTING);
+        if ((this->geometry_mode & G_LIGHTING) == 0) {
+            GXSetChanCtrl(GX_COLOR0A0, GX_FALSE, GX_SRC_REG, GX_SRC_VTX, GX_LIGHT_NULL, GX_DF_NONE, GX_AF_NONE);
+        }
+        else {
+            int i;
+            for (i = 0; i < this->num_lights; i++) {
+                EmuLight* l = &this->lights[i];
+                GXLightObj light_obj;
+                GXInitLightPos(&light_obj, l->position.x, l->position.y, l->position.z);
+                GXInitLightDir(&light_obj, 0.0f, 0.0f, 0.0f);
+                GXInitLightAttn(&light_obj, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f);
+
+                if (l->attenuation.kc != 0.0f) {
+                    GXInitLightDir(&light_obj, 1.0f, 0.0f, 0.0f);
+                    GXInitLightAttn(
+                        &light_obj,
+                        0.0f, 0.0f, 0.0f, /* a */
+                        l->attenuation.kc, l->attenuation.k1, l->attenuation.kq /* k */
+                    );
+                }
+
+                if (aflags[AFLAGS_LIGHT_OVERRIDE_ATTN_K0] != 0) {
+                    f32 k0 = (f32)aflags[AFLAGS_LIGHT_OVERRIDE_ATTN_K0] / 1000.0f;
+                    f32 k1 = (f32)aflags[AFLAGS_LIGHT_OVERRIDE_ATTN_K1] / 1000.0f;
+                    f32 k2 = (f32)aflags[AFLAGS_LIGHT_OVERRIDE_ATTN_K2] / 1000000.0f;
+                    GXInitLightAttn(&light_obj, 0.0f, 0.0f, 0.0f, k0, k1, k2);
+                }
+
+                GXInitLightColor(&light_obj, l->color.color);
+                GXLoadLightObjImm(&light_obj, (GXLightID)(1 << i));
+            }
+            
+            GXSetChanAmbColor(GX_COLOR0, this->lights[i].color.color);
+            GXSetChanAmbColor(GX_ALPHA0, black_color);
+
+            if (aflags[AFLAGS_LIGHT_DISABLE_DIFFUSION] == 0) {
+                if ((aflags[AFLAGS_LIGHT_FORCE_ATTN_MODE] == 0 && this->geometry_mode & G_LIGHTING_POSITIONAL != 0) || aflags[AFLAGS_LIGHT_FORCE_ATTN_MODE] == 2) {
+                    GXSetChanCtrl(GX_COLOR0, GX_TRUE, GX_SRC_REG, GX_SRC_REG, (1 << num_lights) - 1, GX_DF_CLAMP, GX_AF_SPOT);
+                }
+                else {
+                    GXSetChanCtrl(GX_COLOR0, GX_TRUE, GX_SRC_REG, GX_SRC_REG, (1 << num_lights) - 1, GX_DF_CLAMP, GX_AF_NONE);
+                }
+
+                GXSetChanCtrl(GX_ALPHA0, GX_FALSE, GX_SRC_REG, GX_SRC_VTX, 0, GX_DF_NONE, GX_AF_NONE);
+            }
+            else {
+                GXSetChanMatColor(GX_COLOR0A0, white_color);
+                GXSetChanCtrl(GX_COLOR0A0, GX_FALSE, GX_SRC_REG, GX_SRC_REG, 0, GX_DF_NONE, GX_AF_NONE);
+            }
+        }
+
+        GXSetNumChans(1);
+        EMU64_END_TIMED_BLOCK(lighting, lighting_time);
+        this->lighting_update_count++;
+    }
+    #else
+    /* Lights block */
+    if (IS_DIRTY(DIRTY_FLAG_LIGHTS)) {
+        EMU64_BEGIN_TIMED_BLOCK(lights);
+        CLEAR_DIRTY(DIRTY_FLAG_LIGHTS);
+        SET_DIRTY(DIRTY_FLAG_LIGHTING);
+        int i;
+        for (i = 0; i < this->num_lights; i++) {
+            EmuLight* l = &this->lights[i];
+            GXLightObj light_obj;
+            GXInitLightPos(&light_obj, l->position.x, l->position.y, l->position.z);
+            GXInitLightDir(&light_obj, 0.0f, 0.0f, 0.0f);
+            GXInitLightAttn(&light_obj, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f);
+
+            if (l->attenuation.kc != 0.0f) {
+                GXInitLightDir(&light_obj, 1.0f, 0.0f, 0.0f);
+                GXInitLightAttn(
+                    &light_obj,
+                    0.0f, 0.0f, 0.0f, /* a */
+                    l->attenuation.kc, l->attenuation.k1, l->attenuation.kq /* k */
+                );
+            }
+
+            GXInitLightColor(&light_obj, l->color.color);
+            GXLoadLightObjImm(&light_obj, (GXLightID)(1 << i));
+        }
+        
+        GXSetChanAmbColor(GX_COLOR0A0, this->lights[i].color.color);
+        EMU64_END_TIMED_BLOCK(lights, light_time);
+        this->light_update_count++;
+    }
+
+    /* Lighting block */
+    if (IS_DIRTY(DIRTY_FLAG_LIGHTING)) {
+        EMU64_BEGIN_TIMED_BLOCK(lighting);
+        CLEAR_DIRTY(DIRTY_FLAG_LIGHTING);
+        if ((this->geometry_mode & G_LIGHTING) == 0) {
+            GXSetChanCtrl(GX_COLOR0A0, GX_FALSE, GX_SRC_REG, GX_SRC_VTX, GX_LIGHT_NULL, GX_DF_NONE, GX_AF_NONE);
+        }
+        else {
+            if (aflags[AFLAGS_LIGHT_DISABLE_DIFFUSION] == 0) {
+                if (this->geometry_mode & G_LIGHTING_POSITIONAL != 0) {
+                    GXSetChanCtrl(GX_COLOR0, GX_TRUE, GX_SRC_REG, GX_SRC_REG, (1 << num_lights) - 1, GX_DF_CLAMP, GX_AF_SPOT);
+                }
+                else {
+                    GXSetChanCtrl(GX_COLOR0, GX_TRUE, GX_SRC_REG, GX_SRC_REG, (1 << num_lights) - 1, GX_DF_CLAMP, GX_AF_NONE);
+                }
+
+                GXSetChanCtrl(GX_ALPHA0, GX_FALSE, GX_SRC_REG, GX_SRC_VTX, 0, GX_DF_NONE, GX_AF_NONE);
+            }
+            else {
+                GXSetChanCtrl(GX_COLOR0A0, GX_FALSE, GX_SRC_REG, GX_SRC_REG, 0, GX_DF_NONE, GX_AF_NONE);
+            }
+        }
+
+        EMU64_END_TIMED_BLOCK(lighting, lighting_time);
+        this->lighting_update_count++;
+    }
+    #endif
+
+    /* Texture block */
+    EMU64_ASSERT_EXISTS(); // line 4957
+    if (do_texture_matrix > -1) {
+        EMU64_BEGIN_TIMED_BLOCK(texture);
+        /* Flags TEXTURE0/1 are checked but not set in any version of the emulator. Not sure on the names. */
+        if (IS_DIRTY(DIRTY_FLAG_TILE0) || IS_DIRTY(DIRTY_FLAG_TEXTURE0) || IS_DIRTY(DIRTY_FLAG_TILE1) || IS_DIRTY(DIRTY_FLAG_TEXTURE1)) {
+            SET_DIRTY(DIRTY_FLAG_TEXTURE_MTX);
+        }
+
+        int end_tile = tile + n_tiles;
+        for (int i = tile; i <= n_tiles; i++) {
+            int t = i & 7;
+            if (IS_DIRTY(DIRTY_FLAG_TILE0 + t) || IS_DIRTY(DIRTY_FLAG_TEXTURE0 + t)) {
+                EMU64_BEGIN_TIMED_BLOCK(texture_mtx_tile);
+                CLEAR_DIRTY(DIRTY_FLAG_TILE0 + t);
+                CLEAR_DIRTY(DIRTY_FLAG_TEXTURE0 + t);
+
+                if (this->use_dolphin_settile[t] == true) {
+                    u32 wrap_s = this->settile_dolphin_cmds[t].wrap_s;
+                    u32 wrap_t = this->settile_dolphin_cmds[t].wrap_t;
+                    u16 height = (u16)this->tex_objs[t].dummy[1]; /* Height is lower 16 bits of second u32 */
+                    u16 width = (u16)(this->tex_objs[t].dummy[1] >> 16); /* Width is upper 16 bits of second u32 */
+                    void* img_addr = (void*)this->tex_objs[t].dummy[0]; /* Image mem pointer is first u32 */
+                    u8 fmt = (u8)(this->tex_objs[t].dummy[2] >> 24);
+                    u8 bit_siz = (u8)(this->tex_objs[t].dummy[2] >> 16);
+
+                    s16 dol_fmt = cvtN64ToDol(fmt, bit_siz);
+                    if ((u32)img_addr & 0x1F != 0) {
+                        /* Translation: Texture (%08x) alignment isn't 32 bytes */
+                        this->Printf0("テクスチャ(%08x)のアライメントが３２バイトになっていません\n");
+                        img_addr = (void*)((u32)img_addr & ~0x1F);
+                    }
+
+                    if (this->geometry_mode & G_TEXTURE_GEN_LINEAR != 0 && aflags[AFLAGS_DO_TEXTURE_LINEAR_CONVERT] != 0) {
+                        img_addr = TextureLinearConvert(img_addr, width, height, fmt, bit_siz);
+                    }
+
+                    if (fmt == G_IM_FMT_CI) {
+                        GXInitTexObjCI(
+                            &this->tex_objs[t],
+                            img_addr,
+                            width, height,
+                            (GXCITexFmt)dol_fmt,
+                            (GXTexWrapMode)wrap_s, (GXTexWrapMode)wrap_t,
+                            GX_FALSE,
+                            this->settile_dolphin_cmds[t].tlut_name
+                        );
+                    }
+                    else {
+                        GXInitTexObj(
+                            &this->tex_objs[t],
+                            img_addr,
+                            width, height,
+                            (GXTexFmt)dol_fmt,
+                            (GXTexWrapMode)wrap_s, (GXTexWrapMode)wrap_t,
+                            GX_FALSE
+                        );
+                    }
+
+                    int aflags_tex_lod_mode = aflags[AFLAGS_TEX_GEN_LOD_MODE];
+                    if ((this->othermode_high & G_TF_BILERP) == 0 || (this->othermode_high & G_CYC_COPY) != 0 || (aflags_tex_lod_mode == 1 && aflags_tex_lod_mode != 2)) {
+                        GXInitTexObjLOD(&this->tex_objs[t], GX_NEAR, GX_NEAR, 0.0f, 0.0f, 0.0f, GX_FALSE, GX_FALSE, GX_ANISO_1);
+                    }
+                    else if (aflags_tex_lod_mode == 3) {
+                        GXInitTexObjLOD(&this->tex_objs[t], GX_NEAR, GX_NEAR, 0.0f, 0.0f, 0.0f, GX_FALSE, GX_TRUE, GX_ANISO_1);
+                    }
+
+                    GXLoadTexObj(&this->tex_objs[t], (GXTexMapID)t);
+                    EMU64_END_TIMED_BLOCK(texture_mtx_tile, texture_tile_dolphin_time);
+                    this->texture_tile_dolphin_update_count++;
+                }
+                else {
+                    /* N64 texture tile */
+                    this->setup_texture_tile(tile);
+                    EMU64_END_TIMED_BLOCK(texture_mtx_tile, texture_tile_time);
+                    this->texture_tile_update_count++;
+                }
+
+                this->texture_tile_all_update_count++;
+            }
+        }
+
+        EMU64_ASSERT_EXISTS(); // line 5026
+        if (IS_DIRTY(DIRTY_FLAG_TEXTURE_MTX) && do_texture_matrix != FALSE) {
+            CLEAR_DIRTY(DIRTY_FLAG_TEXTURE_MTX);
+            EMU64_BEGIN_TIMED_BLOCK(tex_mtx);
+            this->texture_matrix();
+            this->texture_mtx_count++;
+            EMU64_END_TIMED_BLOCK(tex_mtx, texture_mtx_time);
+        }
+
+        EMU64_END_TIMED_BLOCK(texture, texture_time);
+    }
+
+    EMU64_ASSERT_EXISTS(); // line 5040
+    if (IS_DIRTY(DIRTY_FLAG_PROJ_MTX)) {
+        EMU64_BEGIN_TIMED_BLOCK(proj_mtx);
+        CLEAR_DIRTY(DIRTY_FLAG_PROJ_MTX);
+        GXSetProjection(this->projection_mtx, this->projection_type);
+        EMU64_END_TIMED_BLOCK(proj_mtx, projection_mtx_time);
+    }
+    
+    EMU64_ASSERT_EXISTS(); // line 5047
+    EMU64_END_TIMED_BLOCK(dirty, dirty_time);
+    EMU64_ASSERT_EXISTS(); // line 5049
 }

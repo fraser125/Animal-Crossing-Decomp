@@ -28,6 +28,8 @@ inline void guMtxXFM1F_dol2w(
     f32* ox, f32* oy, f32* oz, f32* ow /* Out x, y, z & w values */
 );
 
+inline f32 guMtxXFM1F_dol3(Mtx44 mtx, GXProjectionType type, f32 z);
+
 /**
  * Works similarly to the N64 standard function guMtxXFMF.
  * Multiplies a 4D vector's components by a GC 4x4 matrix (the projection matrix).
