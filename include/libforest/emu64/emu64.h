@@ -652,9 +652,10 @@ private:
     u32 texture_tile_dolphin_update_count;
     u32 texture_tile_time;
     u32 texture_tile_update_count;
-
     u32 texture_mtx_time;
     u32 texture_mtx_count;
+
+    u32 projection_mtx_time;
 
     /* 0xBD0 */
     u32 prim_color_time;
