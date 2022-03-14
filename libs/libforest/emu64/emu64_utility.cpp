@@ -1376,7 +1376,7 @@ EMU64_INLINE void emu64::blend_mode() {
     }
 }
 
-void emu64::alpha_compare() {
+EMU64_INLINE void emu64::alpha_compare() {
     #ifdef ANIMAL_FOREST_PLUS
     static struct {
         GXCompare value;
@@ -1473,4 +1473,52 @@ void emu64::alpha_compare() {
 
     GXSetZCompLoc(before_tex);
     #endif
+}
+
+EMU64_INLINE void emu64::cullmode() {
+    GXCullMode cullmode;
+    if (aflags[AFLAGS_SET_CULLMODE] == 0) {
+        /* Cull modes seem to be inverted between N64 and GC */
+        cullmode = (GXCullMode)(((this->geometry_mode >> 8) & (G_CULL_FRONT >> 8)) | ((this->geometry_mode >> 10) & (G_CULL_BACK >> 10)));
+    }
+    else if (aflags[AFLAGS_SET_CULLMODE] == 1) { /* Inverse mapping mode */
+        u32 n64_mode = this->geometry_mode & G_CULL_BOTH;
+        if (n64_mode == G_CULL_BACK) {
+            cullmode = GX_CULL_FRONT;
+        }
+        else if (n64_mode == G_CULL_FRONT) {
+            cullmode = GX_CULL_BACK;
+        }
+        else if (n64_mode == G_CULL_BOTH) {
+            cullmode = GX_CULL_ALL;
+        }
+        else {
+            cullmode = GX_CULL_NONE;
+        }
+    }
+    else if (aflags[AFLAGS_SET_CULLMODE] == 2) { /* Direct mapping mode */
+        u32 n64_mode = this->geometry_mode & G_CULL_BOTH;
+        if (n64_mode == G_CULL_BACK) {
+            cullmode = GX_CULL_BACK;
+        }
+        else if (n64_mode == G_CULL_FRONT) {
+            cullmode = GX_CULL_FRONT;
+        }
+        else if (n64_mode == G_CULL_BOTH) {
+            cullmode = GX_CULL_ALL;
+        }
+        else {
+            cullmode = GX_CULL_NONE;
+        }
+    }
+    else { /* Directly set cull mode. 3 = GX_CULL_FRONT, 4 = GX_CULL_BACK, 5 = GX_CULL_ALL */
+        cullmode = (GXCullMode)(aflags[AFLAGS_SET_CULLMODE] - 2);
+    }
+
+    /* Culling is disabled when 2 tris mode is active */
+    if (aflags[AFLAGS_2TRIS] != 0) {
+        cullmode = GX_CULL_NONE;
+    }
+
+    GXSetCullMode(cullmode);
 }
