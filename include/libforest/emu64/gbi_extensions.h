@@ -91,8 +91,9 @@ extern "C" {
 
 /* Extra Geometry Mode Flags */
 #define G_LIGHTING_POSITIONAL 0x400000
-#define G_DECAL_EQUAL 0x20
+#define G_DECAL_LEQUAL 0x00
 #define G_DECAL_GEQUAL 0x10
+#define G_DECAL_EQUAL 0x20
 #define G_DECAL_ALWAYS 0x30
 #define G_DECAL_SPECIAL 0x40
 

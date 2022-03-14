@@ -1234,3 +1234,128 @@ void emu64::dirty_check(int tile, int n_tiles, BOOL do_texture_matrix) {
     EMU64_END_TIMED_BLOCK(dirty, dirty_time);
     EMU64_ASSERT_EXISTS(); // line 5049
 }
+
+void emu64::zmode() {
+    static struct {
+        GXBool value;
+        bool init;
+    } compare_enable;
+
+    static struct {
+        GXCompare value;
+        bool init;
+    } compare_func;
+
+    static struct {
+        GXBool value;
+        bool init;
+    } update_enable;
+
+    static struct {
+        bool value;
+        bool init;
+    } zcomp;
+
+    if (compare_enable.init == false) {
+        compare_enable.init = true;
+    }
+
+    if (compare_func.init == false) {
+        compare_func.init = true;
+    }
+
+    if (update_enable.init == false) {
+        update_enable.value = GX_FALSE;
+        update_enable.init = true;
+    }
+
+    if (zcomp.init == false) {
+        zcomp.value = false;
+        zcomp.init = true;
+    }
+
+    if ((this->othermode_low & Z_CMP) == 0) {
+        if ((this->othermode_low & Z_UPD) == 0) {
+            compare_enable.value = GX_FALSE;
+            compare_func.value = GX_ALWAYS;
+            update_enable.value = GX_FALSE;
+            zcomp.value = true;
+        }
+        else {
+            compare_enable.value = GX_TRUE;
+            compare_func.value = GX_ALWAYS;
+            update_enable.value = GX_TRUE;
+            zcomp.value = false;
+        }
+    }
+    else {
+        #ifdef ANIMAL_FOREST_PLUS
+        compare_func.value = GX_LESS;
+        #endif
+        compare_enable.value = GX_TRUE;
+        if ((this->othermode_low & ZMODE_DEC) == ZMODE_DEC) {
+            u32 decal_mode = this->geometry_mode & G_DECAL_ALWAYS;
+            if (decal_mode == G_DECAL_LEQUAL) {
+                compare_func.value = GX_LEQUAL;
+            }
+            else if (decal_mode == G_DECAL_GEQUAL) {
+                compare_func.value = GX_GEQUAL;
+            }
+            else if (decal_mode == G_DECAL_EQUAL) {
+                compare_func.value = GX_EQUAL;
+            }
+            else {
+                compare_func.value = GX_ALWAYS;
+            }
+
+            if (aflags[AFLAGS_DECAL_OFFSET_MODE] != 0) {
+                if (aflags[AFLAGS_DECAL_OFFSET_MODE] == 1) {
+                    compare_func.value = GX_LEQUAL;
+                }
+                else if (aflags[AFLAGS_DECAL_OFFSET_MODE] == 2) {
+                    compare_func.value = GX_GEQUAL;
+                }
+                else if (aflags[AFLAGS_DECAL_OFFSET_MODE] == 3) {
+                    compare_func.value = GX_EQUAL;
+                }
+                else {
+                    compare_func.value = GX_ALWAYS;
+                }
+            }
+
+            if ((this->geometry_mode & G_DECAL_SPECIAL) == 0) {
+                GXSetColorUpdate(GX_TRUE);
+                GXSetAlphaUpdate(GX_FALSE);
+            }
+            else if (decal_mode == G_DECAL_GEQUAL) {
+                GXSetColorUpdate(GX_FALSE);
+                GXSetAlphaUpdate(GX_TRUE);
+            }
+            else if (decal_mode == G_DECAL_LEQUAL) {
+                GXSetColorUpdate(GX_TRUE);
+                GXSetAlphaUpdate(GX_FALSE);
+            }
+            else {
+                GXSetColorUpdate(GX_TRUE);
+                GXSetAlphaUpdate(GX_FALSE);
+            }
+        }
+        #ifdef ANIMAL_FOREST_PLUS
+        else if (aflags[AFLAGS_FORCE_ZMODE_COMPARE_FUNC_LEQUAL]) {
+            compare_func.value = GX_LEQUAL;
+        }
+        #else
+        else {
+            compare_func.value = GX_LESS;
+        }
+        #endif
+        update_enable.value = (this->othermode_low & Z_UPD) != 0;
+        zcomp.value = false;
+    }
+
+    if (aflags[AFLAGS_2TRIS] != 0) {
+        compare_enable.value = GX_FALSE;
+    }
+    
+    GXSetZMode(compare_enable.value, compare_func.value, update_enable.value);
+}
