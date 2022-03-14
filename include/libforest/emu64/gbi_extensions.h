@@ -96,6 +96,7 @@ extern "C" {
 #define G_DECAL_EQUAL 0x20
 #define G_DECAL_ALWAYS 0x30
 #define G_DECAL_SPECIAL 0x40
+#define G_DECAL_ALL G_DECAL_ALWAYS | G_DECAL_SPECIAL
 
 /* Indicies for G_SPECIAL_1 */
 #define G_SPECIAL_NONE 0

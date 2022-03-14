@@ -1356,6 +1356,22 @@ void emu64::zmode() {
     if (aflags[AFLAGS_2TRIS] != 0) {
         compare_enable.value = GX_FALSE;
     }
-    
+
     GXSetZMode(compare_enable.value, compare_func.value, update_enable.value);
+}
+
+EMU64_INLINE void emu64::blend_mode() {
+    int zmode = this->othermode_low & ZMODE_DEC;
+    if (zmode == ZMODE_DEC && (this->geometry_mode & G_DECAL_ALL) == (G_DECAL_GEQUAL | G_DECAL_SPECIAL)) {
+        GXSetBlendMode(GX_BM_NONE, GX_BL_ONE, GX_BL_ZERO, GX_LO_NOOP);
+    }
+    else if (zmode == ZMODE_DEC && (this->geometry_mode & G_DECAL_ALL) == G_DECAL_SPECIAL) {
+        GXSetBlendMode(GX_BM_BLEND, GX_BL_DSTALPHA, GX_BL_INVDSTALPHA, GX_LO_NOOP);
+    }
+    else if ((this->othermode_low & (IM_RD | FORCE_BL)) == (IM_RD | FORCE_BL)) {
+        GXSetBlendMode(GX_BM_BLEND, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, GX_LO_NOOP);
+    }
+    else {
+        GXSetBlendMode(GX_BM_NONE, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, GX_LO_NOOP);
+    }
 }
