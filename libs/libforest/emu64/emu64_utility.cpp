@@ -1375,3 +1375,102 @@ EMU64_INLINE void emu64::blend_mode() {
         GXSetBlendMode(GX_BM_NONE, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, GX_LO_NOOP);
     }
 }
+
+void emu64::alpha_compare() {
+    #ifdef ANIMAL_FOREST_PLUS
+    static struct {
+        GXCompare value;
+        bool init;
+    } ac_compare0;
+
+    static struct {
+        GXCompare value;
+        bool init;
+    } ac_compare1;
+
+    static struct {
+        u8 value;
+        bool init;
+    } ac_ref0;
+
+    static struct {
+        u8 value;
+        bool init;
+    } ac_ref1;
+
+    static struct {
+        GXAlphaOp value;
+        bool init;
+    } ac_alphaop;
+
+    if (aflags[AFLAGS_SKIP_ALPHA_COMPARE] == 0) {
+        bool gequal = ((this->othermode_low & (AA_EN | CVG_X_ALPHA | ALPHA_CVG_SEL)) == (AA_EN | CVG_X_ALPHA | ALPHA_CVG_SEL) &&
+            (this->othermode_low & (CVG_DST_SAVE | ZMODE_XLU)) == 0);
+        
+        int ac_threshold = !(G_AC_THRESHOLD - (this->othermode_high & G_AC_DITHER));
+        u8 tex_edge_alpha = this->tex_edge_alpha;
+        if (aflags[AFLAGS_OVERRIDE_TEXEDGEALPHA] != 0) {
+            tex_edge_alpha = (u8)aflags[AFLAGS_OVERRIDE_TEXEDGEALPHA];
+        }
+
+        GXCompare comp1 = gequal ? GX_GEQUAL : GX_ALWAYS;
+        GXCompare comp0 = ac_threshold ? GX_GEQUAL : GX_ALWAYS;
+        GXSetAlphaCompare(comp0, this->blend_color.a, GX_AOP_AND, comp1, tex_edge_alpha);
+        
+        GXBool before_tex = GX_TRUE;
+        if (ac_threshold == 0 && !gequal) {
+            before_tex = GX_FALSE;
+        }
+
+        GXSetZCompLoc(!before_tex);
+    }
+    else {
+        if (ac_compare0.init == false) {
+            ac_compare0.value = GX_NEVER;
+            ac_compare0.init = true;
+        }
+
+        if (ac_compare1.init == false) {
+            ac_compare1.value = GX_ALWAYS;
+            ac_compare1.init = true;
+        }
+
+        if (ac_ref0.init == false) {
+            ac_ref0.value = 28;
+            ac_ref0.init = true;
+        }
+
+        if (ac_ref1.init == false) {
+            ac_ref1.value = 0;
+            ac_ref1.init = true;
+        }
+
+        if (ac_alphaop.init == false) {
+            ac_alphaop.value = GX_AOP_AND;
+            ac_alphaop.init = true;
+        }
+
+        GXSetAlphaCompare(ac_compare0.value, ac_ref0.value, ac_alphaop.value, ac_compare1.value, ac_ref1.value);
+    }
+    #else
+    bool gequal = ((this->othermode_low & (AA_EN | CVG_X_ALPHA | ALPHA_CVG_SEL)) == (AA_EN | CVG_X_ALPHA | ALPHA_CVG_SEL) &&
+        (this->othermode_low & (CVG_DST_SAVE | ZMODE_XLU)) == 0);
+    
+    int ac_threshold = !(G_AC_THRESHOLD - (this->othermode_high & G_AC_DITHER));
+    u8 tex_edge_alpha = this->tex_edge_alpha;
+    if (aflags[AFLAGS_OVERRIDE_TEXEDGEALPHA] != 0) {
+        tex_edge_alpha = (u8)aflags[AFLAGS_OVERRIDE_TEXEDGEALPHA];
+    }
+
+    GXCompare comp1 = gequal ? GX_GEQUAL : GX_ALWAYS;
+    GXCompare comp0 = ac_threshold ? GX_GEQUAL : GX_ALWAYS;
+    GXSetAlphaCompare(comp0, this->blend_color.a, GX_AOP_AND, comp1, tex_edge_alpha);
+    
+    GXBool before_tex = GX_FALSE;
+    if (ac_threshold == 0 && !gequal) {
+        before_tex = GX_TRUE;
+    }
+
+    GXSetZCompLoc(before_tex);
+    #endif
+}
