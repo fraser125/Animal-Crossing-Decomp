@@ -2,6 +2,7 @@
 #include "emu64.h"
 #include "mtx_extensions.h"
 #include "texture.h"
+#include "texture_cache.h"
 #include "boot.h"
 #include "ultra.h"
 #include <stdio.h>
@@ -1521,4 +1522,253 @@ EMU64_INLINE void emu64::cullmode() {
     }
 
     GXSetCullMode(cullmode);
+}
+
+void emu64::setup_texture_tile(int tile) {
+    EMU64_BEGIN_TIMED_BLOCK(setup_texture_tile);
+    Gsettile* settile = &this->settile_cmds[tile];
+    if (settile->line == 0) return;
+    
+    u32 tmem = settile->tmem;
+    u32 tmem_idx = tmem / 4;
+    if (tmem_idx > TMEM_ENTRIES - 1) {
+        EMU64_PANIC(this, "tmem / 4 < number(tmem_map)"); /* emu64.c line 3367 (e+), line 2862 (DnM+), line 2756 (AC) */
+    }
+
+    void* tmem_addr = tmem_map[tmem_idx].addr;
+    if (tmem_addr == nullptr) {
+        this->err_count++;
+        return;
+    }
+
+    u32 siz = settile->siz;
+    u32 maskt = settile->maskt;
+    u32 masks = settile->masks;
+
+    u16 stride = (u16)(settile->line << (4 - siz)); 
+    u32 sizet = maskt != 0 ? (1 << maskt) : 0x400;
+    u32 sizes = masks != 0 ? (1 << masks) : 0x400;
+
+    u16 height, width;
+    u8 isDolphinTile = tmem_map[tmem_idx].setimg.setimg2.isDolphin;
+    
+    if (isDolphinTile == 0) {
+        u32 wd = tmem_map[tmem_idx].setimg.setimg.wd;
+        if (wd == 0) {
+            wd = tmem_map[tmem_idx].loadblock.th;
+            if (wd == 0) {
+                height = (((tmem_map[tmem_idx].loadblock.sl) + 1) << (2 - siz)) / stride;
+                width = stride;
+            }
+            else {
+                width = (u16)(((1 << (15 - siz)) - 1) / wd + 1);
+                height = (((tmem_map[tmem_idx].loadblock.sl) + 1) << (2 - siz)) / width;
+            }
+        }
+        else {
+            height = 0;
+            width = (u16)(((wd + 1) << tmem_map[tmem_idx].setimg.setimg.siz) >> siz);
+        }
+    }
+    else {
+        height = EXPAND_HEIGHT(tmem_map[tmem_idx].setimg.setimg2.ht);
+        width = EXPAND_WIDTH(tmem_map[tmem_idx].setimg.setimg2.wd);
+    }
+
+    u16 o_width, o_height = width, height;
+    s16 dol_fmt = cvtN64ToDol(this->settile_cmds[tile].fmt, siz);
+    void* converted_addr = tmem_addr;
+
+    if (isDolphinTile == 0) {
+        if (tmem_map[tmem_idx].setimg.setimg.wd == 0) {
+            if (this->settile_cmds[tile].mt != 0) {
+                u32 tlen = this->settilesize_dolphin_cmds[tile].tlen + 1;
+                if (tlen < height) {
+                    height = tlen;
+                }
+            }
+
+            if (sizet < height) {
+                height = sizet;
+            }
+
+            if (tmem_addr == this->texture_info[tile].img_addr) {
+                /* Translation: ### This tile is already loaded: %08x\n */
+                EMU64_LOG_INFO("### このタイルはすでにロードされています %08x\n", tmem_addr);
+
+                if ((this->settile_cmds[tile].fmt != G_IM_FMT_CI || this->texture_info[tile].tlut_name != this->settile_cmds[tile].palette) &&
+                    aflags[AFLAGS_SKIP_TILE_SETUP] != 0) {
+                    /* Translation: ### Skip tile setup\n */
+                    EMU64_LOG_INFO("### タイルの設定はスキップします\n");
+                    return;
+                }
+            }
+
+            u32 t;
+            if (tmem_map[tmem_idx].loadblock.th == 0) {
+                t = this->settile_cmds[tile].line;
+            }
+            else {
+                t = 0;
+            }
+
+            converted_addr = this->texconv_block_new((u8*)tmem_addr, width, height, this->settile_cmds[tile].fmt, this->settile_cmds[tile].siz, t);
+        }
+        else {
+            u32 ht_start = tmem_map[tmem_idx].loadtile.tl / 4;
+            u32 wd_start = ((tmem_map[tmem_idx].loadtile.sl << tmem_map[tmem_idx].setimg.setimg.siz) >> siz) / 4;
+            u32 wd_end = ((tmem_map[tmem_idx].loadtile.sh << tmem_map[tmem_idx].setimg.setimg.siz) >> siz) / 4;
+            u32 ht_end = tmem_map[tmem_idx].loadtile.th / 4;
+
+            u8* start_addr = ((u8*)tmem_addr) + ((wd_start + width * ht_start << siz) / 2);
+            if (start_addr == this->texture_info[tile].img_addr) {
+                /* Translation: ### This tile is already loaded: %08x\n */
+                EMU64_LOG_INFO("### このタイルはすでにロードされています %08x\n", start_addr);
+
+                if ((this->settile_cmds[tile].fmt != G_IM_FMT_CI || this->texture_info[tile].tlut_name != this->settile_cmds[tile].palette) &&
+                    aflags[AFLAGS_SKIP_TILE_SETUP] != 0) {
+                    /* Translation: ### Skip tile setup\n */
+                    EMU64_LOG_INFO("### タイルの設定はスキップします\n");
+                    return;
+                }
+            }
+
+            converted_addr = this->texconv_tile_new(
+                (u8*)tmem_addr,
+                width,
+                this->settile_cmds[tile].fmt, this->settile_cmds[tile].siz,
+                0, 0,
+                wd_end - wd_start, ht_end - ht_start,
+                0
+            );
+
+            tmem_addr = start_addr;
+            width = (wd_end - wd_start) + 1;
+            height = (ht_end - ht_start) + 1;
+        }
+    }
+
+    if ((this->geometry_mode & G_TEXTURE_GEN_LINEAR) != 0 && aflags[AFLAGS_DO_TEXTURE_LINEAR_CONVERT] != 0) {
+        converted_addr = TextureLinearConvert(converted_addr, width, height, this->settile_cmds[tile].fmt, this->settile_cmds[tile].siz);
+    }
+
+    /* TODO: Go back and rename a lot of these variables */
+    EMU64_LOG_INFO(
+        "\n : setup_texture_tile %s %s SIZE0=%dx? SIZE0X=%dx%d SIZE7=%dx%d TILE=%dx%d\n",
+        get_fmt_str(this->settile_cmds[tile].fmt),
+        get_siz_str(this->settile_cmds[tile].siz),
+        stride,
+        sizes, sizet,
+        o_width, o_height,
+        width, height
+    );
+
+    if (converted_addr == nullptr) {
+        this->Printf0("TEXTURE OVER!!\n");
+        this->err_count++;
+        return;
+    }
+
+    if (tmem_map[tmem_idx].setimg.setimg2.isDolphin == FALSE) {
+        /* Translation: Texture conversion %08x %s %s %dx%d .data %d .bss %d\n */
+        EMU64_LOG_QUIET(
+            "テクスチャ変換 %08x %s %s %dx%d .data %d .bss %d\n",
+            tmem_addr,
+            get_fmt_str(this->settile_cmds[tile].fmt),
+            get_siz_str(this->settile_cmds[tile].siz),
+            width, height,
+            (s32)texture_cache_data.buffer_current - (s32)texture_cache_data.buffer_start,
+            (s32)texture_cache_bss.buffer_current - (s32)texture_cache_bss.buffer_start
+        );
+    }
+
+    /* Convert to GC width & height */
+    if (tmem_map[tmem_idx].setimg.setimg2.isDolphin == FALSE) {
+        u32 w, h;
+        get_dol_wd_ht(this->settile_cmds[tile].siz, width, height, &w, &h);
+        width = (u16)w;
+        height = (u16)h;
+    }
+
+    u32 dol_width = width;
+    u32 dol_height = height;
+
+    GXTexWrapMode wrap_s = GX_CLAMP;
+    GXTexWrapMode wrap_t = GX_CLAMP;
+
+    /* X wrapmode */
+    if (dol_width == 4 || dol_width == 8 || dol_width == 16 || dol_width == 32 || dol_width == 64 || dol_width == 128 || dol_width == 256 || dol_width == 512)
+    {
+        #ifdef ANIMAL_FOREST_PLUS
+        if (aflags[AFLAGS_FORCE_WRAPMODE_REPEAT] == 0 || (this->geometry_mode & G_TEXTURE_GEN) == 0) {
+            if (this->settile_cmds[tile].cs == 0) {
+                wrap_s = this->settile_cmds[tile].ms == 0 ? GX_REPEAT : GX_MIRROR;
+            }
+            else {
+                wrap_s = (this->settile_cmds[tile].ms == 0 || EXPAND_WIDTH(this->settilesize_dolphin_cmds[tile].slen) <= dol_width) ? GX_CLAMP : GX_MIRROR;
+            }
+        }
+        else {
+            wrap_s = GX_REPEAT;
+        }
+        #else
+        if (this->settile_cmds[tile].cs == 0) {
+            wrap_s = this->settile_cmds[tile].ms == 0 ? GX_REPEAT : GX_MIRROR;
+        }
+        else {
+            wrap_s = (this->settile_cmds[tile].ms == 0 || EXPAND_WIDTH(this->settilesize_dolphin_cmds[tile].slen) <= dol_width) ? GX_CLAMP : GX_MIRROR;
+        }
+        #endif
+    }
+
+    /* Y wrapmode */
+    if (dol_height == 4 || dol_height == 8 || dol_height == 16 || dol_height == 32 || dol_height == 64 || dol_height == 128 || dol_height == 256 || dol_height == 512)
+    {
+        #ifdef ANIMAL_FOREST_PLUS
+        if (aflags[AFLAGS_FORCE_WRAPMODE_REPEAT] == 0 || (this->geometry_mode & G_TEXTURE_GEN) == 0) {
+            if (this->settile_cmds[tile].ct == 0) {
+                wrap_t = this->settile_cmds[tile].mt == 0 ? GX_REPEAT : GX_MIRROR;
+            }
+            else {
+                wrap_t = (this->settile_cmds[tile].mt == 0 || EXPAND_WIDTH(this->settilesize_dolphin_cmds[tile].tlen) <= dol_height) ? GX_CLAMP : GX_MIRROR;
+            }
+        }
+        else {
+            wrap_t = GX_REPEAT;
+        }
+        #else
+        if (this->settile_cmds[tile].ct == 0) {
+            wrap_t = this->settile_cmds[tile].mt == 0 ? GX_REPEAT : GX_MIRROR;
+        }
+        else {
+            wrap_t = (this->settile_cmds[tile].mt == 0 || EXPAND_WIDTH(this->settilesize_dolphin_cmds[tile].tlen) <= dol_height) ? GX_CLAMP : GX_MIRROR;
+        }
+        #endif
+    }
+
+    this->texture_info[tile].img_addr = tmem_addr;
+    this->texture_info[tile].format = this->settile_cmds[tile].fmt;
+    this->texture_info[tile].size = this->settile_cmds[tile].siz;
+    this->texture_info[tile].width = dol_width;
+    this->texture_info[tile].height = dol_height;
+
+    if (this->settile_cmds[tile].fmt == G_IM_FMT_CI) {
+        this->texture_info[tile].tlut_name = this->settile_cmds[tile].palette;
+        GXInitTexObjCI(&this->tex_objs[tile], converted_addr, dol_width, dol_height, (GXCITexFmt)dol_fmt, wrap_s, wrap_t, GX_FALSE, this->settile_cmds[tile].palette);
+        EMU64_LOG_INFO("GXInitTexObjCI tile_no=%d %dx%d pal_no=%d\n", tile, dol_width, dol_height, this->settile_cmds[tile].palette);
+    }
+    else {
+        this->texture_info[tile].tlut_name = 0xFF;
+        GXInitTexObj(&this->tex_objs[tile], converted_addr, dol_width, dol_height, (GXTexFmt)dol_fmt, wrap_s, wrap_t, GX_FALSE);
+        EMU64_LOG_INFO("GXInitTexObj tile_no=%d %dx%d\n", tile, dol_width, dol_height);
+    }
+
+    if ((this->geometry_mode & G_TF_BILERP) == 0 || (this->othermode_high & G_CYC_COPY) != 0 || (aflags[AFLAGS_TEX_GEN_LOD_MODE] == 1 && aflags[AFLAGS_TEX_GEN_LOD_MODE] != 2)) {
+        GXInitTexObjLOD(&this->tex_objs[tile], GX_NEAR, GX_NEAR, 0.0f, 0.0f, 0.0f, GX_FALSE, GX_FALSE, GX_ANISO_1);
+    }
+    else if (aflags[AFLAGS_TEX_GEN_LOD_MODE] == 3) {
+        GXInitTexObjLOD(&this->tex_objs[tile], GX_NEAR, GX_NEAR, 0.0f, 0.0f, 0.0f, GX_FALSE, GX_TRUE, GX_ANISO_1);
+    }
+
+    GXLoadTexObj(&this->tex_objs[tile], (GXTexMapID)tile);
 }

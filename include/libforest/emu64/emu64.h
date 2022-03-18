@@ -13,8 +13,6 @@
 #define DL_MAX_STACK_LEVEL 18
 #define DL_HISTORY_COUNT 16
 #define NUM_TILES 8
-#define NUM_TEX_OBJS 4
-#define TMEM_ENTRIES 128
 #define NUM_TLUTS 16
 #define MTX_STACK_SIZE 10
 #define VTX_COUNT 128
@@ -178,6 +176,21 @@ do {} while (0)
     this->##timer_field = (osGetCount() - timer_##name); \
 } while (0)
 
+static inline char* get_fmt_str(u32 fmt) {
+    if (fmt == G_IM_FMT_RGBA) return "RGBA";
+    else if (fmt == G_IM_FMT_YUV) return "YUV";
+    else if (fmt == G_IM_FMT_CI) return "CI";
+    else if (fmt == G_IM_FMT_IA) return "IA";
+    else return "I";
+}
+
+static inline char* get_siz_str(u32 siz) {
+    if (siz == G_IM_SIZ_4b) return "4b";
+    else if (siz == G_IM_SIZ_8b) return "8b";
+    else if (siz == G_IM_SIZ_16b) return "16b";
+    else return "32b";
+}
+
 #else
 #define EMU64_ASSERT_EXISTS() do {} while(0)
 #define EMU64_BEGIN_TIMED_BLOCK(name) do {} while (0)
@@ -321,6 +334,25 @@ static inline s16 cvtN64ToDol(int fmt, int bit_siz) {
     return 0;
 }
 
+static inline void get_blk_wd_ht(u32 siz, u32* blk_wd, u32* blk_ht) {
+    static u8 blk_tbl[4][2] = {
+        { 8, 8 }, /* 4 bpp */
+        { 8, 4 }, /* 8 bpp */
+        { 4, 4 }, /* 16 bpp */
+        { 4, 4 }  /* 32 bpp */
+    };
+
+    *blk_wd = blk_tbl[siz][0];
+    *blk_ht = blk_tbl[siz][1];
+}
+
+static inline void get_dol_wd_ht(u32 siz, u32 in_wd, u32 in_ht, u32* o_wd, u32* o_ht) {
+    u32 blk_wd, blk_ht;
+    get_blk_wd_ht(siz, &blk_wd, &blk_ht);
+    *o_wd = (in_wd + (blk_wd - 1u)) & ~(blk_wd - 1u);
+    *o_ht = (in_ht + (blk_ht - 1u)) & ~(blk_ht - 1u);
+}
+
 /* Pointer-to-Member-Function type */
 typedef void (emu64::*dl_func)();
 
@@ -428,6 +460,8 @@ public:
     EMU64_INLINE void blend_mode();
     EMU64_INLINE void alpha_compare();
     EMU64_INLINE void cullmode();
+    EMU64_INLINE u8* texconv_block_new(u8* addr, u32 wd, u32 ht, u32 fmt, u32 siz, u32 param_6);
+    EMU64_INLINE u8* texconv_tile_new(u8* addr, u32 wd, u32 fmt, u32 siz, u32 start_wd, u32 start_ht, u32 end_wd, u32 end_ht, u32 param_9);
     void texture_gen(int tex);
     void texture_matrix();
     void set_position(u32 vtx);
@@ -557,15 +591,13 @@ private:
     emu64_texture_info texture_info[NUM_TILES];
     Gsetimg2 setimg2_cmds[NUM_TILES];
     void* tlut_addresses[NUM_TLUTS];
-    GXTexObj tex_objs[NUM_TEX_OBJS];
-
-    /* 0x2F0 */
+    GXTexObj tex_objs[NUM_TILES];
     GXTlutObj tlut_objs[NUM_TLUTS];
     bool use_dolphin_settile[NUM_TILES];
     Gsettile settile_cmds[NUM_TILES];
     Gsettile_dolphin settile_dolphin_cmds[NUM_TILES];
     Gsettilesize_dolphin settilesize_dolphin_cmds[NUM_TILES];
-    Gsetimg2 now_setimg2; /* NOTE: this can be either Gsetimg or Gsetimg2 */
+    Gsetimg_new now_setimg;
     u8 tex_edge_alpha;
 
     union {

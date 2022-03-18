@@ -9,6 +9,7 @@
 #define TEX_CACHE_ALIGNMENT (32-1) /* 32 byte alignment */
 #define NUM_TEXTURE_CACHE_DATA 10
 #define TEXTURE_CACHE_LIST_SIZE 256
+#define TMEM_ENTRIES 128
 
 #define TEX_CACHE_ALIGN(n)((n + TEX_CACHE_ALIGNMENT) & ~TEX_CACHE_ALIGNMENT)
 
@@ -20,8 +21,8 @@ typedef struct {
     void* addr;
     Gloadblock loadblock;
     Gloadtile loadtile;
-    Gsetimg2 setimg2;
-} tmem;
+    Gsetimg_new setimg;
+} tmem_t;
 
 typedef struct {
     void* start; /* Start RAM address of cache */
@@ -53,6 +54,9 @@ typedef struct {
     u8 cache_full; /* Set to true when the cache is full */
     u32 buffer_pos; /* Write index into cache buffer */
 } texture_cache_t;
+
+/* TMEM map */
+static tmem_t tmem_map[TMEM_ENTRIES];
 
 static u32 texture_cache_num;
 static texture_cache_entry_t texture_cache_list[TEXTURE_CACHE_LIST_SIZE];

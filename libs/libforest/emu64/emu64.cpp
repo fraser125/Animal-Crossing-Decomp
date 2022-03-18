@@ -173,8 +173,6 @@ static MatrixInfo gmtxtbl[] = {
 
 static char* kakko = "/\\/\\||||||||\\/\\/";
 
-static tmem tmem_map[TMEM_ENTRIES];
-
 void emu64::emu64_init() {
     static bool init;
     static f32 AAnear;
@@ -535,20 +533,20 @@ void emu64::dl_G_SETTILE_DOLPHIN() {
     this->use_dolphin_settile[tile] = true;
     this->settile_dolphin_cmds[tile] = *settile_dolphin;
     bzero(&this->settile_cmds[tile], sizeof(Gsettile));
-    this->setimg2_cmds[tile] = this->now_setimg2;
+    this->setimg2_cmds[tile] = this->now_setimg.setimg2;
 
     /* Setup tile size using S (X): [0, width - 1], T (Y): [0, height - 1] */
     this->settilesize_dolphin_cmds[tile].sl = 0;
     this->settilesize_dolphin_cmds[tile].tl = 0;
-    this->settilesize_dolphin_cmds[tile].slen = this->now_setimg2.wd;
-    this->settilesize_dolphin_cmds[tile].tlen = EXPAND_HEIGHT(this->now_setimg2.ht) - 1;
+    this->settilesize_dolphin_cmds[tile].slen = this->now_setimg.setimg2.wd;
+    this->settilesize_dolphin_cmds[tile].tlen = EXPAND_HEIGHT(this->now_setimg.setimg2.ht) - 1;
 
     /* Set texture info for use in GC texture object initialization */
-    this->texture_info[tile].img_addr = (void*)this->now_setimg2.imgaddr;
-    this->texture_info[tile].format = this->now_setimg2.fmt;
-    this->texture_info[tile].size = this->now_setimg2.siz;
-    this->texture_info[tile].width = EXPAND_WIDTH(this->now_setimg2.wd);
-    this->texture_info[tile].height = EXPAND_HEIGHT(this->now_setimg2.ht);
+    this->texture_info[tile].img_addr = (void*)this->now_setimg.setimg2.imgaddr;
+    this->texture_info[tile].format = this->now_setimg.setimg2.fmt;
+    this->texture_info[tile].size = this->now_setimg.setimg2.siz;
+    this->texture_info[tile].width = EXPAND_WIDTH(this->now_setimg.setimg2.wd);
+    this->texture_info[tile].height = EXPAND_HEIGHT(this->now_setimg.setimg2.ht);
 
     /* Mark texture tile as dirty */
     this->dirty_flags[DIRTY_FLAG_TILE0 + tile] = true;
@@ -573,14 +571,14 @@ void emu64::dl_G_LOADTILE() {
     #endif
 
     /* Check if this image does not support gsDPLoadTile() */
-    if (this->now_setimg2.isDolphin != false) return;
+    if (this->now_setimg.setimg2.isDolphin != false) return;
 
     int tmem = this->settile_cmds[loadtile->tile].tmem;
 
     int sl = loadtile->sl / 4;
     int tl = loadtile->tl / 4;
-    int width = EXPAND_WIDTH(this->now_setimg2.wd);
-    u32 addr = this->now_setimg2.imgaddr + ((sl + tl) * (width << this->now_setimg2.siz)) / 2;
+    int width = EXPAND_WIDTH(this->now_setimg.setimg2.wd);
+    u32 addr = this->now_setimg.setimg2.imgaddr + ((sl + tl) * (width << this->now_setimg.setimg2.siz)) / 2;
 
     #ifdef EMU64_DEBUG
     
@@ -603,7 +601,7 @@ void emu64::dl_G_LOADTILE() {
 
     /* Copy setup values to tmem */
     tmem_map[tmem_idx].loadtile = *loadtile;
-    tmem_map[tmem_idx].setimg2 = this->now_setimg2;
+    tmem_map[tmem_idx].setimg = this->now_setimg;
 
     #ifdef EMU64_DEBUG
 
@@ -634,14 +632,14 @@ void emu64::dl_G_LOADBLOCK() {
 
     #endif
 
-    if (this->now_setimg2.isDolphin != false) return; /* Does not support LOAD commands */
+    if (this->now_setimg.setimg2.isDolphin != false) return; /* Does not support LOAD commands */
 
     int tmem_idx = this->settile_cmds[loadblock->tile].tmem / 4;
     for (int i = tmem_idx; i < tmem_idx + (loadblock->sh + 1) / 16; i++) {
-        tmem entry = tmem_map[i];
+        tmem_t entry = tmem_map[i];
         entry.addr = (void*)((int)entry.addr + 32);
         entry.loadblock = *loadblock;
-        entry.setimg2 = this->now_setimg2;
+        entry.setimg = this->now_setimg;
     }
 
     #ifdef EMU64_DEBUG
@@ -790,7 +788,7 @@ void emu64::dl_G_LOADTLUT() {
         if (this->disable_polygons == false) {
             u32 tlut_name = (this->settile_cmds[loadtlut->loadtlut.tile].tmem / 16) & 0xF;
             u32 count = ((loadtlut->words.w1 >> 14) & 0x3FF) + 1;
-            u32 addr = this->now_setimg2.imgaddr;
+            u32 addr = this->now_setimg.setimg2.imgaddr;
 
             if (addr == (u32)this->tlut_addresses[tlut_name]) {
                 #ifdef EMU64_DEBUG
@@ -806,7 +804,7 @@ void emu64::dl_G_LOADTLUT() {
                 void* tlut = (void*)addr;
 
                 /* Convert TLUT */
-                if (this->now_setimg2.isDolphin == false) {
+                if (this->now_setimg.setimg2.isDolphin == false) {
                     tlut = this->tlutconv_new((u16*)addr, TLUT_FORMAT_RGB5A3, count);
                 }
 
@@ -1373,13 +1371,13 @@ void emu64::dl_G_SETZIMG() {
 
 void emu64::dl_G_SETTIMG() {
     u8 print_commands = this->print_commands;
-    Gsetimg2* setimg2 = (Gsetimg2*)this->gfx_p;
+    Gsetimg_new* setimg = (Gsetimg_new*)this->gfx_p;
 
     #ifdef EMU64_DEBUG
 
     if (EMU64_IS_PRINT_ENABLED(this)) {
-        if (setimg2->isDolphin == FALSE) {
-            Gsetimg* setimg = (Gsetimg*)setimg2;
+        if (setimg->setimg2.isDolphin == FALSE) {
+            Gsetimg* setimg = (Gsetimg*)setimg;
             if (print_commands != false) {
                 const char* s_siz;
                 const char* s_fmt;
@@ -1427,7 +1425,7 @@ void emu64::dl_G_SETTIMG() {
         }
         else if (print_commands != false) {
             const char* s_siz;
-            u32 siz = setimg2->siz;
+            u32 siz = setimg->setimg2.siz;
 
             if (siz == G_IM_SIZ_4b) {
                 s_siz = "4b";
@@ -1444,19 +1442,19 @@ void emu64::dl_G_SETTIMG() {
 
             this->Printf2(
                 "gsDPSetTextureImage_Dolphin(G_IM_FMT_%s, G_IM_SIZ_%s, %d, %d, %s),",
-                dolfmttbl2[setimg2->siz][setimg2->fmt],
+                dolfmttbl2[setimg->setimg2.siz][setimg->setimg2.fmt],
                 s_siz,
-                EXPAND_WIDTH(setimg2->wd),
-                EXPAND_HEIGHT(setimg2->ht),
-                this->segchk(setimg2->imgaddr)
+                EXPAND_WIDTH(setimg->setimg2.wd),
+                EXPAND_HEIGHT(setimg->setimg2.ht),
+                this->segchk(setimg->setimg2.imgaddr)
             );
         }
     }
 
     #endif
 
-    this->now_setimg2 = *setimg2;
-    this->now_setimg2.imgaddr = (u32)this->seg2k0(setimg2->imgaddr);
+    this->now_setimg = *setimg;
+    this->now_setimg.setimg2.imgaddr = (u32)this->seg2k0(setimg->setimg2.imgaddr);
 }
 
 void emu64::dl_G_SETENVCOLOR() {

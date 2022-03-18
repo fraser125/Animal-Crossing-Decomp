@@ -290,6 +290,11 @@ typedef struct {
     unsigned int imgaddr:32; /* Image RAM address */
 } Gsetimg2;
 
+typedef union {
+    Gsetimg setimg;
+    Gsetimg2 setimg2;
+} Gsetimg_new;
+
 typedef struct {
     int cmd:8;
     unsigned int type:2; /* Type - if 2, is Gloadtlut_dolphin. Otherwise is Gloadtlut. */
