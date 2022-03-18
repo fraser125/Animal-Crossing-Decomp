@@ -155,6 +155,10 @@ static u8 FrameCancel;
         this->Printf3(fmt, ##args); \
     } \
 } while(0)
+
+#define EMU64_PRINT_MEMBER(member) do { \
+    this->Printf0(#member" = %u\n", this->##member); \
+} while (0)
 #else
 #define EMU64_LOG_QUIET(fmt, args...)
 #define EMU64_LOG_VERBOSE(fmt, args...)
@@ -664,7 +668,7 @@ private:
     u32 vertex_cnt;
     u32 texconv_time;
     u32 rsprdp_time;
-    u32 dirty_combine_mode_time;
+    u32 combine_time;
     u32 spvertex_time;
     u32 setup_time;
     u32 loadblock_time;

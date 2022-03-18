@@ -3215,7 +3215,7 @@ void emu64::emu64_taskstart(Gfx* dl_p) {
         if (aflags[AFLAGS_PRINT_COMMAND_INFO] != 0) {
             aflags.set(AFLAGS_PRINT_COMMAND_INFO, 0);
 
-            #ifdef EMU64_DEBUG_TIMERS
+            #ifdef EMU64_DEBUG_PRINTINFO
             this->Printf0("CMD TIMES CALLS TIMES/CALLS\n");
             #endif
 
@@ -3231,7 +3231,54 @@ void emu64::emu64_taskstart(Gfx* dl_p) {
                 }
             }
 
-
+            #ifdef EMU64_DEBUG_PRINTINFO
+            EMU64_PRINT_MEMBER(lookatx_cnt);
+            EMU64_PRINT_MEMBER(lookaty_cnt);
+            EMU64_PRINT_MEMBER(texconv_cnt);
+            EMU64_PRINT_MEMBER(vertex_cnt);
+            EMU64_PRINT_MEMBER(texconv_time);
+            EMU64_PRINT_MEMBER(rsprdp_time);
+            EMU64_PRINT_MEMBER(combine_time);
+            EMU64_PRINT_MEMBER(spvertex_time);
+            EMU64_PRINT_MEMBER(setup_time);
+            EMU64_PRINT_MEMBER(loadblock_time);
+            EMU64_PRINT_MEMBER(loadtlut_time);
+            EMU64_PRINT_MEMBER(matrix_time);
+            this->Printf0("polygons = %u/%u/%u/%u\n", this->polygons, this->double_triangles, this->triangles, this->quads);
+            EMU64_PRINT_MEMBER(polygons_time);
+            EMU64_PRINT_MEMBER(dirty_check_time);
+            #ifndef ANIMAL_FOREST_PLUS
+            EMU64_PRINT_MEMBER(dirty_lightX_time);
+            EMU64_PRINT_MEMBER(dirty_lightX_cnt);
+            #endif
+            EMU64_PRINT_MEMBER(dirty_light_time);
+            EMU64_PRINT_MEMBER(dirty_light_cnt);
+            EMU64_PRINT_MEMBER(dirty_tex_time);
+            EMU64_PRINT_MEMBER(dirty_tex_cnt);
+            EMU64_PRINT_MEMBER(dirty_tex1_time);
+            EMU64_PRINT_MEMBER(dirty_tex1_cnt);
+            EMU64_PRINT_MEMBER(dirty_tex2_time);
+            EMU64_PRINT_MEMBER(dirty_tex2_cnt);
+            EMU64_PRINT_MEMBER(dirty_texmtx_time);
+            EMU64_PRINT_MEMBER(dirty_texmtx_cnt);
+            EMU64_PRINT_MEMBER(dirty_proj_time);
+            EMU64_PRINT_MEMBER(dirty_primcolor_time);
+            EMU64_PRINT_MEMBER(dirty_envcolor_time);
+            EMU64_PRINT_MEMBER(dirty_fillcolor_time);
+            EMU64_PRINT_MEMBER(dirty_combine_mode_time);
+            EMU64_PRINT_MEMBER(dirty_othermodeh_time);
+            EMU64_PRINT_MEMBER(dirty_othermodel_time);
+            EMU64_PRINT_MEMBER(dirty_geometory_time);
+            EMU64_PRINT_MEMBER(setuptex_time);
+            EMU64_PRINT_MEMBER(texture_cache_select_time);
+            EMU64_PRINT_MEMBER(guMtxL2F_time);
+            EMU64_PRINT_MEMBER(guMtxL2F_cnt);
+            EMU64_PRINT_MEMBER(combine_auto_cnt[0]);
+            EMU64_PRINT_MEMBER(combine_auto_cnt[1]);
+            EMU64_PRINT_MEMBER(combine_auto_cnt[2]);
+            EMU64_PRINT_MEMBER(combine_auto_cnt[3]);
+            EMU64_PRINT_MEMBER(combine_auto_cnt[4]);
+            #endif
         }
 
         if (emu64::displayWarning != false) {
