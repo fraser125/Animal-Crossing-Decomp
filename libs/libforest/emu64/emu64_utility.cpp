@@ -212,7 +212,7 @@ EMU64_INLINE u16* emu64::tlutconv_new(u16* tlut, u32 format, u32 count) {
         if (converted == nullptr) {
             #ifdef EMU64_DEBUG
 
-            this->tex_cache_find_time += (osGetCount() - start);
+            this->texture_cache_select_time += (osGetCount() - start);
 
             #endif
 
@@ -514,7 +514,7 @@ EMU64_INLINE void emu64::setup_1tri_2tri_1quad(u32 v0) {
     }
 
     #ifdef EMU64_DEBUG
-    this->setup_poly_time += (osGetCount() - start);
+    this->setup_time += (osGetCount() - start);
     #endif
 }
 
@@ -919,7 +919,7 @@ void emu64::dirty_check(int tile, int n_tiles, BOOL do_texture_matrix) {
         EMU64_BEGIN_TIMED_BLOCK(prim);
         CLEAR_DIRTY(DIRTY_FLAG_PRIM_COLOR);
         GXSetTevColor(GX_TEVREG2, this->primitive_color.color);
-        EMU64_END_TIMED_BLOCK(prim, prim_color_time);
+        EMU64_END_TIMED_BLOCK(prim, dirty_primcolor_time);
     }
 
     EMU64_ASSERT_EXISTS(); // line 4833
@@ -928,7 +928,7 @@ void emu64::dirty_check(int tile, int n_tiles, BOOL do_texture_matrix) {
         EMU64_BEGIN_TIMED_BLOCK(env);
         CLEAR_DIRTY(DIRTY_FLAG_ENV_COLOR);
         GXSetTevColor(GX_TEVPREV, this->environment_color.color);
-        EMU64_END_TIMED_BLOCK(env, env_color_time);
+        EMU64_END_TIMED_BLOCK(env, dirty_envcolor_time);
     }
 
     EMU64_ASSERT_EXISTS(); // line 4840
@@ -970,7 +970,7 @@ void emu64::dirty_check(int tile, int n_tiles, BOOL do_texture_matrix) {
         CLEAR_DIRTY(DIRTY_FLAG_FILL_COLOR);
         CLEAR_DIRTY(DIRTY_FLAG_TEV_FILL_COLOR);
         GXSetTevColor(GX_TEVREG1, this->fill_color.color);
-        EMU64_END_TIMED_BLOCK(fill, fill_color_time);
+        EMU64_END_TIMED_BLOCK(fill, dirty_fillcolor_time);
     }
 
     EMU64_ASSERT_EXISTS(); // line 4872
@@ -978,14 +978,14 @@ void emu64::dirty_check(int tile, int n_tiles, BOOL do_texture_matrix) {
         EMU64_BEGIN_TIMED_BLOCK(combine);
         CLEAR_DIRTY(DIRTY_FLAG_COMBINE);
         this->combine();
-        EMU64_END_TIMED_BLOCK(combine, combine_time);
+        EMU64_END_TIMED_BLOCK(combine, dirty_combine_mode_time);
     }
 
     EMU64_ASSERT_EXISTS();
     if (IS_DIRTY(DIRTY_FLAG_OTHERMODE_HIGH)) {
         EMU64_BEGIN_TIMED_BLOCK(othermode_h);
         CLEAR_DIRTY(DIRTY_FLAG_OTHERMODE_HIGH);
-        EMU64_END_TIMED_BLOCK(othermode_h, othermode_high_time);
+        EMU64_END_TIMED_BLOCK(othermode_h, dirty_othermodeh_time);
     }
 
     EMU64_ASSERT_EXISTS();
@@ -997,14 +997,14 @@ void emu64::dirty_check(int tile, int n_tiles, BOOL do_texture_matrix) {
             EMU64_BEGIN_TIMED_BLOCK(othermode_l);
             CLEAR_DIRTY(DIRTY_FLAG_OTHERMODE_LOW);
             this->alpha_compare();
-            EMU64_END_TIMED_BLOCK(othermode_l, othermode_low_time);
+            EMU64_END_TIMED_BLOCK(othermode_l, dirty_othermodel_time);
         }
 
         if (IS_DIRTY(DIRTY_FLAG_GEOMETRYMODE)) {
             EMU64_BEGIN_TIMED_BLOCK(geometry_mode);
             CLEAR_DIRTY(DIRTY_FLAG_GEOMETRYMODE);
             this->cullmode();
-            EMU64_END_TIMED_BLOCK(geometry_mode, geometry_mode_time);
+            EMU64_END_TIMED_BLOCK(geometry_mode, dirty_geometory_time);
         }
     }
 
@@ -1066,8 +1066,8 @@ void emu64::dirty_check(int tile, int n_tiles, BOOL do_texture_matrix) {
         }
 
         GXSetNumChans(1);
-        EMU64_END_TIMED_BLOCK(lighting, lighting_time);
-        this->lighting_update_count++;
+        EMU64_END_TIMED_BLOCK(lighting, dirty_light_time);
+        this->dirty_light_cnt++;
     }
     #else
     /* Lights block */
@@ -1097,8 +1097,8 @@ void emu64::dirty_check(int tile, int n_tiles, BOOL do_texture_matrix) {
         }
         
         GXSetChanAmbColor(GX_COLOR0A0, this->lights[i].color.color);
-        EMU64_END_TIMED_BLOCK(lights, light_time);
-        this->light_update_count++;
+        EMU64_END_TIMED_BLOCK(lights, dirty_lightX_time);
+        this->dirty_lightX_cnt++;
     }
 
     /* Lighting block */
@@ -1124,8 +1124,8 @@ void emu64::dirty_check(int tile, int n_tiles, BOOL do_texture_matrix) {
             }
         }
 
-        EMU64_END_TIMED_BLOCK(lighting, lighting_time);
-        this->lighting_update_count++;
+        EMU64_END_TIMED_BLOCK(lighting, dirty_light_time);
+        this->dirty_light_cnt++;
     }
     #endif
 
@@ -1197,17 +1197,17 @@ void emu64::dirty_check(int tile, int n_tiles, BOOL do_texture_matrix) {
                     }
 
                     GXLoadTexObj(&this->tex_objs[t], (GXTexMapID)t);
-                    EMU64_END_TIMED_BLOCK(texture_mtx_tile, texture_tile_dolphin_time);
-                    this->texture_tile_dolphin_update_count++;
+                    EMU64_END_TIMED_BLOCK(texture_mtx_tile, dirty_tex1_time);
+                    this->dirty_tex1_cnt++;
                 }
                 else {
                     /* N64 texture tile */
                     this->setup_texture_tile(tile);
-                    EMU64_END_TIMED_BLOCK(texture_mtx_tile, texture_tile_time);
-                    this->texture_tile_update_count++;
+                    EMU64_END_TIMED_BLOCK(texture_mtx_tile, dirty_tex2_time);
+                    this->dirty_tex2_cnt++;
                 }
 
-                this->texture_tile_all_update_count++;
+                this->dirty_tex_cnt++;
             }
         }
 
@@ -1216,11 +1216,11 @@ void emu64::dirty_check(int tile, int n_tiles, BOOL do_texture_matrix) {
             CLEAR_DIRTY(DIRTY_FLAG_TEXTURE_MTX);
             EMU64_BEGIN_TIMED_BLOCK(tex_mtx);
             this->texture_matrix();
-            this->texture_mtx_count++;
-            EMU64_END_TIMED_BLOCK(tex_mtx, texture_mtx_time);
+            this->dirty_texmtx_cnt++;
+            EMU64_END_TIMED_BLOCK(tex_mtx, dirty_texmtx_time);
         }
 
-        EMU64_END_TIMED_BLOCK(texture, texture_time);
+        EMU64_END_TIMED_BLOCK(texture, dirty_tex_time);
     }
 
     EMU64_ASSERT_EXISTS(); // line 5040
@@ -1228,11 +1228,11 @@ void emu64::dirty_check(int tile, int n_tiles, BOOL do_texture_matrix) {
         EMU64_BEGIN_TIMED_BLOCK(proj_mtx);
         CLEAR_DIRTY(DIRTY_FLAG_PROJ_MTX);
         GXSetProjection(this->projection_mtx, this->projection_type);
-        EMU64_END_TIMED_BLOCK(proj_mtx, projection_mtx_time);
+        EMU64_END_TIMED_BLOCK(proj_mtx, dirty_proj_time);
     }
     
     EMU64_ASSERT_EXISTS(); // line 5047
-    EMU64_END_TIMED_BLOCK(dirty, dirty_time);
+    EMU64_END_TIMED_BLOCK(dirty, dirty_check_time);
     EMU64_ASSERT_EXISTS(); // line 5049
 }
 
@@ -1771,5 +1771,5 @@ void emu64::setup_texture_tile(int tile) {
     }
 
     GXLoadTexObj(&this->tex_objs[tile], (GXTexMapID)tile);
-    EMU64_END_TIMED_BLOCK(setup_texture_tile, setup_texture_tile_time);
+    EMU64_END_TIMED_BLOCK(setup_texture_tile, setuptex_time);
 }

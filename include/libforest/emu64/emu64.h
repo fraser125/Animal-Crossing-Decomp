@@ -657,65 +657,55 @@ private:
 
     /* 0xB64 */
     u8 num_lights;
-
-    /* 0xB80 */
-    u32 task_time;
-
-    /* 0xB88 */
-    u32 vtx_time;
-    u32 setup_poly_time;
+    u32 lookatx_cnt;
+    u32 lookaty_cnt;
+    /* ??? */
+    u32 texconv_cnt;
+    u32 vertex_cnt;
+    u32 texconv_time;
+    u32 rsprdp_time;
+    u32 dirty_combine_mode_time;
+    u32 spvertex_time;
+    u32 setup_time;
     u32 loadblock_time;
     u32 loadtlut_time;
-    u32 mtx_time;
-    u32 poly_time;
-    u32 dirty_time;
-
+    u32 matrix_time;
+    u32 polygons_time;
+    u32 dirty_check_time;
     #ifndef ANIMAL_FOREST_PLUS
-    u32 light_time;
-    u32 light_update_count;
+    u32 dirty_lightX_time;
+    u32 dirty_lightX_cnt;
     #endif
-
-    u32 lighting_time;
-    u32 lighting_update_count;
-
-    u32 texture_time;
-    u32 texture_tile_all_update_count;
-    u32 texture_tile_dolphin_time;
-    u32 texture_tile_dolphin_update_count;
-    u32 texture_tile_time;
-    u32 texture_tile_update_count;
-    u32 texture_mtx_time;
-    u32 texture_mtx_count;
-
-    u32 projection_mtx_time;
-
-    /* 0xBD0 */
-    u32 prim_color_time;
-    u32 env_color_time;
-    u32 fill_color_time;
-    u32 combine_time;
-    u32 othermode_high_time;
-    u32 othermode_low_time;
-    u32 geometry_mode_time;
-    u32 setup_texture_tile_time;
-
-    /* 0xBF8 */
+    u32 dirty_light_time;
+    u32 dirty_light_cnt;
+    u32 dirty_tex_time;
+    u32 dirty_tex_cnt;
+    u32 dirty_tex1_time;
+    u32 dirty_tex1_cnt;
+    u32 dirty_tex2_time;
+    u32 dirty_tex2_cnt;
+    u32 dirty_texmtx_time;
+    u32 dirty_texmtx_cnt;
+    u32 dirty_proj_time;
+    u32 dirty_primcolor_time;
+    u32 dirty_envcolor_time;
+    u32 dirty_fillcolor_time;
+    u32 dirty_combine_mode_time;
+    u32 dirty_othermodeh_time;
+    u32 dirty_othermodel_time;
+    u32 dirty_geometory_time; /* Yes, the devs misspelt this */
+    u32 setuptex_time;
     struct {
         u32 time;
         u32 calls;
     } command_info[NUM_COMMANDS];
-
-    /*  0xDF0 */
-    u32 tex_cache_find_time;
-
-    /* 0xE18 */
+    u32 texture_cache_select_time;
+    u32 guMtxL2F_time;
+    u32 guMtxL2F_cnt;
+    u32 combine_auto_cnt[5];
     bool using_nonshared_mtx;
     Vertex vertices[VTX_COUNT];
-
-    /* 0x201C */
     u8 texture_adjust_mode;
-
-    /* 0x2020 */
     u32 resolved_addresses;
 
     /* 0x2030 */

@@ -1864,7 +1864,7 @@ void emu64::dl_G_MTX() {
         }
 
         #ifdef EMU64_DEBUG
-        this->mtx_time += (osGetCount() - start);
+        this->matrix_time += (osGetCount() - start);
         #endif
     }
 }
@@ -1993,7 +1993,7 @@ void emu64::dl_G_VTX() {
     }
 
     #ifdef EMU64_DEBUG
-    this->vtx_time += (osGetCount() - start);
+    this->spvertex_time += (osGetCount() - start);
     #endif
 }
 
@@ -2079,7 +2079,7 @@ void emu64::dl_G_TRI1() {
     this->polygons++;
 
     #ifdef EMU64_DEBUG
-    this->poly_time += (osGetCount() - start);
+    this->polygons_time += (osGetCount() - start);
     #endif
 }
 
@@ -2217,7 +2217,7 @@ void emu64::dl_G_TRIN() {
 
     this->gfx_p += (int)n_faces - 1; /* Should equate to gfx_p--, as the emulator will increment it once. */
     #ifdef EMU64_DEBUG
-    this->poly_time += (osGetCount() - start);
+    this->polygons_time += (osGetCount() - start);
     #endif
     this->rdp_pipe_sync_needed = true;
 }
@@ -2333,7 +2333,7 @@ void emu64::dl_G_QUADN() {
 
     this->gfx_p += (int)n_faces - 1; /* Should equate to gfx_p--, as the emulator will increment it once. */
     #ifdef EMU64_DEBUG
-    this->poly_time += (osGetCount() - start);
+    this->polygons_time += (osGetCount() - start);
     #endif
     this->rdp_pipe_sync_needed = true;
 }
@@ -2416,7 +2416,7 @@ void emu64::dl_G_TRI2() {
 
         this->gfx_p += (commands - 1);
         #ifdef EMU64_DEBUG
-        this->poly_time += (osGetCount() - start);
+        this->polygons_time += (osGetCount() - start);
         #endif
     }
     else {
@@ -2453,9 +2453,9 @@ void emu64::dl_G_TRI2() {
         }
 
         this->double_triangles++;
-        this->poly_time++;
+        this->polygons_time++;
         #ifdef EMU64_DEBUG
-        this->poly_time += (osGetCount() - start);
+        this->polygons_time += (osGetCount() - start);
         #endif
     }
 
@@ -2489,7 +2489,7 @@ void emu64::dl_G_QUAD() {
     this->polygons++;
     this->quads++;
     #ifdef EMU64_DEBUG
-    this->poly_time += (osGetCount() - start);
+    this->polygons_time += (osGetCount() - start);
     #endif
 }
 
@@ -3205,7 +3205,7 @@ void emu64::emu64_taskstart(Gfx* dl_p) {
         this->emu64_taskstart_r(dl_p);
 
         #ifdef EMU64_DEBUG
-        this->task_time += (osGetCount() - start);
+        this->rsprdp_time += (osGetCount() - start);
         #endif
 
         if (aflags[AFLAGS_JUTREPORT_SEGMENT_STATS] == TRUE) {
@@ -3214,6 +3214,11 @@ void emu64::emu64_taskstart(Gfx* dl_p) {
 
         if (aflags[AFLAGS_PRINT_COMMAND_INFO] != 0) {
             aflags.set(AFLAGS_PRINT_COMMAND_INFO, 0);
+
+            #ifdef EMU64_DEBUG_TIMERS
+            this->Printf0("CMD TIMES CALLS TIMES/CALLS\n");
+            #endif
+
             for (int i = 0; i < NUM_COMMANDS; i++) {
                 if (this->command_info[i].calls != 0) {
                     this->Printf0(
@@ -3225,6 +3230,8 @@ void emu64::emu64_taskstart(Gfx* dl_p) {
                     );
                 }
             }
+
+
         }
 
         if (emu64::displayWarning != false) {
