@@ -1771,4 +1771,5 @@ void emu64::setup_texture_tile(int tile) {
     }
 
     GXLoadTexObj(&this->tex_objs[tile], (GXTexMapID)tile);
+    EMU64_END_TIMED_BLOCK(setup_texture_tile, setup_texture_tile_time);
 }

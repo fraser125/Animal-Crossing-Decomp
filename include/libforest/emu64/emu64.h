@@ -697,6 +697,7 @@ private:
     u32 othermode_high_time;
     u32 othermode_low_time;
     u32 geometry_mode_time;
+    u32 setup_texture_tile_time;
 
     /* 0xBF8 */
     struct {
