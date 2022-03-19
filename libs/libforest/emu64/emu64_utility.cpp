@@ -1773,3 +1773,117 @@ void emu64::setup_texture_tile(int tile) {
     GXLoadTexObj(&this->tex_objs[tile], (GXTexMapID)tile);
     EMU64_END_TIMED_BLOCK(setup_texture_tile, setuptex_time);
 }
+
+EMU64_INLINE u8* emu64::texconv_block_new(u8* addr, u32 wd, u32 ht, u32 fmt, u32 siz, u32 line_siz) {
+    return this->texconv_tile_new(addr, wd, fmt, siz, 0, 0, wd - 1, ht - 1, line_siz);
+}
+
+EMU64_INLINE u8* emu64::texconv_tile_new(u8* addr, u32 wd, u32 fmt, u32 siz, u32 start_wd, u32 start_ht, u32 end_wd, u32 end_ht, u32 line_siz) {
+    if (addr == nullptr) return nullptr;
+
+    EMU64_BEGIN_TIMED_BLOCK(texture_cache_select);
+    texture_cache_t* cache = texture_cache_select(addr);
+    u8* converted_addr = (u8*)cache->funcs->search(addr);
+    EMU64_END_TIMED_BLOCK(texture_cache_select, texture_cache_select_time);
+
+    if (converted_addr == nullptr) {
+        u32 alloc_size = get_dol_tex_siz(siz, (end_wd - start_wd) + 1, (end_ht - start_ht) + 1);
+        converted_addr == cache->funcs->alloc(cache, alloc_size);
+
+        if (converted_addr != nullptr) {
+            this->texconv_tile(addr, converted_addr, wd, fmt, siz, start_wd, start_ht, end_wd, end_ht, line_siz);
+            DCStoreRange(converted_addr, alloc_size);
+            cache->funcs->entry(addr, converted_addr);
+        }
+    }
+
+    return converted_addr;
+}
+
+void emu64::texconv_tile(u8* addr, u8* conv_addr, u32 wd, u32 fmt, u32 siz, u32 start_wd, u32 start_ht, u32 end_wd, u32 end_ht, u32 line_siz) {
+    EMU64_BEGIN_TIMED_BLOCK(texconv);
+
+    u32 blk_wd, blk_ht;
+    get_blk_wd_ht(siz, &blk_wd, &blk_ht);
+    for (u32 x0 = start_wd; start_ht < end_ht; start_ht += blk_ht) {
+        for (; x0 < end_wd; x0 += blk_wd) {
+            for (u32 y0 = 0; y0 < blk_ht; y0++) {
+                u32 y_ofs = start_ht + y0;
+                if (siz == G_IM_SIZ_16b) {
+                    if (fmt == G_IM_FMT_RGBA) {
+                        /* 16bpp RGBA (RGB5A1 -> RGB5A3) */
+                        u32 x_ofs = (x0 + y_ofs * wd) * 2;
+
+                        u32 pix_ofs = this->tmem_swap(x_ofs, line_siz);
+                        u16 pix = rgba5551_to_rgb5a3(*(u16*)(addr + pix_ofs));
+                        *(u16*)(conv_addr) = pix;
+
+                        pix = rgba5551_to_rgb5a3(*(u16*)(addr + pix_ofs + sizeof(u16)));
+                        *(u16*)(conv_addr + sizeof(u16)) = pix;
+
+                        pix_ofs = this->tmem_swap(x_ofs + 2 * sizeof(u16), line_siz);
+                        pix = rgba5551_to_rgb5a3(*(u16*)(addr + pix_ofs + 2 * sizeof(u16)));
+                        *(u16*)(conv_addr + 2 * sizeof(u16)) = pix;
+
+                        pix = rgba5551_to_rgb5a3(*(u16*)(addr + pix_ofs + 3 * sizeof(u16)));
+                        *(u16*)(conv_addr + 3 * sizeof(u16)) = pix;
+                    }
+                    else if (fmt == G_IM_FMT_IA) {
+                        /* 16bpp IA */
+                        u32 x_ofs = (x0 + y_ofs * wd) * 2;
+
+                        u32 pix_ofs = this->tmem_swap(x_ofs, line_siz);
+                        u8* t_addr = addr + pix_ofs;
+
+                        conv_addr[0] = t_addr[1];
+                        conv_addr[1] = t_addr[0];
+                        conv_addr[2] = t_addr[3];
+                        conv_addr[3] = t_addr[2];
+
+                        pix_ofs = this->tmem_swap(x_ofs + sizeof(u32), line_siz);
+                        t_addr = addr + pix_ofs;
+
+                        conv_addr[4] = t_addr[1];
+                        conv_addr[5] = t_addr[0];
+                        conv_addr[6] = t_addr[3];
+                        conv_addr[7] = t_addr[2];
+                    }
+
+                    conv_addr += 2 * sizeof(u32); /* 8 bytes processed */
+                }
+                else if (siz == G_IM_SIZ_8b) {
+                    if (fmt == G_IM_FMT_IA) {
+                        /* 8bpp IA (4bpp I, 4bpp A) */
+                        u32 x_ofs = x0 + y_ofs * wd;
+                        u32 pix_ofs = this->tmem_swap(x_ofs, line_siz);
+                        *((u32*)conv_addr) = ((*((u32*)(addr + pix_ofs)) & 0xF0F0F0F) << 8) | (((*((u32*)(addr + pix_ofs))) >> 4) & 0xF0F0F0F);
+
+                        u32 pix_ofs = this->tmem_swap(x_ofs + sizeof(u32), line_siz);
+                        *((u32*)(conv_addr + sizeof(u32))) = ((*((u32*)(addr + pix_ofs)) & 0xF0F0F0F) << 8) | (((*((u32*)(addr + pix_ofs))) >> 4) & 0xF0F0F0F);
+                    }
+                    else {
+                        /* 8bpp I */
+                        u32 x_ofs = x0 + y_ofs * wd;
+
+                        *((u32*)conv_addr) = *((u32*)(addr + this->tmem_swap(x_ofs, line_siz)));
+                        *((u32*)(conv_addr + sizeof(u32))) = *((u32*)(addr + this->tmem_swap(x_ofs + sizeof(u32), line_siz)));
+                    }
+
+                    conv_addr += 2 * sizeof(u32); /* 8 bytes processed */
+                }
+                else if (siz == G_IM_SIZ_4b) {
+                    /* 4bpp CI or 4bpp I */
+                    *((u32*)conv_addr) = *((u32*)(addr + this->tmem_swap((x0 + y_ofs * wd) / 2, line_siz)));
+                    conv_addr += sizeof(u32); /* 4 bytes processed */
+                }
+                else {
+                    /* Translation: G_IM_SIZ_32b isn't supported */
+                    this->Printf0("G_IM_SIZ_32bはサポートしてません");
+                }
+            }
+        }
+    }
+
+    EMU64_END_TIMED_BLOCK(texconv, texconv_time);
+    this->texconv_cnt++;
+}

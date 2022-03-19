@@ -318,6 +318,14 @@ static inline f32 fastcast_float(s16* in) {
     #endif
 }
 
+static inline u16 rgba5551_to_rgb5a3(u16 rgba5551) {
+    if ((rgba5551 & 1) == 0) {
+        return ((rgba5551 >> 2) & 0xF) | ((rgba5551 >> 4) & 0xFFFFF00) | ((rgba5551 >> 3) & 0xF0);
+    }
+    
+    return (rgba5551 >> 1) | 0x8000;
+}
+
 /* Helper function to convert N64 texture format to Dolphin format */
 s16 emu64::fmtxtbl[8][4] = {
     { GX_TF_CMPR, -1, GX_TF_RGB5A3, GX_TF_RGBA8 },
@@ -355,6 +363,12 @@ static inline void get_dol_wd_ht(u32 siz, u32 in_wd, u32 in_ht, u32* o_wd, u32* 
     get_blk_wd_ht(siz, &blk_wd, &blk_ht);
     *o_wd = (in_wd + (blk_wd - 1u)) & ~(blk_wd - 1u);
     *o_ht = (in_ht + (blk_ht - 1u)) & ~(blk_ht - 1u);
+}
+
+static inline u32 get_dol_tex_siz(u32 siz, u32 wd, u32 ht) {
+    u32 n_wd, n_ht;
+    get_dol_wd_ht(siz, wd, ht, &n_wd, &n_ht);
+    return ((n_wd * n_ht) << siz) / 2;
 }
 
 /* Pointer-to-Member-Function type */
@@ -464,8 +478,10 @@ public:
     EMU64_INLINE void blend_mode();
     EMU64_INLINE void alpha_compare();
     EMU64_INLINE void cullmode();
-    EMU64_INLINE u8* texconv_block_new(u8* addr, u32 wd, u32 ht, u32 fmt, u32 siz, u32 param_6);
-    EMU64_INLINE u8* texconv_tile_new(u8* addr, u32 wd, u32 fmt, u32 siz, u32 start_wd, u32 start_ht, u32 end_wd, u32 end_ht, u32 param_9);
+    EMU64_INLINE u8* texconv_block_new(u8* addr, u32 wd, u32 ht, u32 fmt, u32 siz, u32 line_siz);
+    EMU64_INLINE u8* texconv_tile_new(u8* addr, u32 wd, u32 fmt, u32 siz, u32 start_wd, u32 start_ht, u32 end_wd, u32 end_ht, u32 line_siz);
+    void texconv_tile(u8* addr, u8* conv_addr, u32 wd, u32 fmt, u32 siz, u32 start_wd, u32 start_ht, u32 end_wd, u32 end_ht, u32 line_siz);
+    EMU64_INLINE u32 tmem_swap(u32 ofs, u32 line_siz);
     void texture_gen(int tex);
     void texture_matrix();
     void set_position(u32 vtx);
