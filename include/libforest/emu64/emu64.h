@@ -110,6 +110,9 @@
 #define CLEAR_DIRTY(flag)(this->dirty_flags[flag] = false)
 #define SET_DIRTY(flag)(this->dirty_flags[flag] = true)
 
+/* Combine Manual Macros */
+#define COMBINE_CONSTEXPR_CHECK(mode0, mode1)((this->combiner_high ^ ((Gfx)gsDPSetCombineLERP(mode0, mode1)).words.w0) == 0 && (this->combiner_low ^ ((Gfx)gsDPSetCombineLERP(mode0, mode1)).words.w1) == 0)
+
 /* Conditional inline which is present in DnM+ and DnMe+ but not AC. */
 #ifdef ANIMAL_CROSSING
 #define EMU64_INLINE inline
@@ -371,6 +374,78 @@ static inline u32 get_dol_tex_siz(u32 siz, u32 wd, u32 ht) {
     return ((n_wd * n_ht) << siz) / 2;
 }
 
+#ifdef ANIMAL_FOREST_PLUS
+typedef struct {
+    GXChannelID chan;
+    GXBool enable;
+    GXColorSrc amb_src;
+    GXColorSrc mat_src;
+    GXLightID light_mask;
+    GXDiffuseFn diff_fn;
+    GXAttnFn attn_fn;
+} chan_ctrl;
+
+chan_ctrl emu64::chan[3] = {
+    { GX_COLOR0, GX_FALSE, GX_SRC_REG, GX_SRC_REG, GX_LIGHT_NULL, GX_DF_NONE, GX_AF_NONE },
+    { GX_COLOR1, GX_FALSE, GX_SRC_REG, GX_SRC_REG, GX_LIGHT_NULL, GX_DF_NONE, GX_AF_NONE },
+    { GX_COLOR0, GX_FALSE, GX_SRC_REG, GX_SRC_REG, GX_LIGHT_NULL, GX_DF_NONE, GX_AF_NONE }
+};
+
+typedef struct {
+    GXTexCoordID dst_coord;
+    GXTexGenType func;
+    GXTexGenSrc src_param;
+    u32 mtx;
+} tex_gen;
+
+u8 emu64::nTexGens = 2;
+tex_gen emu64::tex[3] = {
+    { GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY },
+    { GX_TEXCOORD1, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY },
+    { GX_TEXCOORD2, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY }
+};
+
+typedef struct {
+    GXTevStageID id;
+
+    GXTevColorArg clr_a;
+    GXTevColorArg clr_b;
+    GXTevColorArg clr_c;
+    GXTevColorArg clr_d;
+
+    GXTevAlphaArg alpha_a;
+    GXTevAlphaArg alpha_b;
+    GXTevAlphaArg alpha_c;
+    GXTevAlphaArg alpha_d;
+
+    GXTexCoordID coord;
+    GXTexMapID map;
+    GXChannelID color;
+} tev_stage;
+
+u8 emu64::nStages = 3;
+tev_stage emu64::tev[3] = {
+    { 
+        GX_TEVSTAGE0,
+        GX_CC_ZERO, GX_CC_ZERO, GX_CC_ZERO, GX_CC_TEXC,
+        GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_TEXA,
+        GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0A0
+    },
+    { 
+        GX_TEVSTAGE1,
+        GX_CC_ZERO, GX_CC_ZERO, GX_CC_ZERO, GX_CC_CPREV,
+        GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_APREV,
+        GX_TEXCOORD0, GX_TEXMAP_NULL, GX_COLOR0A0
+    },
+    { 
+        GX_TEVSTAGE2,
+        GX_CC_ZERO, GX_CC_ZERO, GX_CC_ZERO, GX_CC_CPREV,
+        GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_APREV,
+        GX_TEXCOORD0, GX_TEXMAP_NULL, GX_COLOR0A0
+    }
+};
+#endif
+
 /* Pointer-to-Member-Function type */
 typedef void (emu64::*dl_func)();
 
@@ -503,6 +578,7 @@ public:
     EMU64_INLINE const char* combine_tev_alpha_name(u32 param);
     const char* combine_tev_color_name(u32 param);
     EMU64_INLINE void print_guMtxXFM1F_dol2(Mtx44 mtx, GXProjectionType type, f32 x, f32 y, f32 z);
+    EMU64_INLINE void print_combine(u64 combine);
 
     /* F3DZEX2 microcode implementations */
     void dl_G_SPNOOP();
@@ -563,6 +639,17 @@ public:
     static char* warningString[EMU64_WARNING_COUNT];
     static int warningTime[EMU64_WARNING_COUNT];
     static bool displayWarning;
+    
+    #ifdef ANIMAL_FOREST_PLUS
+    static u8 nChans;
+    static chan_ctrl chan[3];
+
+    static u8 nTexGens;
+    static tex_gen tex[3];
+
+    static u8 nStages;
+    static tev_stage tev[3];
+    #endif
 
     /* N64 texture format[N64 bit size] -> dol texture format */
     static s16 fmtxtbl[8][4];

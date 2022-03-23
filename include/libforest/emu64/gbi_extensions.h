@@ -113,28 +113,6 @@ extern "C" {
 #define COMBINER_PARAM_C 3
 #define COMBINER_PARAM_D 4
 
-/* Regular Combiner Settings */
-
-#define COMBINED 0
-#define TEXEL0 1
-#define TEXEL1 2
-#define PRIMITIVE 3
-#define SHADE 4
-#define ENVIRONMENT 5
-#define CENTER 6
-#define SCALE 6
-#define NOISE 7
-#define K4 7
-#define COMBINED_ALPHA 7
-#define TEXEL0_ALPHA 8
-#define TEXEL1_ALPHA 9
-#define PRIMITIVE_ALPHA 10
-#define SHADE_ALPHA 11
-#define ENV_ALPHA 12
-#define LOD_FRACTION 13
-#define PRIM_LOD_FAC 14
-#define K5 15
-
 /* TEV Combiner Settings */
 
 #define TEV_COMBINED 0
@@ -210,6 +188,27 @@ extern "C" {
 #define COMBINER_TEV_GET_Ab1(words)((words.w0 >>  6) & 7)
 #define COMBINER_TEV_GET_Ac1(words)((words.w0 >>  3) & 7)
 #define COMBINER_TEV_GET_Ad1(words)((words.w0 >>  0) & 7)
+
+typedef struct {
+    int cmd:8;
+    unsigned int a0:4;
+    unsigned int c0:5;
+    unsigned int Aa0:3;
+    unsigned int Ac0:3;
+    unsigned int a1:4;
+    unsigned int c1:5;
+
+    unsigned int b0:4;
+    unsigned int b1:4;
+    unsigned int Aa1:3;
+    unsigned int Ac1:3;
+    unsigned int d0:3;
+    unsigned int Ab0:3;
+    unsigned int Ad0:3;
+    unsigned int d1:3;
+    unsigned int Ab1:3;
+    unsigned int Ad1:3;
+} Gsetcombine;
 
 typedef struct {
     int cmd:8; /* 0xCF */
@@ -364,7 +363,7 @@ typedef struct {
     unsigned int pad0:5;
     unsigned int alpha0:3;
     unsigned int pad1:5;
-    unsigned int alpha1;
+    unsigned int alpha1:3;
 } combiner_tev_alpha;
 
 static combiner_tev_alpha tbla[8] {

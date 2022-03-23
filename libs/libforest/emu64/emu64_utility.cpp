@@ -1,10 +1,12 @@
 /* Note: They used .c file extensions for C++ files */
 #include "emu64.h"
+#include "combiner_modes.h"
 #include "mtx_extensions.h"
 #include "texture.h"
 #include "texture_cache.h"
 #include "boot.h"
 #include "ultra.h"
+#include "mbi.h"
 #include <stdio.h>
 #include <Runtime/Inc/__mem.h>
 
@@ -383,10 +385,10 @@ int emu64::replace_combine_to_tev(Gfx* g) {
     int Ac1 = COMBINER_GET_Ac1(g->words);
     int Ad1 = COMBINER_GET_Ad1(g->words);
 
-    if ((a0 != TEXEL1 && b0 != TEXEL1 && c0 != TEXEL1 && d0 != TEXEL1 && c0 != TEXEL1_ALPHA) &&
-        (Aa0 != TEXEL1 && Ab0 != TEXEL1 && Ac0 != TEXEL1 && Ad0 != TEXEL1) &&
-        (a1 != TEXEL1 && b1 != TEXEL1 && c1 != TEXEL1 && d1 != TEXEL1 && c1 != TEXEL1_ALPHA) &&
-        (Aa1 != TEXEL1 && Ab1 != TEXEL1 && Ac1 != TEXEL1 && Ad1 != TEXEL1)
+    if ((a0 != G_CCMUX_TEXEL1 && b0 != G_CCMUX_TEXEL1 && c0 != G_CCMUX_TEXEL1 && d0 != G_CCMUX_TEXEL1 && c0 != G_CCMUX_TEXEL1_ALPHA) &&
+        (Aa0 != G_ACMUX_TEXEL1 && Ab0 != G_ACMUX_TEXEL1 && Ac0 != G_ACMUX_TEXEL1 && Ad0 != G_ACMUX_TEXEL1) &&
+        (a1 != G_CCMUX_TEXEL1 && b1 != G_CCMUX_TEXEL1 && c1 != G_CCMUX_TEXEL1 && d1 != G_CCMUX_TEXEL1 && c1 != G_CCMUX_TEXEL1_ALPHA) &&
+        (Aa1 != G_ACMUX_TEXEL1 && Ab1 != G_ACMUX_TEXEL1 && Ac1 != G_ACMUX_TEXEL1 && Ad1 != G_ACMUX_TEXEL1)
     ) {
         Gsetcombine_tev sc_tev;
 
@@ -918,7 +920,7 @@ void emu64::dirty_check(int tile, int n_tiles, BOOL do_texture_matrix) {
     if (IS_DIRTY(DIRTY_FLAG_PRIM_COLOR)) {
         EMU64_BEGIN_TIMED_BLOCK(prim);
         CLEAR_DIRTY(DIRTY_FLAG_PRIM_COLOR);
-        GXSetTevColor(GX_TEVREG2, this->primitive_color.color);
+        GXSetTevColor(GX_TEVREG1, this->primitive_color.color);
         EMU64_END_TIMED_BLOCK(prim, dirty_primcolor_time);
     }
 
@@ -927,7 +929,7 @@ void emu64::dirty_check(int tile, int n_tiles, BOOL do_texture_matrix) {
     if (IS_DIRTY(DIRTY_FLAG_ENV_COLOR)) {
         EMU64_BEGIN_TIMED_BLOCK(env);
         CLEAR_DIRTY(DIRTY_FLAG_ENV_COLOR);
-        GXSetTevColor(GX_TEVPREV, this->environment_color.color);
+        GXSetTevColor(GX_TEVREG2, this->environment_color.color);
         EMU64_END_TIMED_BLOCK(env, dirty_envcolor_time);
     }
 
@@ -969,7 +971,7 @@ void emu64::dirty_check(int tile, int n_tiles, BOOL do_texture_matrix) {
         EMU64_BEGIN_TIMED_BLOCK(fill);
         CLEAR_DIRTY(DIRTY_FLAG_FILL_COLOR);
         CLEAR_DIRTY(DIRTY_FLAG_TEV_FILL_COLOR);
-        GXSetTevColor(GX_TEVREG1, this->fill_color.color);
+        GXSetTevColor(GX_TEVREG0, this->fill_color.color);
         EMU64_END_TIMED_BLOCK(fill, dirty_fillcolor_time);
     }
 
@@ -1886,4 +1888,991 @@ void emu64::texconv_tile(u8* addr, u8* conv_addr, u32 wd, u32 fmt, u32 siz, u32 
 
     EMU64_END_TIMED_BLOCK(texconv, texconv_time);
     this->texconv_cnt++;
+}
+
+static u32 highlow0[2];
+void emu64::combine() {
+    EMU64_BEGIN_TIMED_BLOCK(combine);
+    if (((this->combiner_high >> 24) & 0xFF) == G_SETCOMBINE_TEV) {
+        this->combine_tev();
+    }
+    else {
+        GXSetNumTexGens(2);
+        GXSetNumTevStages(1);
+
+        GXSetTevColorIn(GX_TEVSTAGE0, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ZERO, GX_CC_KONST);
+        GXSetTevColorIn(GX_TEVSTAGE1, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ZERO, GX_CC_CPREV);
+        GXSetTevColorIn(GX_TEVSTAGE2, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ZERO, GX_CC_CPREV);
+
+        GXSetTevAlphaIn(GX_TEVSTAGE0, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_KONST);
+        GXSetTevAlphaIn(GX_TEVSTAGE1, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_APREV);
+        GXSetTevAlphaIn(GX_TEVSTAGE2, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_APREV);
+
+        GXSetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD_NULL, GX_TEXMAP_NULL, GX_COLOR_NULL);
+        GXSetTevOrder(GX_TEVSTAGE1, GX_TEXCOORD_NULL, GX_TEXMAP_NULL, GX_COLOR_NULL);
+        GXSetTevOrder(GX_TEVSTAGE2, GX_TEXCOORD_NULL, GX_TEXMAP_NULL, GX_COLOR_NULL);
+
+        GXSetTevColorOp(GX_TEVSTAGE0, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+        GXSetTevColorOp(GX_TEVSTAGE1, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+        GXSetTevColorOp(GX_TEVSTAGE2, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+
+        GXSetTevAlphaOp(GX_TEVSTAGE0, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+        GXSetTevAlphaOp(GX_TEVSTAGE1, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+        GXSetTevAlphaOp(GX_TEVSTAGE2, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+
+        #ifdef ANIMAL_FOREST_PLUS
+        if (aflags[AFLAGS_SETUP_ALL_TEVSTAGES] != 0) {
+            GXSetTevOrder(GX_TEVSTAGE3, GX_TEXCOORD_NULL, GX_TEXMAP_NULL, GX_COLOR_NULL);
+            GXSetTevOrder(GX_TEVSTAGE4, GX_TEXCOORD_NULL, GX_TEXMAP_NULL, GX_COLOR_NULL);
+            GXSetTevOrder(GX_TEVSTAGE5, GX_TEXCOORD_NULL, GX_TEXMAP_NULL, GX_COLOR_NULL);
+            GXSetTevOrder(GX_TEVSTAGE6, GX_TEXCOORD_NULL, GX_TEXMAP_NULL, GX_COLOR_NULL);
+            GXSetTevOrder(GX_TEVSTAGE7, GX_TEXCOORD_NULL, GX_TEXMAP_NULL, GX_COLOR_NULL);
+
+            GXSetTevColorOp(GX_TEVSTAGE3, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+            GXSetTevColorOp(GX_TEVSTAGE4, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+            GXSetTevColorOp(GX_TEVSTAGE5, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+            GXSetTevColorOp(GX_TEVSTAGE6, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+            GXSetTevColorOp(GX_TEVSTAGE7, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+
+            GXSetTevAlphaOp(GX_TEVSTAGE3, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+            GXSetTevAlphaOp(GX_TEVSTAGE4, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+            GXSetTevAlphaOp(GX_TEVSTAGE5, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+            GXSetTevAlphaOp(GX_TEVSTAGE6, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+            GXSetTevAlphaOp(GX_TEVSTAGE7, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+
+            GXSetNumChans(1);
+        }
+
+        if ((this->combiner_high ^ highlow0[1]) | (this->combiner_low ^ highlow0[0]) == 0) {
+            GXSetNumChans(emu64::nChans);
+            for (int i = 0; i < emu64::nChans; i++) {
+                GXSetChanCtrl(
+                    emu64::chan[i].chan,
+                    emu64::chan[i].enable,
+                    emu64::chan[i].amb_src,
+                    emu64::chan[i].mat_src,
+                    emu64::chan[i].light_mask,
+                    emu64::chan[i].diff_fn,
+                    emu64::chan[i].attn_fn
+                );
+            }
+
+            SET_DIRTY(DIRTY_FLAG_LIGHTING);
+
+            GXSetNumTexGens(emu64::nTexGens);
+            for (int i = 0; i < emu64::nTexGens; i++) {
+                GXSetTexCoordGen2(
+                    emu64::tex[i].dst_coord,
+                    emu64::tex[i].func,
+                    emu64::tex[i].src_param,
+                    emu64::tex[i].mtx,
+                    GX_FALSE,
+                    GX_PTIDENTITY
+                );
+            }
+
+            GXSetNumTevStages(emu64::nStages);
+            for (int i = 0; i < emu64::nStages; i++) {
+                GXTevStageID id = emu64::tev[i].id;
+                GXSetTevColorIn(
+                    id,
+                    emu64::tev[i].clr_a,
+                    emu64::tev[i].clr_b,
+                    emu64::tev[i].clr_c,
+                    emu64::tev[i].clr_d
+                );
+                GXSetTevAlphaIn(
+                    id,
+                    emu64::tev[i].alpha_a,
+                    emu64::tev[i].alpha_b,
+                    emu64::tev[i].alpha_c,
+                    emu64::tev[i].alpha_d
+                );
+                GXSetTevOrder(
+                    id,
+                    emu64::tev[i].coord,
+                    emu64::tev[i].map,
+                    emu64::tev[i].color
+                );
+            }
+        }
+        else {
+            bool manual = true;
+            if (aflags[AFLAGS_COMBINE_AUTO] != FALSE && this->combine_auto() == FALSE) {
+                manual = false;
+            }
+
+            if (manual) {
+                this->combine_manual();
+            }
+        }
+        #else
+        bool manual = true;
+        if (aflags[AFLAGS_COMBINE_AUTO] != FALSE && this->combine_auto() == FALSE) {
+            manual = false;
+        }
+
+        if (manual) {
+            this->combine_manual();
+        }
+        #endif
+
+        if (aflags[ALFAGS_TEV_ALPHA_KONST] != FALSE || aflags[AFLAGS_2TRIS] != FALSE) {
+            GXSetTevAlphaIn(GX_TEVSTAGE0, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_KONST);
+            GXSetTevAlphaIn(GX_TEVSTAGE1, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_KONST);
+            GXSetTevAlphaIn(GX_TEVSTAGE2, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_KONST);
+        }
+
+        EMU64_END_TIMED_BLOCK(combine, combine_time);
+    }
+}
+
+void emu64::combine_tev() {
+    static struct {
+        u32 value;
+        bool set;
+    } c;
+    static struct {
+        u32 value;
+        bool set;
+    } c1;
+    static struct {
+        u32 value;
+        bool set;
+    } a;
+    static struct {
+        u32 value;
+        bool set;
+    } a1;
+
+    Gsetcombine_tev combine_tev = *((Gsetcombine_tev*)&this->combiner_high);
+
+    if (((this->combiner_high >> 24) & 0xFF) == G_SETCOMBINE_TEV) {
+        if (aflags[AFLAGS_FORCE_TEV_COMBINE_MODE] != 0) {
+            if (aflags[AFLAGS_FORCE_TEV_COMBINE_MODE] == 1) {
+                if (c.set == false) {
+                    c.value = TEV_SHADE;
+                    c.set = true;
+                }
+                if (c1.set == false) {
+                    c1.value = TEV_SHADE;
+                    c1.set = true;
+                }
+                if (a.set == false) {
+                    a.value = TEV_ALPHA_SHADE;
+                    a.set = true;
+                }
+                if (a1.set == false) {
+                    a1.value = TEV_ALPHA_SHADE;
+                    a1.set = true;
+                }
+
+                if (combine_tev.a0 == c.value) {
+                    combine_tev.a0 = c1.value;
+                }
+                
+                if (combine_tev.b0 == c.value) {
+                    combine_tev.b0 = c1.value;
+                }
+
+                if (combine_tev.c0 == c.value) {
+                    combine_tev.c0 = c1.value;
+                }
+
+                if (combine_tev.d0 == c.value) {
+                    combine_tev.d0 = c1.value;
+                }
+
+                if (combine_tev.a1 == c.value) {
+                    combine_tev.a1 = c1.value;
+                }
+                
+                if (combine_tev.b1 == c.value) {
+                    combine_tev.b1 = c1.value;
+                }
+
+                if (combine_tev.c1 == c.value) {
+                    combine_tev.c1 = c1.value;
+                }
+
+                if (combine_tev.d1 == c.value) {
+                    combine_tev.d1 = c1.value;
+                }
+
+                if (combine_tev.Aa0 == a.value) {
+                    combine_tev.Aa0 = a1.value;
+                }
+                
+                if (combine_tev.Ab0 == a.value) {
+                    combine_tev.Ab0 = a1.value;
+                }
+
+                if (combine_tev.Ac0 == a.value) {
+                    combine_tev.Ac0 = a1.value;
+                }
+
+                if (combine_tev.Ad0 == a.value) {
+                    combine_tev.Ad0 = a1.value;
+                }
+
+                if (combine_tev.Aa1 == a.value) {
+                    combine_tev.Aa1 = a1.value;
+                }
+                
+                if (combine_tev.Ab1 == a.value) {
+                    combine_tev.Ab1 = a1.value;
+                }
+
+                if (combine_tev.Ac1 == a.value) {
+                    combine_tev.Ac1 = a1.value;
+                }
+
+                if (combine_tev.Ad1 == a.value) {
+                    combine_tev.Ad1 = a1.value;
+                }
+            }
+
+            if (aflags[AFLAGS_FORCE_TEV_COMBINE_MODE] == 2) {
+                combine_tev.d1 = TEV_ENVIRONMENT;
+                combine_tev.Ad1 = TEV_ALPHA_ONE;
+            }
+        }
+
+        GXSetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0A0);
+        GXSetTevColorOp(GX_TEVSTAGE0, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+        GXSetTevAlphaOp(GX_TEVSTAGE0, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+
+        GXSetTevColorIn(GX_TEVSTAGE0, (GXTevColorArg)combine_tev.a0, (GXTevColorArg)combine_tev.b0, (GXTevColorArg)combine_tev.c0, (GXTevColorArg)combine_tev.d0);
+        GXSetTevAlphaIn(GX_TEVSTAGE0, (GXTevAlphaArg)combine_tev.Aa0, (GXTevAlphaArg)combine_tev.Ab0, (GXTevAlphaArg)combine_tev.Ac0, (GXTevAlphaArg)combine_tev.Ad0);
+
+        /* Decide whether we're going to use 1 or 2 cycle combining */
+        /* If 2 cycle mode is disabled, or 2nd cycle color & alpha = ZERO|ZERO|ZERO|COMBINED, use 1 cycle */
+        #ifdef ANIMAL_FOREST_PLUS
+        if ((this->othermode_high & G_CYC_2CYCLE) == 0 || ((this->combiner_low & 0xFFFF) == 0xFFF0 && ((this->combiner_high & 0xFFF) == 0xFF8) && (aflags[AFLAGS_FORCE_TEV_CYCLEFLAGS] & 4) == 0)) {
+            GXSetNumTexGens(1);
+            GXSetNumTevStages(1);
+
+            if ((aflags[AFLAGS_FORCE_TEV_CYCLEFLAGS] & 2) == 0) {
+                GXSetTevOrder(GX_TEVSTAGE1, GX_TEXCOORD_NULL, GX_TEXMAP_NULL, GX_COLOR_NULL);
+                GXSetTevOrder(GX_TEVSTAGE2, GX_TEXCOORD_NULL, GX_TEXMAP_NULL, GX_COLOR_NULL);
+
+                GXSetTevColorOp(GX_TEVSTAGE1, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+                GXSetTevColorOp(GX_TEVSTAGE2, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+
+                GXSetTevAlphaOp(GX_TEVSTAGE1, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+                GXSetTevAlphaOp(GX_TEVSTAGE2, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+
+                GXSetTevColorIn(GX_TEVSTAGE1, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ONE);
+                GXSetTevColorIn(GX_TEVSTAGE2, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ONE);
+
+                GXSetTevAlphaIn(GX_TEVSTAGE1, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_KONST);
+                GXSetTevAlphaIn(GX_TEVSTAGE2, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_KONST);
+            }
+
+            GXSetTevOrder(GX_TEVSTAGE1, GX_TEXCOORD1, GX_TEXMAP1, GX_COLOR0A0);
+            GXSetTevColorOp(GX_TEVSTAGE1, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+            GXSetTevAlphaOp(GX_TEVSTAGE1, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+            GXSetTevColorIn(GX_TEVSTAGE1, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ZERO, GX_CC_CPREV);
+            GXSetTevAlphaIn(GX_TEVSTAGE1, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_APREV);
+        }
+        else {
+            GXSetNumTexGens(2);
+            GXSetNumTevStages(2);
+
+            GXSetTevOrder(GX_TEVSTAGE1, GX_TEXCOORD1, GX_TEXMAP1, GX_COLOR0A0);
+            GXSetTevColorOp(GX_TEVSTAGE1, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+            GXSetTevAlphaOp(GX_TEVSTAGE1, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+            GXSetTevColorIn(GX_TEVSTAGE1, (GXTevColorArg)combine_tev.a1, (GXTevColorArg)combine_tev.b1, (GXTevColorArg)combine_tev.c1, (GXTevColorArg)combine_tev.d1);
+            GXSetTevAlphaIn(GX_TEVSTAGE1, (GXTevAlphaArg)combine_tev.Aa1, (GXTevAlphaArg)combine_tev.Ab1, (GXTevAlphaArg)combine_tev.Ac1, (GXTevAlphaArg)combine_tev.Ad1);
+
+            if ((aflags[AFLAGS_FORCE_TEV_CYCLEFLAGS] & 2) == 0) {
+                GXSetTevOrder(GX_TEVSTAGE2, GX_TEXCOORD_NULL, GX_TEXMAP_NULL, GX_COLOR_NULL);
+                GXSetTevColorOp(GX_TEVSTAGE2, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+                GXSetTevAlphaOp(GX_TEVSTAGE2, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+                GXSetTevColorIn(GX_TEVSTAGE2, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ONE);
+                GXSetTevAlphaIn(GX_TEVSTAGE2, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_KONST);
+            }
+        }
+        #else
+        if ((this->othermode_high & G_CYC_2CYCLE) == 0 || ((this->combiner_low & 0xFFFF) == 0xFFF0 && ((this->combiner_high & 0xFFF) == 0xFF8))) {
+            GXSetNumTexGens(1);
+            GXSetNumTevStages(1);
+            
+            GXSetTevOrder(GX_TEVSTAGE1, GX_TEXCOORD_NULL, GX_TEXMAP_NULL, GX_COLOR_NULL);
+            GXSetTevColorOp(GX_TEVSTAGE1, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+            GXSetTevAlphaOp(GX_TEVSTAGE1, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+            GXSetTevColorIn(GX_TEVSTAGE1, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ONE);
+            GXSetTevAlphaIn(GX_TEVSTAGE1, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_KONST);
+
+            GXSetTevOrder(GX_TEVSTAGE2, GX_TEXCOORD_NULL, GX_TEXMAP_NULL, GX_COLOR_NULL);
+            GXSetTevColorOp(GX_TEVSTAGE2, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+            GXSetTevAlphaOp(GX_TEVSTAGE2, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+            GXSetTevColorIn(GX_TEVSTAGE2, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ONE);
+            GXSetTevAlphaIn(GX_TEVSTAGE2, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_KONST);
+        }
+        else {
+            GXSetNumTexGens(2);
+            GXSetNumTevStages(2);
+
+            GXSetTevOrder(GX_TEVSTAGE1, GX_TEXCOORD1, GX_TEXMAP1, GX_COLOR0A0);
+            GXSetTevColorOp(GX_TEVSTAGE1, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+            GXSetTevAlphaOp(GX_TEVSTAGE1, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+            GXSetTevColorIn(GX_TEVSTAGE1, (GXTevColorArg)combine_tev.a1, (GXTevColorArg)combine_tev.b1, (GXTevColorArg)combine_tev.c1, (GXTevColorArg)combine_tev.d1);
+            GXSetTevAlphaIn(GX_TEVSTAGE1, (GXTevAlphaArg)combine_tev.Aa1, (GXTevAlphaArg)combine_tev.Ab1, (GXTevAlphaArg)combine_tev.Ac1, (GXTevAlphaArg)combine_tev.Ad1);
+
+            GXSetTevOrder(GX_TEVSTAGE2, GX_TEXCOORD_NULL, GX_TEXMAP_NULL, GX_COLOR_NULL);
+            GXSetTevColorOp(GX_TEVSTAGE2, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+            GXSetTevAlphaOp(GX_TEVSTAGE2, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+            GXSetTevColorIn(GX_TEVSTAGE2, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ONE);
+            GXSetTevAlphaIn(GX_TEVSTAGE2, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_KONST);
+        }
+        #endif
+        
+        if (aflags[ALFAGS_TEV_ALPHA_KONST] != 0 || aflags[AFLAGS_2TRIS] != 0) {
+            GXSetTevAlphaIn(GX_TEVSTAGE1, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_KONST);
+        }
+    }
+}
+
+int emu64::combine_auto() {
+    Gsetcombine* setcombine = (Gsetcombine*)&this->combiner_high;
+    bool two_cycle = (this->othermode_high & G_CYC_2CYCLE) != 0;
+
+    if (setcombine->a0 != G_CCMUX_TEXEL1 && setcombine->b0 != G_CCMUX_TEXEL1 && setcombine->c0 != G_CCMUX_TEXEL1 && setcombine->d0 != G_CCMUX_TEXEL1 && setcombine->c0 != G_CCMUX_TEXEL1_ALPHA &&
+        setcombine->Aa0 != G_ACMUX_TEXEL1 && setcombine->Ab0 != G_ACMUX_TEXEL1 && setcombine->Ac0 != G_ACMUX_TEXEL1 && setcombine->Ad0 != G_ACMUX_TEXEL1) {
+        if (two_cycle == false || (setcombine->a1 != G_CCMUX_TEXEL1 && setcombine->b1 != G_CCMUX_TEXEL1 && setcombine->c1 != G_CCMUX_TEXEL1 && setcombine->d1 != G_CCMUX_TEXEL1 && setcombine->c1 != G_CCMUX_TEXEL1_ALPHA &&
+            setcombine->Aa1 != G_ACMUX_TEXEL1 && setcombine->Ab1 != G_ACMUX_TEXEL1 && setcombine->Ac1 != G_ACMUX_TEXEL1 && setcombine->Ad1 != G_ACMUX_TEXEL1)) {
+            
+            int stage = GX_TEVSTAGE0;
+
+            GXTevColorArg a = (GXTevColorArg)tblc[setcombine->b0].color1; /* b0 */
+            GXTevColorArg b = (GXTevColorArg)tblc[setcombine->a0].color0; /* a0 */
+            GXTevColorArg c = (GXTevColorArg)tblc[setcombine->c0].color2; /* c0 */
+            GXTevColorArg d = (GXTevColorArg)tblc[setcombine->d0].color3; /* d0 */
+
+            GXTevAlphaArg alpha_b = (GXTevAlphaArg)tbla[setcombine->Aa0].alpha0; /* Aa0 */
+            GXTevAlphaArg alpha_a = (GXTevAlphaArg)tbla[setcombine->Ab0].alpha0; /* Ab0 */
+            GXTevAlphaArg alpha_c = (GXTevAlphaArg)tbla[setcombine->Ac0].alpha1; /* Ac0 */
+            GXTevAlphaArg alpha_d = (GXTevAlphaArg)tbla[setcombine->Ad0].alpha0; /* Ad0 */
+
+            u32 color_stages, tevstages;
+            if (a == GX_CC_ZERO) {
+                GXSetTevColorIn(GX_TEVSTAGE0, GX_CC_ZERO, b, c, d);
+                color_stages = 1;
+            }
+            else if (a == d) {
+                GXSetTevColorIn(GX_TEVSTAGE0, a, b, c, GX_CC_ZERO);
+                color_stages = 1;
+            }
+            else {
+                GXSetTevColorIn(GX_TEVSTAGE0, GX_CC_ZERO, b, c, d);
+                GXSetTevColorOp(GX_TEVSTAGE1, GX_TEV_SUB, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+                GXSetTevColorIn(GX_TEVSTAGE1, GX_CC_ZERO, a, c, GX_CC_CPREV);
+                color_stages = 2;
+            }
+
+            if (alpha_a == GX_CA_ZERO) {
+                GXSetTevAlphaIn(GX_TEVSTAGE0, GX_CA_ZERO, alpha_b, alpha_c, alpha_d);
+                tevstages = 1;
+            }
+            else if (alpha_a == alpha_d) {
+                GXSetTevAlphaIn(GX_TEVSTAGE0, alpha_a, alpha_b, alpha_c, GX_CA_ZERO);
+                tevstages = 1;
+            }
+            else {
+                GXSetTevAlphaIn(GX_TEVSTAGE0, GX_CA_ZERO, alpha_b, alpha_c, alpha_d);
+                GXSetTevAlphaOp(GX_TEVSTAGE1, GX_TEV_SUB, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+                GXSetTevAlphaIn(GX_TEVSTAGE1, GX_CA_ZERO, alpha_a, alpha_c, GX_CA_APREV);
+                tevstages = 2;
+            }
+
+            if (tevstages < color_stages) {
+                tevstages = color_stages;
+            }
+
+            for (stage; stage < tevstages; stage++) {
+                GXSetTevOrder((GXTevStageID)stage, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0A0);
+            }
+
+            if (two_cycle != false) {
+                GXTevColorArg a2 = (GXTevColorArg)tblc[setcombine->b1].color1; /* b1 */
+                GXTevColorArg b2 = (GXTevColorArg)tblc[setcombine->a1].color0; /* a1 */
+                GXTevColorArg c2 = (GXTevColorArg)tblc[setcombine->c1].color2; /* c1 */
+                GXTevColorArg d2 = (GXTevColorArg)tblc[setcombine->d1].color3; /* d1 */
+
+                GXTevAlphaArg alpha_b2 = (GXTevAlphaArg)tbla[setcombine->Aa1].alpha0; /* Aa1 */
+                GXTevAlphaArg alpha_a2 = (GXTevAlphaArg)tbla[setcombine->Ab1].alpha0; /* Ab1 */
+                GXTevAlphaArg alpha_c2 = (GXTevAlphaArg)tbla[setcombine->Ac1].alpha1; /* Ac1 */
+                GXTevAlphaArg alpha_d2 = (GXTevAlphaArg)tbla[setcombine->Ad1].alpha0; /* Ad1 */
+
+                /* TODO: Is this alpha_c2 != GX_CC_ZERO check supposed to be alpha_c2 != GX_CA_ZERO??? */
+                if (c2 != GX_CC_ZERO || d2 != GX_CC_CPREV || alpha_c2 != GX_CC_ZERO || alpha_d2 != GX_CA_APREV) {
+                    if (a2 == GX_CC_ZERO) {
+                        GXSetTevColorIn((GXTevStageID)stage, GX_CC_ZERO, b2, c2, d2);
+                        color_stages = stage + 1;
+                    }
+                    else if (a2 == d2) {
+                        GXSetTevColorIn((GXTevStageID)stage, a2, b2, c2, GX_CC_ZERO);
+                        color_stages = stage + 1;
+                    }
+                    else {
+                        GXSetTevColorIn((GXTevStageID)stage, GX_CC_ZERO, b2, c2, d2);
+                        GXSetTevColorOp((GXTevStageID)(stage + 1), GX_TEV_SUB, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+                        GXSetTevColorIn((GXTevStageID)(stage + 1), GX_CC_ZERO, a2, c2, GX_CC_CPREV);
+                        color_stages = stage + 2;
+                    }
+
+                    if (alpha_a2 == GX_CA_ZERO) {
+                        GXSetTevAlphaIn((GXTevStageID)stage, GX_CA_ZERO, alpha_b2, alpha_c2, alpha_d2);
+                        tevstages = stage + 1;
+                    }
+                    else if (alpha_a2 == alpha_d2) {
+                        GXSetTevAlphaIn((GXTevStageID)stage, alpha_a2, alpha_b2, alpha_c2, GX_CA_ZERO);
+                        tevstages = stage + 1;
+                    }
+                    else {
+                        GXSetTevAlphaIn((GXTevStageID)stage, GX_CA_ZERO, alpha_b2, alpha_c2, alpha_d2);
+                        GXSetTevAlphaOp((GXTevStageID)(stage + 1), GX_TEV_SUB, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+                        GXSetTevAlphaIn((GXTevStageID)(stage + 1), GX_CA_ZERO, alpha_a2, alpha_c2, GX_CA_APREV);
+                        tevstages = stage + 2;
+                    }
+
+                    if (tevstages < color_stages) {
+                        tevstages = color_stages;
+                    }
+
+                    for (stage; stage < tevstages; stage++) {
+                        GXSetTevOrder((GXTevStageID)stage, GX_TEXCOORD1, GX_TEXMAP1, GX_COLOR0A0);
+                    }
+                }
+            }
+
+            if (tevstages > 4) {
+                EMU64_PANIC(this, "tevstages <= 4"); /* DnM+: emu64.c line 2060, e+: emu64.c line 2038 */
+            }
+
+            GXSetNumTevStages(tevstages);
+            this->combine_auto_cnt[tevstages]++;
+            return 0;
+        }
+    }
+
+    return -1;
+}
+
+#define NUM_COMBINER_HIGHLOW_ERRS 10
+static u32 last_highlow;
+static Gfx highlow_errs[NUM_COMBINER_HIGHLOW_ERRS];
+
+void emu64::combine_manual() {
+    /* TODO: DnM+ logic */
+    if (COMBINE_CONSTEXPR_CHECK(G_CC_BLENDPETEMPLERP, G_CC_MODULATEI_SHADE_PRIM2)) {
+        GXSetNumTevStages(3);
+        GXSetTevColorIn(GX_TEVSTAGE0, GX_CC_TEXC, GX_CC_C1, GX_CC_C2, GX_CC_ZERO);
+        GXSetTevColorIn(GX_TEVSTAGE1, GX_CC_ZERO, GX_CC_CPREV, GX_CC_RASC, GX_CC_ZERO);
+        GXSetTevColorIn(GX_TEVSTAGE2, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ZERO, GX_CC_CPREV);
+        GXSetTevAlphaIn(GX_TEVSTAGE0, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_TEXA);
+        GXSetTevAlphaIn(GX_TEVSTAGE1, GX_CA_APREV, GX_CA_TEXA, GX_CA_A0, GX_CA_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE2, GX_CA_ZERO, GX_CA_APREV, GX_CA_A1, GX_CA_ZERO);
+        GXSetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE1, GX_TEXCOORD1, GX_TEXMAP1, GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE2, GX_TEXCOORD_NULL, GX_TEXMAP_NULL, GX_COLOR0A0);
+        return;
+    }
+
+    /* TODO: These temporary defines should have a name decided on and be moved into combiner_modes.h */
+    /* TODO: Move these to a switch statement. */
+    /* NOTE: I generated these with a script, so it is possible there are mistakes. */
+    #define G_CC_TEMP0 TEXEL1, TEXEL0, PRIM_LOD_FRAC, TEXEL0, TEXEL1, 0, TEXEL0, 0
+    #define G_CC_TEMP1 PRIMITIVE, ENVIRONMENT, COMBINED, ENVIRONMENT, COMBINED, 0, PRIMITIVE, 0
+    if (COMBINE_CONSTEXPR_CHECK(G_CC_TEMP0, G_CC_TEMP1)) {
+        GXSetNumTevStages(3);
+        GXSetTevColorIn(GX_TEVSTAGE0,GX_CC_TEXC,GX_CC_ZERO,GX_CC_ZERO,GX_CC_ZERO);
+        GXSetTevColorIn(GX_TEVSTAGE1,GX_CC_CPREV,GX_CC_TEXC,GX_CC_A0,GX_CC_ZERO);
+        GXSetTevColorIn(GX_TEVSTAGE2,GX_CC_C2,GX_CC_C1,GX_CC_CPREV,GX_CC_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE0,GX_CA_ZERO,GX_CA_TEXA,GX_CA_A1,GX_CA_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE1,GX_CA_ZERO,GX_CA_TEXA,GX_CA_APREV,GX_CA_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE2,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO,GX_CA_APREV);
+        GXSetTevOrder(GX_TEVSTAGE0,GX_TEXCOORD0,GX_TEXMAP0,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE1,GX_TEXCOORD1,GX_TEXMAP1,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE2,GX_TEXCOORD_NULL,GX_TEXMAP_NULL,GX_COLOR0A0);
+        return;
+    }
+
+    #define G_CC_TEMP0 TEXEL0, 0, TEXEL1_ALPHA, 0, TEXEL0, 0, TEXEL1, 0
+    #define G_CC_TEMP1 PRIMITIVE, 0, SHADE, COMBINED, COMBINED, 0, PRIM_LOD_FRAC, 0
+    if (COMBINE_CONSTEXPR_CHECK(G_CC_TEMP0, G_CC_TEMP1)) {
+        GXSetNumTevStages(3);
+        GXSetTevColorIn(GX_TEVSTAGE0,GX_CC_ZERO,GX_CC_ZERO,GX_CC_ZERO,GX_CC_TEXC);
+        GXSetTevColorIn(GX_TEVSTAGE1,GX_CC_ZERO,GX_CC_CPREV,GX_CC_TEXA,GX_CC_ZERO);
+        GXSetTevColorIn(GX_TEVSTAGE2,GX_CC_ZERO,GX_CC_C1,GX_CC_RASC,GX_CC_CPREV);
+        GXSetTevAlphaIn(GX_TEVSTAGE0,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO,GX_CA_TEXA);
+        GXSetTevAlphaIn(GX_TEVSTAGE1,GX_CA_ZERO,GX_CA_APREV,GX_CA_TEXA,GX_CA_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE2,GX_CA_ZERO,GX_CA_APREV,GX_CA_A0,GX_CA_ZERO);
+        GXSetTevOrder(GX_TEVSTAGE0,GX_TEXCOORD0,GX_TEXMAP0,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE1,GX_TEXCOORD1,GX_TEXMAP1,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE2,GX_TEXCOORD_NULL,GX_TEXMAP_NULL,GX_COLOR0A0);
+        return;
+    }
+
+    #define G_CC_TEMP0 TEXEL0, 0, TEXEL1_ALPHA, 0, TEXEL0, 0, TEXEL1, 0
+    #define G_CC_TEMP1 PRIMITIVE, ENVIRONMENT, COMBINED, ENVIRONMENT, COMBINED, 0, PRIMITIVE, 0
+    if (COMBINE_CONSTEXPR_CHECK(G_CC_TEMP0, G_CC_TEMP1)) {
+        GXSetNumTevStages(3);
+        GXSetTevColorIn(GX_TEVSTAGE0,GX_CC_ZERO,GX_CC_ZERO,GX_CC_ZERO,GX_CC_TEXC);
+        GXSetTevColorIn(GX_TEVSTAGE1,GX_CC_ZERO,GX_CC_CPREV,GX_CC_TEXA,GX_CC_ZERO);
+        GXSetTevColorIn(GX_TEVSTAGE2,GX_CC_C2,GX_CC_C1,GX_CC_CPREV,GX_CC_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE0,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO,GX_CA_TEXA);
+        GXSetTevAlphaIn(GX_TEVSTAGE1,GX_CA_ZERO,GX_CA_APREV,GX_CA_TEXA,GX_CA_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE2,GX_CA_ZERO,GX_CA_APREV,GX_CA_A1,GX_CA_ZERO);
+        GXSetTevOrder(GX_TEVSTAGE0,GX_TEXCOORD0,GX_TEXMAP0,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE1,GX_TEXCOORD1,GX_TEXMAP1,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE2,GX_TEXCOORD_NULL,GX_TEXMAP_NULL,GX_COLOR0A0);
+        return;
+    }
+
+    #define G_CC_TEMP0 TEXEL0, 0, SHADE, TEXEL0, 0, 0, 0, TEXEL0
+    #define G_CC_TEMP1 SHADE, ENVIRONMENT, PRIMITIVE, COMBINED, 0, 0, 0, COMBINED
+    if (COMBINE_CONSTEXPR_CHECK(G_CC_TEMP0, G_CC_TEMP1)) {
+        GXSetNumTevStages(3);
+        GXSetTevColorIn(GX_TEVSTAGE0,GX_CC_ZERO,GX_CC_RASC,GX_CC_TEXC,GX_CC_TEXC);
+        GXSetTevColorIn(GX_TEVSTAGE1,GX_CC_ZERO,GX_CC_RASC,GX_CC_C1,GX_CC_CPREV);
+        GXSetTevColorIn(GX_TEVSTAGE2,GX_CC_ZERO,GX_CC_C2,GX_CC_C1,GX_CC_CPREV);
+        GXSetTevAlphaIn(GX_TEVSTAGE0,GX_CA_TEXA,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE1,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO,GX_CA_APREV);
+        GXSetTevAlphaIn(GX_TEVSTAGE2,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO,GX_CA_APREV);
+        GXSetTevOrder(GX_TEVSTAGE0,GX_TEXCOORD0,GX_TEXMAP0,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE1,GX_TEXCOORD_NULL,GX_TEXMAP_NULL,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE2,GX_TEXCOORD_NULL,GX_TEXMAP_NULL,GX_COLOR0A0);
+        GXSetTevColorOp(GX_TEVSTAGE2,GX_TEV_SUB,GX_TB_ZERO,GX_CS_SCALE_1,1,GX_TEVPREV);
+        return;
+    }
+
+    #define G_CC_TEMP0 TEXEL0, 0, TEXEL1_ALPHA, 0, TEXEL0, 0, TEXEL1, 0
+    #define G_CC_TEMP1 PRIMITIVE, 0, SHADE, COMBINED, COMBINED, 0, PRIM_LOD_FRAC, PRIMITIVE
+    if (COMBINE_CONSTEXPR_CHECK(G_CC_TEMP0, G_CC_TEMP1)) {
+        GXSetNumTevStages(3);
+        GXSetTevColorIn(GX_TEVSTAGE0,GX_CC_ZERO,GX_CC_ZERO,GX_CC_ZERO,GX_CC_TEXC);
+        GXSetTevColorIn(GX_TEVSTAGE1,GX_CC_ZERO,GX_CC_CPREV,GX_CC_TEXA,GX_CC_ZERO);
+        GXSetTevColorIn(GX_TEVSTAGE2,GX_CC_ZERO,GX_CC_C1,GX_CC_RASC,GX_CC_CPREV);
+        GXSetTevAlphaIn(GX_TEVSTAGE0,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO,GX_CA_TEXA);
+        GXSetTevAlphaIn(GX_TEVSTAGE1,GX_CA_ZERO,GX_CA_APREV,GX_CA_TEXA,GX_CA_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE2,GX_CA_ZERO,GX_CA_APREV,GX_CA_A0,GX_CA_A1);
+        GXSetTevOrder(GX_TEVSTAGE0,GX_TEXCOORD0,GX_TEXMAP0,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE1,GX_TEXCOORD1,GX_TEXMAP1,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE2,GX_TEXCOORD_NULL,GX_TEXMAP_NULL,GX_COLOR0A0);
+        return;
+    }
+
+    #define G_CC_TEMP0 TEXEL1, 0, TEXEL0, TEXEL0, TEXEL1, 0, TEXEL0, 0
+    #define G_CC_TEMP1 PRIMITIVE, 0, SHADE, COMBINED, 0, 0, 0, COMBINED
+    if (COMBINE_CONSTEXPR_CHECK(G_CC_TEMP0, G_CC_TEMP1)) {
+        GXSetNumTevStages(3);
+        GXSetTevColorIn(GX_TEVSTAGE0,GX_CC_ZERO,GX_CC_ZERO,GX_CC_ZERO,GX_CC_TEXC);
+        GXSetTevColorIn(GX_TEVSTAGE1,GX_CC_ZERO,GX_CC_CPREV,GX_CC_TEXC,GX_CC_CPREV);
+        GXSetTevColorIn(GX_TEVSTAGE2,GX_CC_ZERO,GX_CC_RASC,GX_CC_C1,GX_CC_CPREV);
+        GXSetTevAlphaIn(GX_TEVSTAGE0,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO,GX_CA_TEXA);
+        GXSetTevAlphaIn(GX_TEVSTAGE1,GX_CA_ZERO,GX_CA_APREV,GX_CA_TEXA,GX_CA_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE2,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO,GX_CA_APREV);
+        GXSetTevOrder(GX_TEVSTAGE0,GX_TEXCOORD0,GX_TEXMAP0,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE1,GX_TEXCOORD1,GX_TEXMAP1,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE2,GX_TEXCOORD_NULL,GX_TEXMAP_NULL,GX_COLOR0A0);
+        return;
+    }
+
+    #define G_CC_TEMP0 TEXEL0, 0, ENV_ALPHA, 0, TEXEL0, 0, TEXEL1, 0
+    #define G_CC_TEMP1 PRIMITIVE, 0, PRIMITIVE_ALPHA, COMBINED, COMBINED, 0, PRIM_LOD_FRAC, 0
+    if (COMBINE_CONSTEXPR_CHECK(G_CC_TEMP0, G_CC_TEMP1)) {
+        GXSetNumTevStages(2);
+        GXSetTevColorIn(GX_TEVSTAGE0,GX_CC_ZERO,GX_CC_TEXC,GX_CC_A2,GX_CC_ZERO);
+        GXSetTevColorIn(GX_TEVSTAGE1,GX_CC_ZERO,GX_CC_C1,GX_CC_A1,GX_CC_CPREV);
+        GXSetTevAlphaIn(GX_TEVSTAGE0,GX_CA_ZERO,GX_CA_TEXA,GX_CA_A0,GX_CA_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE1,GX_CA_ZERO,GX_CA_APREV,GX_CA_TEXA,GX_CA_ZERO);
+        GXSetTevOrder(GX_TEVSTAGE0,GX_TEXCOORD0,GX_TEXMAP0,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE1,GX_TEXCOORD1,GX_TEXMAP1,GX_COLOR0A0);
+        return;
+    }
+
+    #define G_CC_TEMP0 TEXEL1, TEXEL0, PRIMITIVE_ALPHA, TEXEL0, SHADE, 0, PRIM_LOD_FRAC, 0
+    #define G_CC_TEMP1 COMBINED, 0, SHADE, 0, 0, 0, 0, COMBINED
+    if (COMBINE_CONSTEXPR_CHECK(G_CC_TEMP0, G_CC_TEMP1)) {
+        GXSetNumTevStages(3);
+        GXSetTevColorIn(GX_TEVSTAGE0,GX_CC_TEXC,GX_CC_ZERO,GX_CC_ZERO,GX_CC_ZERO);
+        GXSetTevColorIn(GX_TEVSTAGE1,GX_CC_CPREV,GX_CC_TEXC,GX_CC_A1,GX_CC_ZERO);
+        GXSetTevColorIn(GX_TEVSTAGE2,GX_CC_ZERO,GX_CC_CPREV,GX_CC_RASC,GX_CC_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE0,GX_CA_ZERO,GX_CA_RASA,GX_CA_A0,GX_CA_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE1,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO,GX_CA_APREV);
+        GXSetTevAlphaIn(GX_TEVSTAGE2,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO,GX_CA_APREV);
+        GXSetTevOrder(GX_TEVSTAGE0,GX_TEXCOORD0,GX_TEXMAP0,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE1,GX_TEXCOORD1,GX_TEXMAP1,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE2,GX_TEXCOORD_NULL,GX_TEXMAP_NULL,GX_COLOR0A0);
+        return;
+    }
+
+    #define G_CC_TEMP0 TEXEL1, TEXEL0, PRIM_LOD_FRAC, TEXEL0, 0, 0, 0, TEXEL0
+    #define G_CC_TEMP1 COMBINED, 0, SHADE, 0, 0, 0, 0, COMBINED
+    if (COMBINE_CONSTEXPR_CHECK(G_CC_TEMP0, G_CC_TEMP1)) {
+        GXSetNumTevStages(3);
+        GXSetTevColorIn(GX_TEVSTAGE0,GX_CC_ZERO,GX_CC_ZERO,GX_CC_ZERO,GX_CC_TEXC);
+        GXSetTevColorIn(GX_TEVSTAGE1,GX_CC_CPREV,GX_CC_TEXC,GX_CC_A0,GX_CC_ZERO);
+        GXSetTevColorIn(GX_TEVSTAGE2,GX_CC_ZERO,GX_CC_CPREV,GX_CC_RASC,GX_CC_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE0,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO,GX_CA_TEXA);
+        GXSetTevAlphaIn(GX_TEVSTAGE1,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO,GX_CA_APREV);
+        GXSetTevAlphaIn(GX_TEVSTAGE2,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO,GX_CA_APREV);
+        GXSetTevOrder(GX_TEVSTAGE0,GX_TEXCOORD0,GX_TEXMAP0,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE1,GX_TEXCOORD1,GX_TEXMAP1,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE2,GX_TEXCOORD_NULL,GX_TEXMAP_NULL,GX_COLOR0A0);
+        return;
+    }
+
+    #define G_CC_TEMP0 TEXEL1, TEXEL0, PRIM_LOD_FRAC, TEXEL0, TEXEL1, TEXEL0, ENVIRONMENT, TEXEL0
+    #define G_CC_TEMP1 PRIMITIVE, ENVIRONMENT, COMBINED, ENVIRONMENT, COMBINED, 0, PRIMITIVE, 0
+    if (COMBINE_CONSTEXPR_CHECK(G_CC_TEMP0, G_CC_TEMP1)) {
+        GXSetNumTevStages(3);
+        GXSetTevColorIn(GX_TEVSTAGE0,GX_CC_TEXC,GX_CC_ZERO,GX_CC_ZERO,GX_CC_ZERO);
+        GXSetTevColorIn(GX_TEVSTAGE1,GX_CC_CPREV,GX_CC_TEXC,GX_CC_A0,GX_CC_ZERO);
+        GXSetTevColorIn(GX_TEVSTAGE2,GX_CC_C2,GX_CC_C1,GX_CC_CPREV,GX_CC_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE0,GX_CA_TEXA,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE1,GX_CA_APREV,GX_CA_TEXA,GX_CA_A2,GX_CA_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE2,GX_CA_ZERO,GX_CA_APREV,GX_CA_A1,GX_CA_ZERO);
+        GXSetTevOrder(GX_TEVSTAGE0,GX_TEXCOORD0,GX_TEXMAP0,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE1,GX_TEXCOORD1,GX_TEXMAP1,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE2,GX_TEXCOORD_NULL,GX_TEXMAP_NULL,GX_COLOR0A0);
+        return;
+    }
+
+    #define G_CC_TEMP0 TEXEL1, TEXEL0, PRIM_LOD_FRAC, TEXEL0, TEXEL1, 0, TEXEL0, 0
+    #define G_CC_TEMP1 PRIMITIVE, ENVIRONMENT, COMBINED, ENVIRONMENT, 0, 0, 0, COMBINED
+    if (COMBINE_CONSTEXPR_CHECK(G_CC_TEMP0, G_CC_TEMP1)) {
+        GXSetNumTevStages(3);
+        GXSetTevColorIn(GX_TEVSTAGE0,GX_CC_TEXC,GX_CC_ZERO,GX_CC_ZERO,GX_CC_ZERO);
+        GXSetTevColorIn(GX_TEVSTAGE1,GX_CC_CPREV,GX_CC_TEXC,GX_CC_A0,GX_CC_ZERO);
+        GXSetTevColorIn(GX_TEVSTAGE2,GX_CC_C2,GX_CC_C1,GX_CC_CPREV,GX_CC_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE0,GX_CA_TEXA,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE1,GX_CA_ZERO,GX_CA_APREV,GX_CA_TEXA,GX_CA_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE2,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO,GX_CA_APREV);
+        GXSetTevOrder(GX_TEVSTAGE0,GX_TEXCOORD0,GX_TEXMAP0,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE1,GX_TEXCOORD1,GX_TEXMAP1,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE2,GX_TEXCOORD_NULL,GX_TEXMAP_NULL,GX_COLOR0A0);
+        return;
+    }
+
+    #define G_CC_TEMP0 TEXEL1, TEXEL0, PRIM_LOD_FRAC, TEXEL0, TEXEL1, TEXEL0, PRIM_LOD_FRAC, TEXEL0
+    #define G_CC_TEMP1 PRIMITIVE, ENVIRONMENT, COMBINED, ENVIRONMENT, COMBINED, 0, PRIMITIVE, 0
+    if (COMBINE_CONSTEXPR_CHECK(G_CC_TEMP0, G_CC_TEMP1)) {
+        GXSetNumTevStages(3);
+        GXSetTevColorIn(GX_TEVSTAGE0,GX_CC_TEXC,GX_CC_ZERO,GX_CC_ZERO,GX_CC_ZERO);
+        GXSetTevColorIn(GX_TEVSTAGE1,GX_CC_CPREV,GX_CC_TEXC,GX_CC_A0,GX_CC_ZERO);
+        GXSetTevColorIn(GX_TEVSTAGE2,GX_CC_C2,GX_CC_C1,GX_CC_CPREV,GX_CC_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE0,GX_CA_TEXA,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE1,GX_CA_APREV,GX_CA_TEXA,GX_CA_A0,GX_CA_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE2,GX_CA_ZERO,GX_CA_APREV,GX_CA_A1,GX_CA_ZERO);
+        GXSetTevOrder(GX_TEVSTAGE0,GX_TEXCOORD0,GX_TEXMAP0,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE1,GX_TEXCOORD1,GX_TEXMAP1,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE2,GX_TEXCOORD_NULL,GX_TEXMAP_NULL,GX_COLOR0A0);
+        return;
+    }
+
+    #define G_CC_TEMP0 PRIMITIVE, ENVIRONMENT, TEXEL0, ENVIRONMENT, TEXEL0, 0, TEXEL1, TEXEL1
+    #define G_CC_TEMP1 0, 0, 0, COMBINED, COMBINED, 0, PRIM_LOD_FRAC, 0
+    if (COMBINE_CONSTEXPR_CHECK(G_CC_TEMP0, G_CC_TEMP1)) {
+        GXSetNumTevStages(2);
+        GXSetTevColorIn(GX_TEVSTAGE0,GX_CC_C2,GX_CC_C1,GX_CC_TEXC,GX_CC_ZERO);
+        GXSetTevColorIn(GX_TEVSTAGE1,GX_CC_ZERO,GX_CC_ZERO,GX_CC_ZERO,GX_CC_CPREV);
+        GXSetTevAlphaIn(GX_TEVSTAGE0,GX_CA_ZERO,GX_CA_TEXA,GX_CA_A0,GX_CA_A0);
+        GXSetTevAlphaIn(GX_TEVSTAGE1,GX_CA_ZERO,GX_CA_TEXA,GX_CA_APREV,GX_CA_ZERO);
+        GXSetTevOrder(GX_TEVSTAGE0,GX_TEXCOORD0,GX_TEXMAP0,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE1,GX_TEXCOORD1,GX_TEXMAP1,GX_COLOR0A0);
+        return;
+    }
+
+    #define G_CC_TEMP0 PRIMITIVE, TEXEL1, TEXEL0, TEXEL1, TEXEL0, 0, TEXEL1, 0
+    #define G_CC_TEMP1 0, 0, 0, COMBINED, 0, 0, 0, COMBINED
+    if (COMBINE_CONSTEXPR_CHECK(G_CC_TEMP0, G_CC_TEMP1)) {
+        GXSetNumTevStages(2);
+        GXSetTevColorIn(GX_TEVSTAGE0,GX_CC_TEXC,GX_CC_ZERO,GX_CC_ZERO,GX_CC_ZERO);
+        GXSetTevColorIn(GX_TEVSTAGE1,GX_CC_TEXC,GX_CC_C1,GX_CC_CPREV,GX_CC_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE0,GX_CA_TEXA,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE1,GX_CA_ZERO,GX_CA_APREV,GX_CA_TEXA,GX_CA_ZERO);
+        GXSetTevOrder(GX_TEVSTAGE0,GX_TEXCOORD0,GX_TEXMAP0,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE1,GX_TEXCOORD1,GX_TEXMAP1,GX_COLOR0A0);
+        return;
+    }
+
+    #define G_CC_TEMP0 PRIMITIVE, ENVIRONMENT, TEXEL0, ENVIRONMENT, TEXEL0, TEXEL1, PRIMITIVE, 0
+    #define G_CC_TEMP1 0, 0, 0, COMBINED, 0, 0, 0, COMBINED
+    if (COMBINE_CONSTEXPR_CHECK(G_CC_TEMP0, G_CC_TEMP1)) {
+        GXSetNumTevStages(2);
+        GXSetTevColorIn(GX_TEVSTAGE0,GX_CC_C2,GX_CC_C1,GX_CC_TEXC,GX_CC_ZERO);
+        GXSetTevColorIn(GX_TEVSTAGE1,GX_CC_ZERO,GX_CC_ZERO,GX_CC_ZERO,GX_CC_CPREV);
+        GXSetTevAlphaIn(GX_TEVSTAGE0,GX_CA_ZERO,GX_CA_TEXA,GX_CA_A1,GX_CA_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE1,GX_CA_ZERO,GX_CA_TEXA,GX_CA_A1,GX_CA_APREV);
+        GXSetTevOrder(GX_TEVSTAGE0,GX_TEXCOORD0,GX_TEXMAP0,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE1,GX_TEXCOORD1,GX_TEXMAP1,GX_COLOR0A0);
+        GXSetTevAlphaOp(GX_TEVSTAGE1,GX_TEV_SUB,GX_TB_ZERO,GX_CS_SCALE_1,1,GX_TEVPREV);
+        return;
+    }
+
+    #define G_CC_TEMP0 1, 0, PRIMITIVE, TEXEL0, TEXEL1, 0, PRIMITIVE, 0
+    #define G_CC_TEMP1 COMBINED, 0, SHADE, TEXEL1, 0, 0, 0, COMBINED
+    if (COMBINE_CONSTEXPR_CHECK(G_CC_TEMP0, G_CC_TEMP1)) {
+        GXSetNumTevStages(2);
+        GXSetTevColorIn(GX_TEVSTAGE0,GX_CC_ZERO,GX_CC_TEXC,GX_CC_RASC,GX_CC_TEXC);
+        GXSetTevColorIn(GX_TEVSTAGE1,GX_CC_ZERO,GX_CC_C1,GX_CC_RASC,GX_CC_CPREV);
+        GXSetTevAlphaIn(GX_TEVSTAGE0,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO,GX_CA_A1);
+        GXSetTevAlphaIn(GX_TEVSTAGE1,GX_CA_ZERO,GX_CA_APREV,GX_CA_TEXA,GX_CA_ZERO);
+        GXSetTevOrder(GX_TEVSTAGE0,GX_TEXCOORD0,GX_TEXMAP0,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE1,GX_TEXCOORD1,GX_TEXMAP1,GX_COLOR0A0);
+        return;
+    }
+
+    #define G_CC_TEMP0 PRIMITIVE, 0, PRIM_LOD_FRAC, ENVIRONMENT, 0, 0, 0, TEXEL0
+    #define G_CC_TEMP1 TEXEL1, 0, COMBINED, 0, 0, 0, 0, COMBINED
+    if (COMBINE_CONSTEXPR_CHECK(G_CC_TEMP0, G_CC_TEMP1)) {
+        GXSetNumTevStages(2);
+        GXSetTevColorIn(GX_TEVSTAGE0,GX_CC_ZERO,GX_CC_C1,GX_CC_A0,GX_CC_C2);
+        GXSetTevColorIn(GX_TEVSTAGE1,GX_CC_ZERO,GX_CC_CPREV,GX_CC_TEXC,GX_CC_CPREV);
+        GXSetTevAlphaIn(GX_TEVSTAGE0,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE1,GX_CA_TEXA,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO);
+        GXSetTevOrder(GX_TEVSTAGE0,GX_TEXCOORD0,GX_TEXMAP0,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE1,GX_TEXCOORD0,GX_TEXMAP0,GX_COLOR0A0);
+        return;
+    }
+
+    #define G_CC_TEMP0 PRIMITIVE, 0, SHADE, ENVIRONMENT, TEXEL0, 0, TEXEL1, TEXEL1
+    #define G_CC_TEMP1 TEXEL1, 0, PRIM_LOD_FRAC, COMBINED, 0, 0, 0, COMBINED
+    if (COMBINE_CONSTEXPR_CHECK(G_CC_TEMP0, G_CC_TEMP1)) {
+        GXSetNumTevStages(2);
+        GXSetTevColorIn(GX_TEVSTAGE0,GX_CC_ZERO,GX_CC_TEXC,GX_CC_A0,GX_CC_C2);
+        GXSetTevColorIn(GX_TEVSTAGE1,GX_CC_ZERO,GX_CC_RASC,GX_CC_C1,GX_CC_CPREV);
+        GXSetTevAlphaIn(GX_TEVSTAGE0,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO,GX_CA_TEXA);
+        GXSetTevAlphaIn(GX_TEVSTAGE1,GX_CA_ZERO,GX_CA_APREV,GX_CA_TEXA,GX_CA_TEXA);
+        GXSetTevOrder(GX_TEVSTAGE0,GX_TEXCOORD0,GX_TEXMAP0,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE1,GX_TEXCOORD1,GX_TEXMAP1,GX_COLOR0A0);
+        return;
+    }
+
+    #define G_CC_TEMP0 PRIMITIVE, 0, SHADE, ENVIRONMENT, TEXEL0, 0, TEXEL1, 0
+    #define G_CC_TEMP1 TEXEL0, 0, PRIM_LOD_FRAC, COMBINED, 0, 0, 0, COMBINED
+    if (COMBINE_CONSTEXPR_CHECK(G_CC_TEMP0, G_CC_TEMP1)) {
+        GXSetNumTevStages(2);
+        GXSetTevColorIn(GX_TEVSTAGE0,GX_CC_ZERO,GX_CC_RASC,GX_CC_C1,GX_CC_C2);
+        GXSetTevColorIn(GX_TEVSTAGE1,GX_CC_ZERO,GX_CC_TEXC,GX_CC_A0,GX_CC_CPREV);
+        GXSetTevAlphaIn(GX_TEVSTAGE0,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO,GX_CA_TEXA);
+        GXSetTevAlphaIn(GX_TEVSTAGE1,GX_CA_ZERO,GX_CA_APREV,GX_CA_TEXA,GX_CA_ZERO);
+        GXSetTevOrder(GX_TEVSTAGE0,GX_TEXCOORD0,GX_TEXMAP0,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE1,GX_TEXCOORD1,GX_TEXMAP1,GX_COLOR0A0);
+        return;
+    }
+
+    #define G_CC_TEMP0 PRIMITIVE, SHADE, PRIM_LOD_FRAC, SHADE, 0, 0, 0, TEXEL0
+    #define G_CC_TEMP1 TEXEL1, 0, COMBINED, 0, 0, 0, 0, COMBINED
+    if (COMBINE_CONSTEXPR_CHECK(G_CC_TEMP0, G_CC_TEMP1)) {
+        GXSetNumTevStages(2);
+        GXSetTevColorIn(GX_TEVSTAGE0,GX_CC_RASC,GX_CC_C1,GX_CC_A0,GX_CC_ZERO);
+        GXSetTevColorIn(GX_TEVSTAGE1,GX_CC_ZERO,GX_CC_CPREV,GX_CC_TEXC,GX_CC_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE0,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE1,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO,GX_CA_TEXA);
+        GXSetTevOrder(GX_TEVSTAGE0,GX_TEXCOORD_NULL,GX_TEXMAP_NULL,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE1,GX_TEXCOORD0,GX_TEXMAP0,GX_COLOR0A0);
+        return;
+    }
+
+    #define G_CC_TEMP0 1, 0, PRIMITIVE, TEXEL0, TEXEL0, 0, TEXEL1, 0
+    #define G_CC_TEMP1 COMBINED, 0, SHADE, TEXEL1, 0, 0, 0, COMBINED
+    if (COMBINE_CONSTEXPR_CHECK(G_CC_TEMP0, G_CC_TEMP1)) {
+        GXSetNumTevStages(2);
+        GXSetTevColorIn(GX_TEVSTAGE0,GX_CC_ZERO,GX_CC_TEXC,GX_CC_RASC,GX_CC_TEXC);
+        GXSetTevColorIn(GX_TEVSTAGE1,GX_CC_ZERO,GX_CC_RASC,GX_CC_C1,GX_CC_CPREV);
+        GXSetTevAlphaIn(GX_TEVSTAGE0,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO,GX_CA_TEXA);
+        GXSetTevAlphaIn(GX_TEVSTAGE1,GX_CA_ZERO,GX_CA_APREV,GX_CA_TEXA,GX_CA_ZERO);
+        GXSetTevOrder(GX_TEVSTAGE0,GX_TEXCOORD0,GX_TEXMAP0,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE1,GX_TEXCOORD1,GX_TEXMAP1,GX_COLOR0A0);
+        return;
+    }
+
+    #define G_CC_TEMP0 1, 0, TEXEL0, TEXEL0, 0, 0, 0, TEXEL0
+    #define G_CC_TEMP1 COMBINED, 0, SHADE, TEXEL1, 0, 0, 0, COMBINED
+    if (COMBINE_CONSTEXPR_CHECK(G_CC_TEMP0, G_CC_TEMP1)) {
+        GXSetNumTevStages(2);
+        GXSetTevColorIn(GX_TEVSTAGE0,GX_CC_ZERO,GX_CC_TEXC,GX_CC_RASC,GX_CC_TEXC);
+        GXSetTevColorIn(GX_TEVSTAGE1,GX_CC_ZERO,GX_CC_TEXC,GX_CC_RASC,GX_CC_CPREV);
+        GXSetTevAlphaIn(GX_TEVSTAGE0,GX_CA_TEXA,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE1,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO,GX_CA_APREV);
+        GXSetTevOrder(GX_TEVSTAGE0,GX_TEXCOORD0,GX_TEXMAP0,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE1,GX_TEXCOORD0,GX_TEXMAP0,GX_COLOR0A0);
+        return;
+    }
+
+    #define G_CC_TEMP0 1, 0, PRIMITIVE, TEXEL0, TEXEL1, 0, TEXEL0, 0
+    #define G_CC_TEMP1 COMBINED, 0, SHADE, TEXEL0, COMBINED, 0, PRIM_LOD_FRAC, 0
+    if (COMBINE_CONSTEXPR_CHECK(G_CC_TEMP0, G_CC_TEMP1)) {
+        GXSetNumTevStages(2);
+        GXSetTevColorIn(GX_TEVSTAGE0,GX_CC_TEXC,GX_CC_ZERO,GX_CC_ZERO,GX_CC_C1);
+        GXSetTevColorIn(GX_TEVSTAGE1,GX_CC_ZERO,GX_CC_CPREV,GX_CC_RASC,GX_CC_TEXC);
+        GXSetTevAlphaIn(GX_TEVSTAGE0,GX_CA_ZERO,GX_CA_TEXA,GX_CA_A0,GX_CA_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE1,GX_CA_ZERO,GX_CA_APREV,GX_CA_TEXA,GX_CA_ZERO);
+        GXSetTevOrder(GX_TEVSTAGE0,GX_TEXCOORD0,GX_TEXMAP0,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE1,GX_TEXCOORD1,GX_TEXMAP1,GX_COLOR0A0);
+        return;
+    }
+
+    #define G_CC_TEMP0 0, 0, 0, PRIMITIVE, TEXEL1, TEXEL0, PRIM_LOD_FRAC, TEXEL0
+    #define G_CC_TEMP1 SHADE, 0, COMBINED, 0, COMBINED, 0, PRIMITIVE, 0
+    if (COMBINE_CONSTEXPR_CHECK(G_CC_TEMP0, G_CC_TEMP1)) {
+        GXSetNumTevStages(3);
+        GXSetTevColorIn(GX_TEVSTAGE0,GX_CC_ZERO,GX_CC_RASC,GX_CC_C1,GX_CC_ZERO);
+        GXSetTevColorIn(GX_TEVSTAGE1,GX_CC_ZERO,GX_CC_ZERO,GX_CC_ZERO,GX_CC_CPREV);
+        GXSetTevColorIn(GX_TEVSTAGE2,GX_CC_ZERO,GX_CC_ZERO,GX_CC_ZERO,GX_CC_CPREV);
+        GXSetTevAlphaIn(GX_TEVSTAGE0,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO,GX_CA_TEXA);
+        GXSetTevAlphaIn(GX_TEVSTAGE1,GX_CA_APREV,GX_CA_TEXA,GX_CA_A0,GX_CA_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE2,GX_CA_ZERO,GX_CA_APREV,GX_CA_A1,GX_CA_ZERO);
+        GXSetTevOrder(GX_TEVSTAGE0,GX_TEXCOORD0,GX_TEXMAP0,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE1,GX_TEXCOORD1,GX_TEXMAP1,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE2,GX_TEXCOORD_NULL,GX_TEXMAP_NULL,GX_COLOR0A0);
+        return;
+    }
+
+    #define G_CC_TEMP0 0, 0, 0, PRIMITIVE, TEXEL0, 0, TEXEL1, 0
+    #define G_CC_TEMP1 0, 0, 0, COMBINED, COMBINED, 0, PRIMITIVE, 0
+    if (COMBINE_CONSTEXPR_CHECK(G_CC_TEMP0, G_CC_TEMP1)) {
+        GXSetNumTevStages(2);
+        GXSetTevColorIn(GX_TEVSTAGE0,GX_CC_ZERO,GX_CC_ZERO,GX_CC_ZERO,GX_CC_C1);
+        GXSetTevColorIn(GX_TEVSTAGE1,GX_CC_ZERO,GX_CC_ZERO,GX_CC_ZERO,GX_CC_CPREV);
+        GXSetTevAlphaIn(GX_TEVSTAGE0,GX_CA_ZERO,GX_CA_TEXA,GX_CA_A1,GX_CA_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE1,GX_CA_ZERO,GX_CA_TEXA,GX_CA_APREV,GX_CA_ZERO);
+        GXSetTevOrder(GX_TEVSTAGE0,GX_TEXCOORD0,GX_TEXMAP0,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE1,GX_TEXCOORD1,GX_TEXMAP1,GX_COLOR0A0);
+        return;
+    }
+
+    #define G_CC_TEMP0 NOISE, TEXEL0, PRIMITIVE, ENVIRONMENT, TEXEL0, 0, PRIMITIVE, 0
+    #define G_CC_TEMP1 COMBINED, 0, SHADE, 0, 0, 0, 0, COMBINED
+    if (COMBINE_CONSTEXPR_CHECK(G_CC_TEMP0, G_CC_TEMP1)) {
+        GXSetNumTevStages(3);
+        GXSetTevColorIn(GX_TEVSTAGE0,GX_CC_TEXC,GX_CC_ZERO,GX_CC_ZERO,GX_CC_HALF);
+        GXSetTevColorIn(GX_TEVSTAGE1,GX_CC_ZERO,GX_CC_CPREV,GX_CC_C1,GX_CC_C2);
+        GXSetTevColorIn(GX_TEVSTAGE2,GX_CC_ZERO,GX_CC_CPREV,GX_CC_RASC,GX_CC_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE0,GX_CA_ZERO,GX_CA_TEXA,GX_CA_A1,GX_CA_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE1,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO,GX_CA_APREV);
+        GXSetTevAlphaIn(GX_TEVSTAGE2,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO,GX_CA_APREV);
+        GXSetTevOrder(GX_TEVSTAGE0,GX_TEXCOORD0,GX_TEXMAP0,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE1,GX_TEXCOORD_NULL,GX_TEXMAP_NULL,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE2,GX_TEXCOORD_NULL,GX_TEXMAP_NULL,GX_COLOR0A0);
+        GXSetTevColorOp(GX_TEVSTAGE0,GX_TEV_SUB,GX_TB_ZERO,GX_CS_SCALE_1,1,GX_TEVPREV);
+        return;
+    }
+
+    #define G_CC_TEMP0 0, 0, 0, PRIMITIVE, TEXEL0, 0, TEXEL1, 0
+    #define G_CC_TEMP1 0, 0, 0, COMBINED, COMBINED, 0, PRIM_LOD_FRAC, 0
+    if (COMBINE_CONSTEXPR_CHECK(G_CC_TEMP0, G_CC_TEMP1)) {
+        GXSetNumTevStages(2);
+        GXSetTevColorIn(GX_TEVSTAGE0,GX_CC_C1,GX_CC_ZERO,GX_CC_ZERO,GX_CC_ZERO);
+        GXSetTevColorIn(GX_TEVSTAGE1,GX_CC_ZERO,GX_CC_ZERO,GX_CC_ZERO,GX_CC_CPREV);
+        GXSetTevAlphaIn(GX_TEVSTAGE0,GX_CA_ZERO,GX_CA_TEXA,GX_CA_A0,GX_CA_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE1,GX_CA_ZERO,GX_CA_APREV,GX_CA_TEXA,GX_CA_ZERO);
+        GXSetTevOrder(GX_TEVSTAGE0,GX_TEXCOORD0,GX_TEXMAP0,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE1,GX_TEXCOORD1,GX_TEXMAP1,GX_COLOR0A0);
+        return;
+    }
+
+    #define G_CC_TEMP0 0, 0, 0, PRIMITIVE, 1, 0, TEXEL0, TEXEL1
+    #define G_CC_TEMP1 0, 0, 0, COMBINED, COMBINED, 0, PRIMITIVE, 0
+    if (COMBINE_CONSTEXPR_CHECK(G_CC_TEMP0, G_CC_TEMP1)) {
+        GXSetNumTevStages(2);
+        GXSetTevColorIn(GX_TEVSTAGE0,GX_CC_C1,GX_CC_ZERO,GX_CC_ZERO,GX_CC_ZERO);
+        GXSetTevColorIn(GX_TEVSTAGE1,GX_CC_ZERO,GX_CC_ZERO,GX_CC_ZERO,GX_CC_CPREV);
+        GXSetTevAlphaIn(GX_TEVSTAGE0,GX_CA_ZERO,GX_CA_TEXA,GX_CA_A1,GX_CA_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE1,GX_CA_ZERO,GX_CA_TEXA,GX_CA_A1,GX_CA_APREV);
+        GXSetTevOrder(GX_TEVSTAGE0,GX_TEXCOORD0,GX_TEXMAP0,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE1,GX_TEXCOORD1,GX_TEXMAP1,GX_COLOR0A0);
+        return;
+    }
+
+    #define G_CC_TEMP0 0, 0, 0, PRIMITIVE, TEXEL1, TEXEL0, PRIM_LOD_FRAC, TEXEL0
+    #define G_CC_TEMP1 0, 0, 0, COMBINED, COMBINED, 0, PRIMITIVE, 0
+    if (COMBINE_CONSTEXPR_CHECK(G_CC_TEMP0, G_CC_TEMP1)) {
+        GXSetNumTevStages(3);
+        GXSetTevColorIn(GX_TEVSTAGE0,GX_CC_ZERO,GX_CC_ZERO,GX_CC_ZERO,GX_CC_C1);
+        GXSetTevColorIn(GX_TEVSTAGE1,GX_CC_ZERO,GX_CC_ZERO,GX_CC_ZERO,GX_CC_CPREV);
+        GXSetTevColorIn(GX_TEVSTAGE2,GX_CC_ZERO,GX_CC_ZERO,GX_CC_ZERO,GX_CC_CPREV);
+        GXSetTevAlphaIn(GX_TEVSTAGE0,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO,GX_CA_TEXA);
+        GXSetTevAlphaIn(GX_TEVSTAGE1,GX_CA_APREV,GX_CA_TEXA,GX_CA_A0,GX_CA_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE2,GX_CA_ZERO,GX_CA_APREV,GX_CA_A1,GX_CA_ZERO);
+        GXSetTevOrder(GX_TEVSTAGE0,GX_TEXCOORD0,GX_TEXMAP0,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE1,GX_TEXCOORD1,GX_TEXMAP1,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE2,GX_TEXCOORD_NULL,GX_TEXMAP_NULL,GX_COLOR0A0);
+        return;
+    }
+
+    #define G_CC_TEMP0 0, 0, 0, TEXEL0, 0, 0, 0, TEXEL1
+    #define G_CC_TEMP1 0, 0, 0, COMBINED, 0, 0, 0, COMBINED
+    if (COMBINE_CONSTEXPR_CHECK(G_CC_TEMP0, G_CC_TEMP1)) {
+        GXSetNumTevStages(2);
+        GXSetTevColorIn(GX_TEVSTAGE0,GX_CC_ZERO,GX_CC_ZERO,GX_CC_ZERO,GX_CC_TEXC);
+        GXSetTevColorIn(GX_TEVSTAGE1,GX_CC_ZERO,GX_CC_ZERO,GX_CC_ZERO,GX_CC_CPREV);
+        GXSetTevAlphaIn(GX_TEVSTAGE0,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO);
+        GXSetTevAlphaIn(GX_TEVSTAGE1,GX_CA_ZERO,GX_CA_ZERO,GX_CA_ZERO,GX_CA_TEXA);
+        GXSetTevOrder(GX_TEVSTAGE0,GX_TEXCOORD0,GX_TEXMAP0,GX_COLOR0A0);
+        GXSetTevOrder(GX_TEVSTAGE1,GX_TEXCOORD1,GX_TEXMAP1,GX_COLOR0A0);
+        return;
+    }
+
+    if (aflags[AFLAGS_COMBINE_AUTO] != 0 || this->combine_auto() != 0) {
+        if (aflags[AFLAGS_SKIP_COMBINE_TEV] == 2) {
+            last_highlow = 0;
+        }
+
+        if (last_highlow < NUM_COMBINER_HIGHLOW_ERRS) {
+            bool found = false;
+            int i;
+            for (i = 0; i < last_highlow; i++) {
+                if (((this->combiner_low ^ highlow_errs[i].words.w1) | (this->combiner_high ^ highlow_errs[i].words.w0)) == 0) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                highlow_errs[i] = *((Gfx*)&this->combiner_high);
+                this->err_count++;
+                this->Printf0("### 未対応のコンバインモードです ###\ncase 0x%16llx:// ");
+                this->print_combine(*((u64*)&this->combiner_high));
+                this->Printf0("\n");
+            }
+        }
+
+        /* Default case */
+        GXSetNumTevStages(1);
+        GXSetTevColorIn(GX_TEVSTAGE0, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ONE);
+        GXSetTevAlphaIn(GX_TEVSTAGE0, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_KONST);
+        GXSetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD_NULL, GX_TEXMAP_NULL, GX_COLOR0A0);
+    }
+}
+
+EMU64_INLINE void emu64::print_combine(u64 combine) {
+    u64 temp = combine;
+    Gsetcombine* setcombine = (Gsetcombine*)&temp;
+    this->Printf0(
+        "gsDPSetCombineLERP(%s,%s,%s,%s, %s,%s,%s,%s, %s,%s,%s,%s, %s,%s,%s,%s),",
+        this->combine_name(setcombine->a0, COMBINER_PARAM_A),
+        this->combine_name(setcombine->b0, COMBINER_PARAM_B),
+        this->combine_name(setcombine->c0, COMBINER_PARAM_C),
+        this->combine_name(setcombine->d0, COMBINER_PARAM_D),
+
+        this->combine_alpha(setcombine->Aa0, COMBINER_PARAM_A),
+        this->combine_alpha(setcombine->Ab0, COMBINER_PARAM_B),
+        this->combine_alpha(setcombine->Ac0, COMBINER_PARAM_C),
+        this->combine_alpha(setcombine->Ad0, COMBINER_PARAM_D),
+
+        this->combine_name(setcombine->a1, COMBINER_PARAM_A),
+        this->combine_name(setcombine->b1, COMBINER_PARAM_B),
+        this->combine_name(setcombine->c1, COMBINER_PARAM_C),
+        this->combine_name(setcombine->d1, COMBINER_PARAM_D),
+
+        this->combine_alpha(setcombine->Aa1, COMBINER_PARAM_A),
+        this->combine_alpha(setcombine->Ab1, COMBINER_PARAM_B),
+        this->combine_alpha(setcombine->Ac1, COMBINER_PARAM_C),
+        this->combine_alpha(setcombine->Ad1, COMBINER_PARAM_D)
+    );
 }
