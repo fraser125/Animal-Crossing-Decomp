@@ -2836,6 +2836,7 @@ void emu64::combine_manual() {
             if (!found) {
                 highlow_errs[i] = *((Gfx*)&this->combiner_high);
                 this->err_count++;
+                /* Translation: ### Unsupported combine mode ###\ncase 0x%16llx:// */
                 this->Printf0("### 未対応のコンバインモードです ###\ncase 0x%16llx:// ");
                 this->print_combine(*((u64*)&this->combiner_high));
                 this->Printf0("\n");
