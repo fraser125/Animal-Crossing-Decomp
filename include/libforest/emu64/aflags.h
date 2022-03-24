@@ -102,11 +102,7 @@ private:
 #endif
 
 #if EMU64_DEBUG
-#ifdef E_PLUS
-static aflags_c<u8, 100> aflags;
-#else /* PLUS/AC */
 static aflags_c<u32, 100> aflags;
-#endif
 #else
 static aflags_c<u8, 0> aflags;
 #endif
