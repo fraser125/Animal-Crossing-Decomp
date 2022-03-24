@@ -104,7 +104,7 @@ private:
 #if EMU64_DEBUG
 static aflags_c<u32, 100> aflags;
 #else
-static aflags_c<u8, 0> aflags;
+static aflags_c<u32, 0> aflags;
 #endif
 
 #endif /* __AFLAGS_H__ */
