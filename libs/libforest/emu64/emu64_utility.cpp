@@ -2877,3 +2877,235 @@ EMU64_INLINE void emu64::print_combine(u64 combine) {
         this->combine_alpha(setcombine->Ad1, COMBINER_PARAM_D)
     );
 }
+
+static f32 shift_tbl[] = {
+    1.0f,
+    2.0f,
+    4.0f,
+    8.0f,
+    16.0f,
+    32.0f,
+    64.0f,
+    128.0f,
+    256.0f,
+    512.0f,
+    1024.0f,
+    1.0f/32.0f, /* 0.03125f */
+    1.0f/16.0f, /* 0.0625f */
+    1.0f/8.0f, /* 0.125f */
+    1.0f/4.0f, /* 0.25f */
+    1.0f/2.0f /* 0.5f */
+};
+
+void emu64::texture_matrix() {
+    static struct {
+        float value;
+        bool set;
+    } scaleS;
+
+    static struct {
+        float value;
+        bool set;
+    } scaleT;
+
+    static struct {
+        float value;
+        bool set;
+    } transS;
+
+    static struct {
+        float value;
+        bool set;
+    } transT;
+
+    EMU64_ASSERT_EXISTS(); /* Line 4036 */
+    if (this->texture_gfx.on != 0) {
+        f32 bilerp_adjust; /* bilerp center adjust */
+        if ((this->texture_adjust_mode == 1 || (this->othermode_high & G_TF_BILERP) == 0 || (this->othermode_high & G_CYC_COPY) != 0 ||
+            aflags[AFLAGS_TEX_GEN_LOD_MODE] == 1) && aflags[AFLAGS_TEX_GEN_LOD_MODE] != 2) {
+            bilerp_adjust = 0.0f;
+        }
+        else {
+            bilerp_adjust = 8.0f;
+        }
+
+        if (scaleS.set == false) {
+            scaleS.set = true;
+            scaleS.value = 0.5f;
+        }
+
+        if (scaleT.set == false) {
+            scaleT.set = true;
+            scaleT.value = -0.5f;
+        }
+
+        if (transS.set == false) {
+            transS.set = true;
+            transS.value = 0.5f;
+        }
+
+        if (transT.set == false) {
+            transT.set = true;
+            transT.value = 0.5f;
+        }
+
+        f32 scale_s = this->texture_scale_s;
+        f32 scale_t = this->texture_scale_t;
+
+        if (this->use_dolphin_settile[0] == true) {
+            this->settile_cmds[0].shifts = this->settile_dolphin_cmds[0].shift_s;
+            this->settile_cmds[0].shiftt = this->settile_dolphin_cmds[0].shift_t;
+        }
+
+        if (this->use_dolphin_settile[1] == true) {
+            this->settile_cmds[1].shifts = this->settile_dolphin_cmds[1].shift_s;
+            this->settile_cmds[1].shiftt = this->settile_dolphin_cmds[1].shift_t;
+        }
+
+        EMU64_ASSERT_EXISTS(); /* line 4092 */
+        if (this->texture_info[0].width != 0 && this->texture_info[0].height != 0) {
+            u16 uls = this->settilesize_dolphin_cmds[0].sl;
+            u16 ult = this->settilesize_dolphin_cmds[0].tl;
+            f32 mul_s = scale_s * shift_tbl[this->settile_cmds[0].shifts];
+            f32 mul_t = scale_t * shift_tbl[this->settile_cmds[0].shiftt];
+
+            f32 l = mul_s * (fastcast_float(&uls) - bilerp_adjust) * (1.0f/16.0f); /* 0.0625f */
+            f32 t = mul_t * (fastcast_float(&ult) - bilerp_adjust) * (1.0f/16.0f); /* 0.0625f */
+            f32 r = l + (mul_s * fastcast_float(&this->texture_info[0].width));
+            f32 b = t + (mul_t * fastcast_float(&this->texture_info[0].height));
+
+            /* TODO: DnM+ has different debug logic here. */
+
+            if (t == b) {
+                OSReport("ult = %8.3f lrt = %8.3f ult0 = %d y32 = %8.3f texobj[0].ht = %d\n", t, b, ult, scale_t, this->texture_info[0].height);
+            }
+
+            if (l == r) {
+                OSReport("uls = %8.3f lrs = %8.3f uls0 = %d x32 = %8.3f texobj[0].wd = %d\n", l, r, uls, scale_s, this->texture_info[0].width);
+            }
+
+            Mtx m;
+            C_MTXLightOrtho(m, t, b, l, r, scaleS.value, scaleT.value, transS.value, transT.value);
+            GXLoadTexMtxImm(m, GX_TEXMTX0, GX_MTX2x4);
+            #ifndef ANIMAL_FOREST_EPLUS
+            GXSetTexCoordGen2(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_TEXMTX0, GX_FALSE, GX_PTIDENTITY);
+            #else
+            GXSetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_TEXMTX0);
+            #endif
+
+            if ((this->geometry_mode & G_TEXTURE_GEN) != 0) {
+                this->texture_gen(0);
+            }
+        }
+
+        if (this->texture_info[1].width != 0 && this->texture_info[1].height != 0) {
+            u16 uls = this->settilesize_dolphin_cmds[1].sl;
+            u16 ult = this->settilesize_dolphin_cmds[1].tl;
+            f32 mul_s = scale_s * shift_tbl[this->settile_cmds[1].shifts];
+            f32 mul_t = scale_t * shift_tbl[this->settile_cmds[1].shiftt];
+
+            f32 l = mul_s * (fastcast_float(&uls) - bilerp_adjust) * (1.0f/16.0f); /* 0.0625f */
+            f32 t = mul_t * (fastcast_float(&ult) - bilerp_adjust) * (1.0f/16.0f); /* 0.0625f */
+            f32 r = l + (mul_s * fastcast_float(&this->texture_info[1].width));
+            f32 b = t + (mul_t * fastcast_float(&this->texture_info[1].height));
+
+            /* TODO: DnM+ has different debug logic here. */
+
+            if (t == b) {
+                OSReport("ult = %8.3f lrt = %8.3f ult0 = %d y32 = %8.3f texobj[1].ht = %d\n", t, b, ult, scale_t, this->texture_info[1].height);
+            }
+
+            if (l == r) {
+                OSReport("uls = %8.3f lrs = %8.3f uls0 = %d x32 = %8.3f texobj[1].wd = %d\n", l, r, uls, scale_s, this->texture_info[1].width);
+            }
+
+            Mtx m;
+            C_MTXLightOrtho(m, t, b, l, r, scaleS.value, scaleT.value, transS.value, transT.value);
+            GXLoadTexMtxImm(m, GX_TEXMTX1, GX_MTX2x4);
+            #ifndef ANIMAL_FOREST_EPLUS
+            GXSetTexCoordGen2(GX_TEXCOORD1, GX_TG_MTX2x4, GX_TG_TEX0, GX_TEXMTX1, GX_FALSE, GX_PTIDENTITY);
+            #else
+            GXSetTexCoordGen(GX_TEXCOORD1, GX_TG_MTX2x4, GX_TG_TEX0, GX_TEXMTX1);
+            #endif
+
+            if ((this->geometry_mode & G_TEXTURE_GEN) != 0) {
+                this->texture_gen(1);
+            }
+        }
+    }
+}
+
+/* TODO: There's a lot of extra debug logic in DnM+. It's basically an entirely different method. */
+#ifdef ANIMAL_FOREST_PLUS
+void emu64::texture_gen(int tex) {
+
+}
+#else
+void emu64::texture_gen(int tex) {
+    Mtx mm; /* Model-view matrix */
+    Mtx ml; /* Look-at matrix */
+    Mtx ms; /* Scale matrix */
+    Mtx mt; /* Translation matrix */
+    Mtx mn; /* Scale-Translation normalization matrix */
+    Mtx mf; /* Finalized texture matrix */
+
+    /* Setup lookat matrix */
+
+    /* LookAt X */
+    ml[0][0] = (f32)this->lookAt.x.x * (1.0f/128.0f); /* 0.0078125f */
+    ml[0][1] = (f32)this->lookAt.x.y * (1.0f/128.0f);
+    ml[0][2] = (f32)this->lookAt.x.z * (1.0f/128.0f);
+    ml[0][3] = 0.0f;
+
+    /* LookAt Y */
+    ml[1][0] = (f32)this->lookAt.y.x * (1.0f/128.0f);
+    ml[1][1] = (f32)this->lookAt.y.y * (1.0f/128.0f);
+    ml[1][2] = (f32)this->lookAt.y.z * (1.0f/128.0f);
+    ml[1][3] = 0.0f;
+
+    /* LookAt Z */
+    ml[2][0] = 0.0f;
+    ml[2][1] = 0.0f;
+    ml[2][2] = 1.0f;
+    ml[2][3] = 0.0f;
+
+    MTXIdentity(mf);
+    
+    /* This is dead code, as the aflag to utilize it is only present in DnM+ */
+    MTXCopy(this->model_view_mtx_stack[this->mtx_stack_size], mm);
+    guMtxNormalize(mm);
+
+    /* Apply look-at and default translation & scale */
+    MTXScale(ms, 0.5f, 0.5f, 0.0f);
+    MTXTrans(mt, 0.5f, 0.5f, 1.0f);
+    MTXConcat(mt, ms, mn);
+    MTXConcat(mn, ml, mf);
+    
+    /* Apply texture scaling */
+    MTXScale(ms, (2097152.0f / this->texture_scale_s) * (1.0f/64.0f), (2097152.0f / this->texture_scale_t) * (1.0f/64.0f), 1.0f); /* 2,097,152 = 2^21, 1/64 = 0.015625 */
+    MTXConcat(ms, mf, mf);
+
+    /* Apply texture shift */
+    MTXScale(ms, 1.0f / shift_tbl[this->settile_cmds[tex].shifts], 1.0f / shift_tbl[this->settile_cmds[tex].shiftt], 1.0f);
+    MTXConcat(ms, mf, mf);
+
+    /* Apply texture position */
+    u16 sl = this->settilesize_dolphin_cmds[tex].sl;
+    u16 tl = this->settilesize_dolphin_cmds[tex].tl;
+    MTXTrans(mt, -(fastcast_float(&sl) * (1.0f/16.0f)), -(fastcast_float(&tl) * (1.0f/16.0f)), 0.0f);
+    MTXConcat(mt, mf, mf);
+
+    /* Convert size to be in units of texture width & height */
+    MTXScale(ms, 1.0f / fastcast_float(&this->texture_info[tex].width), 1.0f / fastcast_float(&this->texture_info[tex].height), 1.0f);
+    MTXConcat(ms, mf, mf);
+
+    /* Load texture */
+    GXTexMtx id = (GXTexMtx)(GX_TEXMTX0 + tex * 3);
+    GXLoadTexMtxImm(mf, id, GX_MTX3x4);
+    #ifdef ANIMAL_FOREST_EPLUS
+    GXSetTexCoordGen((GXTexCoordID)tex, GX_TG_MTX3x4, GX_TG_NRM, id);
+    #else
+    GXSetTexCoordGen2((GXTexCoordID)tex, GX_TG_MTX3x4, GX_TG_NRM, id, GX_FALSE, GX_PTIDENTITY);
+    #endif
+}
+#endif

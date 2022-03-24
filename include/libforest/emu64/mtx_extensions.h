@@ -54,4 +54,9 @@ inline void guMtxXFM1F_dol7(
     f32* ox, f32* oy, f32* oz
 );
 
+/**
+ * Normalizes a 3x4 matrix. Similar to guNormalize (for vectors).
+ */
+inline void guMtxNormalize(Mtx m);
+
 #endif /* __MTX_EXTENSIONS_H__ */

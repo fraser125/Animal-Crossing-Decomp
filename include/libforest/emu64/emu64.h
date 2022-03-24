@@ -321,6 +321,14 @@ static inline f32 fastcast_float(s16* in) {
     #endif
 }
 
+static inline f32 fastcast_float(u16* in) {
+    #if !defined(_WIN32) && defined(GEKKO)
+    return __OSu16tof32(in);
+    #else
+    return (f32)*in;
+    #endif
+}
+
 static inline u16 rgba5551_to_rgb5a3(u16 rgba5551) {
     if ((rgba5551 & 1) == 0) {
         return ((rgba5551 >> 2) & 0xF) | ((rgba5551 >> 4) & 0xFFFFF00) | ((rgba5551 >> 3) & 0xF0);
