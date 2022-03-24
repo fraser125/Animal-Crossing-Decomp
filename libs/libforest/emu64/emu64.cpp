@@ -174,32 +174,162 @@ static MatrixInfo gmtxtbl[] = {
 static char* kakko = "/\\/\\||||||||\\/\\/";
 
 void emu64::emu64_init() {
-    static bool init;
-    static f32 AAnear;
-    static bool _init;
-    static f32 AAfar;
+    static struct {
+        bool init;
+        f32  value;
+    } AAnear;
+
+    static struct {
+        bool init;
+        f32  value;
+    } AAfar;
+
+    static struct {
+        u8 value;
+        bool init;
+    } line_width;
+
+    static struct {
+        GXTexOffset value;
+        bool init;
+    } tex_offsets;
+
+    static u8 black_texture[] = {
+        0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88,
+        0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88,
+        0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88,
+        0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88
+    };
 
     bzero(this, sizeof(emu64));
     GXSetCurrentGXThread();
     emu64_init2(&GXNtsc480IntDf);
     GXSetAlphaUpdate(GX_FALSE);
     GXSetPixelFmt(GX_PF_RGBA6_Z24, GX_ZC_LINEAR);
+    #ifdef ANIMAL_FOREST_PLUS
+    GXSetDither(aflags[AFLAGS_DITHERMODE] == 0);
+    #else
     GXSetDither(GX_TRUE);
+    #endif
     GXInvalidateTexAll();
     GXInvalidateVtxCache();
 
-    if (init == false) {
-        init = true;
-        AAnear = -1.0f;
+    if (AAnear.init == false) {
+        AAnear.init = true;
+        AAnear.value = -1.0f;
     }
 
-    if (_init == false) {
-        _init = true;
-        AAfar = 1.0f;
+    if (AAfar.init == false) {
+        AAfar.init = true;
+        AAfar.value = 1.0f;
     }
 
-    C_MTXOrtho(ortho_mtx, 1.0f, -1.0f, -1.0f, 1.0f, AAnear, AAfar);
-    //MTXIdentity();
+    C_MTXOrtho(ortho_mtx, 1.0f, -1.0f, -1.0f, 1.0f, AAnear.value, AAfar.value);
+    
+    MTXIdentity(this->perspective_mtx);
+    MTXIdentity(this->projection_mtx);
+    MTXIdentity(this->original_projection_mtx);
+    MTXIdentity(this->position_mtx);
+    MTXIdentity(this->model_view_mtx_stack[0]);
+    MTXIdentity(this->position_mtx_stack[0]);
+
+    GXSetProjection(this->ortho_mtx, GX_ORTHOGRAPHIC);
+    GXLoadPosMtxImm(this->perspective_mtx, GX_PNMTX0);
+    GXLoadNrmMtxImm(this->perspective_mtx, GX_PNMTX0);
+
+    GXSetNumChans(1);
+    GXSetChanCtrl(GX_COLOR0A0, GX_FALSE, GX_SRC_REG, GX_SRC_REG, GX_LIGHT_NULL, GX_DF_NONE, GX_AF_NONE);
+
+    GXSetNumTexGens(2);
+    #ifdef ANIMAL_FOREST_EPLUS
+    GXSetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY);
+    GXSetTexCoordGen(GX_TEXCOORD1, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY);
+    #else
+    GXSetTexCoordGen2(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY, GX_FALSE, GX_PTIDENTITY);
+    GXSetTexCoordGen2(GX_TEXCOORD1, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY, GX_FALSE, GX_PTIDENTITY);
+    #endif
+    
+    GXSetNumTevStages(2);
+    GXSetTevColorIn(GX_TEVSTAGE0, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ONE);
+    GXSetTevColorIn(GX_TEVSTAGE1, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ZERO, GX_CC_CPREV);
+    GXSetTevAlphaIn(GX_TEVSTAGE0, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_KONST);
+    GXSetTevAlphaIn(GX_TEVSTAGE1, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_APREV);
+    GXSetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0A0);
+    GXSetTevOrder(GX_TEVSTAGE1, GX_TEXCOORD0, GX_TEXMAP1, GX_COLOR0A0); /* Is GX_TEXCOORD0 a mistake? */
+    GXSetTevColorOp(GX_TEVSTAGE0, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+    GXSetTevColorOp(GX_TEVSTAGE1, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+    GXSetTevAlphaOp(GX_TEVSTAGE0, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+    GXSetTevAlphaOp(GX_TEVSTAGE1, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+
+    for (int i = GX_TEVSTAGE2; i < GX_TEVSTAGE8; i++) {
+        GXTevStageID stage = (GXTevStageID)i;
+        GXSetTevColorIn(stage, GX_CC_ZERO, GX_CC_ZERO, GX_CC_ZERO, GX_CC_CPREV);
+        GXSetTevAlphaIn(stage, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_APREV);
+        GXSetTevOrder(stage, GX_TEXCOORD_NULL, GX_TEXMAP_NULL, GX_COLOR0A0);
+        GXSetTevColorOp(stage, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+        GXSetTevAlphaOp(stage, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+    }
+
+    GXSetCurrentMtx(GX_PNMTX0);
+    if (line_width.init == false) {
+        line_width.value = 6;
+        line_width.init = true;
+    }
+
+    if (tex_offsets.init == false) {
+        tex_offsets.value = GX_TO_ZERO;
+        tex_offsets.init = true;
+    }
+
+    GXSetLineWidth(line_width.value + (aflags[AFLAGS_2TRIS] - 1), tex_offsets.value);
+
+    #ifdef ANIMAL_FOREST_PLUS
+    if ((aflags[AFLAGS_FORCE_TEV_CYCLEFLAGS] & 8) == 0) {
+        for (int i = 0; i < NUM_TILES; i++) {
+            if (((1 << i) & aflags[AFLAGS_DISABLED_TEXOBJS]) == 0) {
+                GXInitTexObj(&this->tex_objs[i], black_texture, 8, 4, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
+                GXLoadTexObj(&this->tex_objs[i], (GXTexMapID)i);
+            }
+        }
+    }
+    #else
+    for (int i = 0; i < NUM_TILES; i++) {
+        if (((1 << i) & aflags[AFLAGS_DISABLED_TEXOBJS]) == 0) {
+            GXInitTexObj(&this->tex_objs[i], black_texture, 8, 4, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
+            GXLoadTexObj(&this->tex_objs[i], (GXTexMapID)i);
+        }
+    }
+    #endif
+
+    texture_cache_is_overflow(&texture_cache_bss);
+    texture_cache_clear(&texture_cache_bss);
+    if (texture_cache_is_overflow(&texture_cache_data) != false || aflags[AFLAGS_SKIP_TEXTURE_CONV] > 1) {
+        texture_cache_clear(&texture_cache_data);
+        texture_cache_num = 0;
+    }
+
+    bzero(tmem_map, sizeof(tmem_map));
+    SET_DIRTY(DIRTY_FLAG_PRIM_COLOR);
+    SET_DIRTY(DIRTY_FLAG_ENV_COLOR);
+    SET_DIRTY(DIRTY_FLAG_BLEND_COLOR);
+    SET_DIRTY(DIRTY_FLAG_FOG);
+    SET_DIRTY(DIRTY_FLAG_FILL_COLOR);
+    SET_DIRTY(DIRTY_FLAG_TEV_FILL_COLOR);
+    SET_DIRTY(DIRTY_FLAG_TEXTURE);
+    SET_DIRTY(DIRTY_FLAG_MODELVIEW_MTX);
+    SET_DIRTY(DIRTY_FLAG_COMBINE);
+    SET_DIRTY(DIRTY_FLAG_OTHERMODE_HIGH);
+    SET_DIRTY(DIRTY_FLAG_OTHERMODE_LOW);
+    SET_DIRTY(DIRTY_FLAG_GEOMETRYMODE);
+    SET_DIRTY(DIRTY_FLAG_PROJ_MTX);
+    #ifndef ANIMAL_FOREST_PLUS
+    SET_DIRTY(DIRTY_FLAG_LIGHTS);
+    #endif
+    SET_DIRTY(DIRTY_FLAG_LIGHTING);
+
+    this->tex_edge_alpha = 144;
+    this->texture_scale_s = 32.0f;
+    this->texture_scale_t = 32.0f;
 }
 
 void emu64::panic(char* msg, char* file, int line) {

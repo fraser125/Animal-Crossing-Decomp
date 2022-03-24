@@ -763,6 +763,7 @@ private:
 
     /* 0x9E8 */
     GXProjectionType projection_type;
+    Mtx perspective_mtx;
 
     //...
 

@@ -118,4 +118,13 @@ static texture_cache_t texture_cache_bss = {
 
 inline texture_cache_t* texture_cache_select(void* address);
 
+inline void texture_cache_clear(texture_cache_t* cache) {
+    cache->cache_full = false;
+    cache->buffer_current = cache->buffer_start;
+}
+
+inline bool texture_cache_is_overflow(texture_cache_t* cache) {
+    return cache->cache_full;
+}
+
 #endif /* __TEXTURE_CACHE_H__ */
