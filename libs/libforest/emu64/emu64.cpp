@@ -332,6 +332,11 @@ void emu64::emu64_init() {
     this->texture_scale_t = 32.0f;
 }
 
+void emu64::emu64_cleanup() {
+    GXSetColorUpdate(GX_TRUE);
+    GXSetAlphaUpdate(GX_TRUE);
+}
+
 void emu64::panic(char* msg, char* file, int line) {
     if (file == nullptr) {
         this->Printf0("\x1B[41;37memu64 PANIC!!\x1B[m\n");

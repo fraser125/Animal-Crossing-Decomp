@@ -546,6 +546,7 @@ protected:
 class emu64 : public emu64_print {
 public:
     void emu64_init();
+    void emu64_cleanup();
     void panic(char* msg, char* file, int line);
     u32 emu64_taskstart_r(Gfx* dl_p);
     void emu64_taskstart(Gfx* dl_p);
