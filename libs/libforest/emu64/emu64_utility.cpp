@@ -901,10 +901,7 @@ void emu64::emu64_set_verbose(int verbose) {
     this->print_commands = (u8)verbose;
 }
 
-static GXColor black_color = { 0, 0, 0, 0 };
-static GXColor white_color = { 255, 255, 255, 255 };
 void emu64::dirty_check(int tile, int n_tiles, BOOL do_texture_matrix) {
-
     if (aflags[AFLAGS_SET_DIRTY_FLAGS] != DIRTY_SET_NONE) {
         if ((int)aflags[AFLAGS_SET_DIRTY_FLAGS] == DIRTY_SET_ALL) {
             memset(this->dirty_flags, TRUE, NUM_DIRTY_FLAGS);

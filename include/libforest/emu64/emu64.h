@@ -838,6 +838,9 @@ private:
     /* 0x2078 */
 };
 
+static GXColor black_color = { 0, 0, 0, 0 };
+static GXColor white_color = { 255, 255, 255, 255 };
+
 static emu64 emu64_class;
 
 /* C interface */
