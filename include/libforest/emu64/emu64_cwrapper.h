@@ -18,16 +18,16 @@ extern void emu64_cleanup();
 extern void emu64_taskstart(Gfx* disp_p);
 
 /* Sets the current microcode info */
-extern void emu64_set_ucode_info(u8 ucode_info_size, Gfx* ucode_info_p); // TODO: ucode_info_p seems to be a struct
+extern void emu64_set_ucode_info(s8 ucode_info_size, Gfx* ucode_info_p);
 
 /* Sets the microcode pointer */
 extern void emu64_set_first_ucode(u32 ucode_p);
 
 /* Sets debug flags */
-extern void emu64_set_aflags(s32 idx, s32 value);
+extern void emu64_set_aflags(u32 idx, u32 value);
 
 /* Gets debug flags */
-extern s32 emu64_get_aflags(s32 idx);
+extern u32 emu64_get_aflags(u32 idx);
 
 /* Refreshes texture cache */
 extern void emu64_refresh();

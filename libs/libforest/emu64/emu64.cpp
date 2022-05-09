@@ -375,6 +375,15 @@ EMU64_INLINE void emu64::emu64_change_ucode(void* addr) {
     }
 }
 
+EMU64_INLINE void emu64::emu64_set_first_ucode(void* addr) {
+    this->emu64_change_ucode(addr);
+}
+
+EMU64_INLINE void emu64::emu64_set_ucode_info(s8 len, void* ucode_info) {
+    this->ucode_len = len;
+    this->ucode_info = (Gfx*)ucode_info;
+}
+
 void emu64::dl_G_SPNOOP() {
     #ifdef EMU64_DEBUG
 

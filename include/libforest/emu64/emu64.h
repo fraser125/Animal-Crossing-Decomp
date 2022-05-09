@@ -580,6 +580,8 @@ public:
     EMU64_INLINE void printInfo();
     EMU64_INLINE void* seg2k0(u32 segment);
     EMU64_INLINE void emu64_change_ucode(void* addr);
+    EMU64_INLINE void emu64_set_first_ucode(void* addr);
+    EMU64_INLINE void emu64_set_ucode_info(s8 len, void* ucode_info);
     EMU64_INLINE u16* tlutconv_new(u16* addr, u32 format, u32 count);
     EMU64_INLINE void tlutconv_ia16(u16* src, u16* dst, u32 count);
     EMU64_INLINE const char* combine_alpha(int param, int type);

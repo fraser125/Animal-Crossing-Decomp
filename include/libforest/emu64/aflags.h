@@ -58,53 +58,30 @@
 #define AFLAGS_LIGHT_OVERRIDE_ATTN_K2 77
 
 #ifdef EMU64_DEBUG
+#define AFLAGS_SIZE 100
+#else
+#define AFLAGS_SIZE 0
+#endif
 
-template<typename T, size_t maxSize>
 class aflags_c {
 public:
-    const size_t getMaxArray() const {
-        return maxSize;
+    const static size_t getMaxArray() {
+        return AFLAGS_SIZE;
     }
 
-    void set(u32 idx, T value) {
+    void set(u32 idx, u32 value) {
         this->flags[idx] = value;
     }
 
-    T operator[](u32 idx) {
+    u32 operator[](u32 idx) {
         return this->flags[idx];
     }
 
 private:
-    T flags[maxSize];
+    u32 flags[AFLAGS_SIZE];
 };
 
-#else
 
-template<typename T, size_t maxSize>
-class aflags_c {
-public:
-    const size_t getMaxArray() const {
-        return 0;
-    }
-
-    void set(u32 idx, T value) {
-        return;
-    }
-
-    T operator[](u32 idx) {
-        return 0;
-    }
-
-private:
-    T flags[0];
-};
-
-#endif
-
-#if EMU64_DEBUG
-static aflags_c<u32, 100> aflags;
-#else
-static aflags_c<u32, 0> aflags;
-#endif
+static aflags_c aflags;
 
 #endif /* __AFLAGS_H__ */

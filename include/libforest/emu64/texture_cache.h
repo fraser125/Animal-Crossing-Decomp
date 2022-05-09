@@ -127,4 +127,8 @@ inline bool texture_cache_is_overflow(texture_cache_t* cache) {
     return cache->cache_full;
 }
 
+extern void texture_cache_list_clear();
+
+extern void texture_cache_data_and_bss_clear();
+
 #endif /* __TEXTURE_CACHE_H__ */

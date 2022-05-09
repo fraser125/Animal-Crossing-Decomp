@@ -62,3 +62,13 @@ void* texture_cache_bss_search(void* address) {
 int texture_cache_bss_entry(void* original, void* converted) {
     return -1;
 }
+
+extern void texture_cache_list_clear() {
+    texture_cache_clear(&texture_cache_data);
+    texture_cache_num = 0;
+}
+
+extern void texture_cache_data_and_bss_clear() {
+    texture_cache_clear(&texture_cache_data);
+    texture_cache_clear(&texture_cache_bss);
+}
