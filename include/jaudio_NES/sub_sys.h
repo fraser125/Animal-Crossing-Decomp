@@ -8,19 +8,23 @@ extern "C" {
 #include "common.h"
 #include "audiowork.h"
 
-typedef struct {
+#define AUDIOPORT_CMD_GROUP(cmd)(cmd & 0xF0)
+
+typedef struct AudioPort_ {
     union {
         struct {
             u8 cmd;
-            u8 srcIdx;
-            u8 paramA;
-            u8 paramB;
+            u8 group;
+            u8 subtrack;
+            u8 param;
         };
         u32 raw;
     };
 
     u32 dataParam;
-} Audioport;
+} AudioPort;
+
+static void Nap_Process1Command(AudioPort* port);
 
 /*
   0001f420 00054c 80024ae0 32 Nap_AudioSysProcess__FP10AudioPort_ 	jaudio_NES.o sub_sys.c

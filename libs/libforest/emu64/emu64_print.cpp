@@ -1,5 +1,6 @@
 #include "emu64.h"
 #include <MSL_Common/Include/stdio.h>
+#include <MSL_Common/Include/va_list.h>
 
 void emu64_print::Printf0(const char* fmt, ...) {
     va_list v;
