@@ -1,0 +1,16 @@
+lbl_803EF340:
+/* 803EF340  3C 80 81 14 */	lis r4, common_data@ha /* 0x81138538@ha */
+/* 803EF344  54 65 10 3A */	slwi r5, r3, 2
+/* 803EF348  38 84 85 38 */	addi r4, r4, common_data@l /* 0x81138538@l */
+/* 803EF34C  38 60 00 01 */	li r3, 1
+/* 803EF350  3C 84 00 02 */	addis r4, r4, 2
+/* 803EF354  38 05 0C 68 */	addi r0, r5, 0xc68
+/* 803EF358  80 A4 61 3C */	lwz r5, 0x613c(r4)
+/* 803EF35C  54 04 D9 7A */	rlwinm r4, r0, 0x1b, 5, 0x1d
+/* 803EF360  54 00 F6 FE */	rlwinm r0, r0, 0x1e, 0x1b, 0x1f
+/* 803EF364  7C A5 22 14 */	add r5, r5, r4
+/* 803EF368  80 85 11 08 */	lwz r4, 0x1108(r5)
+/* 803EF36C  7C 60 00 30 */	slw r0, r3, r0
+/* 803EF370  7C 80 03 78 */	or r0, r4, r0
+/* 803EF374  90 05 11 08 */	stw r0, 0x1108(r5)
+/* 803EF378  4E 80 00 20 */	blr 

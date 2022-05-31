@@ -1,0 +1,30 @@
+lbl_8050EFB8:
+/* 8050EFB8  54 60 06 3E */	clrlwi r0, r3, 0x18
+/* 8050EFBC  2C 00 00 3F */	cmpwi r0, 0x3f
+/* 8050EFC0  41 82 00 4C */	beq lbl_8050F00C
+/* 8050EFC4  40 80 00 30 */	bge lbl_8050EFF4
+/* 8050EFC8  2C 00 00 2C */	cmpwi r0, 0x2c
+/* 8050EFCC  41 82 00 40 */	beq lbl_8050F00C
+/* 8050EFD0  40 80 00 18 */	bge lbl_8050EFE8
+/* 8050EFD4  2C 00 00 22 */	cmpwi r0, 0x22
+/* 8050EFD8  40 80 00 3C */	bge lbl_8050F014
+/* 8050EFDC  2C 00 00 20 */	cmpwi r0, 0x20
+/* 8050EFE0  40 80 00 2C */	bge lbl_8050F00C
+/* 8050EFE4  48 00 00 30 */	b lbl_8050F014
+lbl_8050EFE8:
+/* 8050EFE8  2C 00 00 2E */	cmpwi r0, 0x2e
+/* 8050EFEC  41 82 00 20 */	beq lbl_8050F00C
+/* 8050EFF0  48 00 00 24 */	b lbl_8050F014
+lbl_8050EFF4:
+/* 8050EFF4  2C 00 00 CD */	cmpwi r0, 0xcd
+/* 8050EFF8  41 82 00 14 */	beq lbl_8050F00C
+/* 8050EFFC  40 80 00 18 */	bge lbl_8050F014
+/* 8050F000  2C 00 00 85 */	cmpwi r0, 0x85
+/* 8050F004  41 82 00 08 */	beq lbl_8050F00C
+/* 8050F008  48 00 00 0C */	b lbl_8050F014
+lbl_8050F00C:
+/* 8050F00C  38 60 00 01 */	li r3, 1
+/* 8050F010  4E 80 00 20 */	blr 
+lbl_8050F014:
+/* 8050F014  38 60 00 00 */	li r3, 0
+/* 8050F018  4E 80 00 20 */	blr 

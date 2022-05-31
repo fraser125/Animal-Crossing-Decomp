@@ -1,0 +1,24 @@
+lbl_803C1DA8:
+/* 803C1DA8  94 21 FF F0 */	stwu r1, -0x10(r1)
+/* 803C1DAC  7C 08 02 A6 */	mflr r0
+/* 803C1DB0  90 01 00 14 */	stw r0, 0x14(r1)
+/* 803C1DB4  4B FF FF CD */	bl func_803C1D80
+/* 803C1DB8  2C 03 00 84 */	cmpwi r3, 0x84
+/* 803C1DBC  41 82 00 2C */	beq lbl_803C1DE8
+/* 803C1DC0  40 80 00 1C */	bge lbl_803C1DDC
+/* 803C1DC4  2C 03 00 81 */	cmpwi r3, 0x81
+/* 803C1DC8  41 82 00 20 */	beq lbl_803C1DE8
+/* 803C1DCC  40 80 00 18 */	bge lbl_803C1DE4
+/* 803C1DD0  2C 03 00 80 */	cmpwi r3, 0x80
+/* 803C1DD4  40 80 00 10 */	bge lbl_803C1DE4
+/* 803C1DD8  48 00 00 10 */	b lbl_803C1DE8
+lbl_803C1DDC:
+/* 803C1DDC  2C 03 00 86 */	cmpwi r3, 0x86
+/* 803C1DE0  40 80 00 08 */	bge lbl_803C1DE8
+lbl_803C1DE4:
+/* 803C1DE4  38 60 00 86 */	li r3, 0x86
+lbl_803C1DE8:
+/* 803C1DE8  80 01 00 14 */	lwz r0, 0x14(r1)
+/* 803C1DEC  7C 08 03 A6 */	mtlr r0
+/* 803C1DF0  38 21 00 10 */	addi r1, r1, 0x10
+/* 803C1DF4  4E 80 00 20 */	blr 
