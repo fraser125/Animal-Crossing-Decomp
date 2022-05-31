@@ -41,7 +41,7 @@ inline void* THA_nextPtr1(THA* this) {
 
 #ifdef THA_OPTIMIZE
 inline void* THA_alloc(THA* this, size_t siz) {
-    int mask = 0;
+    int mask = ~0;
 
     if (siz >= 16) {
         mask = ~(16 - 1);
