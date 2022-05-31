@@ -76,7 +76,7 @@ extern void* THA_alloc16(THA *this, size_t siz) {
     return this->tail_p;
 }
 
-extern void *THA_allocAlign(THA *this, size_t siz, int mask) {
+extern void* THA_allocAlign(THA *this, size_t siz, int mask) {
     this->tail_p = (char*)((((int)this->tail_p & mask) - siz) & mask);
     return this->tail_p;
 }
