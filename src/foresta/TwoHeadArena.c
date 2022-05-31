@@ -2,7 +2,7 @@
 
 #include "TwoHeadArena.h"
 
-extern void *THA_getHeadPtr(THA *this) {
+extern void* THA_getHeadPtr(THA *this) {
     return this->head_p;
 }
 
@@ -10,17 +10,17 @@ extern void THA_setHeadPtr(THA *this, void *p) {
     this->head_p = (char*)p;
 }
 
-extern void *THA_getTailPtr(THA *this) {
+extern void* THA_getTailPtr(THA *this) {
     return this->tail_p;
 }
 
-extern void *THA_nextPtrN(THA *this, size_t n) {
+extern void* THA_nextPtrN(THA *this, size_t n) {
     char* next_p = this->head_p;
     this->head_p += n;
     return next_p;
 }
 
-extern void *THA_nextPtr1(THA *this) {
+extern void* THA_nextPtr1(THA *this) {
     return THA_nextPtrN(this, 1);
 }
 
@@ -47,7 +47,7 @@ extern void* THA_alloc(THA* this, size_t siz) {
     return this->tail_p;
 }
 #else
-extern void *THA_alloc(THA *this, size_t siz) {
+extern void* THA_alloc(THA *this, size_t siz) {
     int mask;
     if (siz == 8) {
         mask = ~(8 - 1);
@@ -70,7 +70,7 @@ extern void *THA_alloc(THA *this, size_t siz) {
 }
 #endif /* THA_OPTIMIZE */
 
-extern void *THA_alloc16(THA *this, size_t siz) {
+extern void* THA_alloc16(THA *this, size_t siz) {
     const int mask = ~(16 - 1);
     this->tail_p = (char*)((((int)this->tail_p & mask) - siz) & mask);
     return this->tail_p;
