@@ -1,0 +1,52 @@
+lbl_803FA2B4:
+/* 803FA2B4  2C 03 FF F9 */	cmpwi r3, -7
+/* 803FA2B8  41 82 00 88 */	beq lbl_803FA340
+/* 803FA2BC  40 80 00 30 */	bge lbl_803FA2EC
+/* 803FA2C0  2C 03 FF F2 */	cmpwi r3, -14
+/* 803FA2C4  41 82 00 7C */	beq lbl_803FA340
+/* 803FA2C8  40 80 00 10 */	bge lbl_803FA2D8
+/* 803FA2CC  2C 03 FF 80 */	cmpwi r3, -128
+/* 803FA2D0  41 82 00 70 */	beq lbl_803FA340
+/* 803FA2D4  48 00 00 7C */	b lbl_803FA350
+lbl_803FA2D8:
+/* 803FA2D8  2C 03 FF F7 */	cmpwi r3, -9
+/* 803FA2DC  40 80 00 5C */	bge lbl_803FA338
+/* 803FA2E0  2C 03 FF F4 */	cmpwi r3, -12
+/* 803FA2E4  40 80 00 5C */	bge lbl_803FA340
+/* 803FA2E8  48 00 00 48 */	b lbl_803FA330
+lbl_803FA2EC:
+/* 803FA2EC  2C 03 FF FF */	cmpwi r3, -1
+/* 803FA2F0  41 82 00 58 */	beq lbl_803FA348
+/* 803FA2F4  40 80 00 1C */	bge lbl_803FA310
+/* 803FA2F8  2C 03 FF FC */	cmpwi r3, -4
+/* 803FA2FC  41 82 00 44 */	beq lbl_803FA340
+/* 803FA300  40 80 00 20 */	bge lbl_803FA320
+/* 803FA304  2C 03 FF FB */	cmpwi r3, -5
+/* 803FA308  40 80 00 20 */	bge lbl_803FA328
+/* 803FA30C  48 00 00 24 */	b lbl_803FA330
+lbl_803FA310:
+/* 803FA310  2C 03 00 01 */	cmpwi r3, 1
+/* 803FA314  40 80 00 3C */	bge lbl_803FA350
+/* 803FA318  38 60 00 00 */	li r3, 0
+/* 803FA31C  4E 80 00 20 */	blr 
+lbl_803FA320:
+/* 803FA320  38 60 00 16 */	li r3, 0x16
+/* 803FA324  4E 80 00 20 */	blr 
+lbl_803FA328:
+/* 803FA328  38 60 00 02 */	li r3, 2
+/* 803FA32C  4E 80 00 20 */	blr 
+lbl_803FA330:
+/* 803FA330  38 60 00 04 */	li r3, 4
+/* 803FA334  4E 80 00 20 */	blr 
+lbl_803FA338:
+/* 803FA338  38 60 00 0C */	li r3, 0xc
+/* 803FA33C  4E 80 00 20 */	blr 
+lbl_803FA340:
+/* 803FA340  38 60 00 18 */	li r3, 0x18
+/* 803FA344  4E 80 00 20 */	blr 
+lbl_803FA348:
+/* 803FA348  38 60 00 19 */	li r3, 0x19
+/* 803FA34C  4E 80 00 20 */	blr 
+lbl_803FA350:
+/* 803FA350  38 60 00 18 */	li r3, 0x18
+/* 803FA354  4E 80 00 20 */	blr 
