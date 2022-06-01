@@ -81,8 +81,16 @@ extern void* THA_allocAlign(THA *this, size_t siz, int mask) {
     return this->tail_p;
 }
 
-extern int THA_getFreeBytes(THA *this) {
-    return (int)this->tail_p - (int)this->head_p;
+extern int THA_getFreeBytesAlign(THA* this, int mask) {
+    return (int)this->tail_p - (((int)this->head_p + ~mask) & mask);
+}
+
+extern int THA_getFreeBytes(THA* this) {
+    return THA_getFreeBytesAlign(this, ~0);
+}
+
+extern int THA_getFreeBytes16(THA* this) {
+    return THA_getFreeBytesAlign(this, ~(16 - 1));
 }
 
 extern int THA_isCrash(THA *this) {

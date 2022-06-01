@@ -106,8 +106,16 @@ inline void* THA_allocAlign(THA* this, size_t siz, int mask) {
     return this->tail_p;
 }
 
+inline int THA_getFreeBytesAlign(THA* this, int mask) {
+    return (int)this->tail_p - (((int)this->head_p + ~mask) & mask);
+}
+
 inline int THA_getFreeBytes(THA* this) {
-    return (int)this->tail_p - (int)this->head_p;
+    return THA_getFreeBytesAlign(this, ~0);
+}
+
+inline int THA_getFreeBytes16(THA* this) {
+    return THA_getFreeBytesAlign(this, ~(16 - 1));
 }
 
 inline int THA_isCrash(THA* this) {
@@ -145,7 +153,9 @@ extern void* THA_alloc16(THA* this, size_t siz);
 extern void* THA_allocAlign(THA* this, size_t siz, int mask);
 extern int THA_isCrash(THA* this);
 extern void THA_init(THA* this);
+extern int THA_getFreeBytesAlign(THA* this, int mask);
 extern int THA_getFreeBytes(THA* this);
+extern int THA_getFreeBytes16(THA* this);
 
 #endif  /* !(defined(_LANGUAGE_C_PLUS_PLUS) && !defined(__TWOHEADARENA_C_)) */
 
