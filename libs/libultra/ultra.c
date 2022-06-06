@@ -4,7 +4,9 @@
 #include <stdarg.h>
 #include <__mem.h>
 #include <string.h>
+#include <dolphin/os.h>
 #include "ultra.h"
+#include "OSReport.h"
 
 void bcopy(void* __src, void* __dst, size_t __n) {
     memmove(__dst, __src, __n);
@@ -21,16 +23,16 @@ void bzero(void* __s, size_t __n) {
 void osSyncPrintf(const char* format, ...) {
     va_list arg;
     va_start(arg, format);
-    //OSVReport(format, &arg);
+    OSVReport(format, arg);
     va_end(arg);
 }
 
 void osWritebackDCache(void* vaddr, int nbytes) {
-    //DCStoreRange(vaddr, nbytes);
+    DCStoreRange(vaddr, nbytes);
 }
 
 u32 osGetCount() {
-    //return OSGetTick();
+    return OSGetTick();
 }
 
 #endif
