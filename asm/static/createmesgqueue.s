@@ -14,3 +14,8 @@ osCreateMesgQueue:
 /* 8005FF88 0005CEE8  7C 08 03 A6 */	mtlr r0
 /* 8005FF8C 0005CEEC  38 21 00 10 */	addi r1, r1, 0x10
 /* 8005FF90 0005CEF0  4E 80 00 20 */	blr 
+
+void osCreateMesgQueue(void) {
+    // ...
+    OSInitMessageQueue();
+}
