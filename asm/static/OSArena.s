@@ -3,7 +3,7 @@
 .section .text
 
 .org 0x8007988C
-
+/* fraser125: r13 has a special usage that is platform specific, at this time I'm not positive what it's contents are */
 .global OSGetArenaHi
 OSGetArenaHi:
 /* 8007988C 000767EC  80 6D 8D 78 */	lwz r3, __OSArenaHi-_SDA_BASE_(r13)
