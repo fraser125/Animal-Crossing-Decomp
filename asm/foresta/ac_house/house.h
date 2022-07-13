@@ -30,3 +30,8 @@ struct house {
 };
 
 struct house house;
+
+extern s32 process;
+struct action_ {
+    s32 unk2A0;
+};
