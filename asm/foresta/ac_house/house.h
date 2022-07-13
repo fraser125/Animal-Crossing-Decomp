@@ -41,3 +41,24 @@ struct actor_move {
     void (*unk2A0)(struct actor_move *, s32);
     //void * unk2A0;
 };
+
+struct data {
+    s32 unk4;
+};
+
+void aHUS_rewrite_out_data(void*, struct arg_door *);              /* extern */
+void aHUS_setup_action(void*, s32);                      /* extern */
+s32 cKF_SkeletonInfo_R_play(s32);                   /* extern */
+void goto_other_scene(void*, void *, s32);                   /* extern */
+void mDemo_End(void*);                                 /* extern */
+extern struct door_data aHUS_npc_house_door_data;
+extern struct data data_806C5240; 
+
+struct open_door {
+    s32 unk2B0;
+    s32 unk20;
+};
+
+struct arg_door {
+    s32 unk20D0;
+};
