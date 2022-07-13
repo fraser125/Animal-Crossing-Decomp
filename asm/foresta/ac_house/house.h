@@ -1,7 +1,3 @@
-extern f32 lit_710;
-extern f32 lit_783;
-extern f32 lit_784;
-
 void aHUS_actor_move(void*, s32);                      /* extern */
 void mFI_SetFG_common(s16, s32*, u32, s16);              /* extern */
 void cKF_SkeletonInfo_R_dt(s32);                       /* extern */
@@ -34,4 +30,14 @@ struct house house;
 extern s32 process;
 struct action_ {
     s32 unk2A0;
+};
+
+void aHUS_ctrl_light(struct actor_move *);                           /* extern */
+void aHUS_set_doorSE();                                /* extern */
+void chase_f(void*, f32*, f32);                        /* extern */
+extern f32 lit_738;
+
+struct actor_move {
+    void (*unk2A0)(struct actor_move *, s32);
+    //void * unk2A0;
 };
