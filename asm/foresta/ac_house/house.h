@@ -2,6 +2,7 @@ void aHUS_actor_move(void*, s32);                      /* extern */
 void mFI_SetFG_common(s16, s32*, u32, s16);              /* extern */
 void cKF_SkeletonInfo_R_dt(s32);                       /* extern */
 void change_FGUnit(s32);                                 /* extern */
+void sAdo_OngenTrgStart(s32, s32, s32);                /* extern */
 
 struct house_A {    
     u32 unk0;
