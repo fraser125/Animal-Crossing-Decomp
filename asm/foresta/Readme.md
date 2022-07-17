@@ -1,4 +1,91 @@
 ?? Guesses, nothing more. <br/>
+Game Core
+main
+player_select
+save_menu
+second_game
+m_actor
+m_actor_dlftbls
+m_actor_shadow
+m_all_grow
+m_banti
+m_bg_item
+m_bgm
+m_calendar
+m_camera2
+m_card
+m_choice
+m_clip
+m_collision_bg
+m_collision_obj
+m_common_data
+m_controller
+m_cpak
+m_diary
+m_eappli
+m_event
+m_event_map_npc
+m_field_assessment
+m_field_info
+m_field_make
+m_fishrecord
+m_flashrom
+m_font
+m_fuusen
+m_handbill = Message board?? <br/>
+m_home
+m_house
+m_huusui_room
+m_island
+m_item_name
+m_kabu_manager
+m_kankyo
+m_land
+m_lib
+m_lights
+m_mail
+m_mail_check
+m_mail_password_check
+m_malloc
+m_mark_room
+m_melody
+m_msg
+m_museum
+m_museum_display
+m_mushroom
+m_name_table
+m_needlework
+m_notice
+m_npc
+m_npc_schedule
+m_npc_walk
+m_olib
+m_passwordChk_ovl
+m_passwordMake_ovl
+m_pause
+m_play
+m_player
+m_player_call
+m_player_lib
+m_prenmi
+m_private
+m_quest
+m_random_field
+m_rcp
+m_roll_lib
+m_room_type
+m_scene
+m_scene_ftr
+m_select
+m_string
+m_submenu
+m_time
+m_trademark
+m_train_control
+m_watch_my_step = Camera + more
+m_view = Graphics / Camera Control ?? <br/>
+m_vibctl = Vibration Control ?? <br/>
+
 ovl = Oval windows that show text and other user interface elements, including sending mail, paying the debt <br/>
 [ac_set_ovl_gyoei](ac_set_ovl_gyoei) = Fish Shadown Overlay ?? <br/>
 [ac_set_ovl_insect](ac_set_ovl_insect) = Insect Overlay ?? <br/>
@@ -29,7 +116,7 @@ ovl = Oval windows that show text and other user interface elements, including s
 [m_mailbox_ovl](m_mailbox_ovl) =  <br/>
 [m_map_ovl](m_map_ovl) =  <br/>
 [m_mark_room_ovl](m_mark_room_ovl) =  <br/>
-[m_mscore_ovl](m_mscore_ovl) =  <br/>
+[m_mscore_ovl](m_mscore_ovl) = The Town Tune board by the Post Office?? <br/>
 [m_music_ovl](m_music_ovl) =  <br/>
 [m_needlework_ovl](m_needlework_ovl) =  <br/>
 [m_notice_ovl](m_notice_ovl) =  <br/>
@@ -59,6 +146,7 @@ Actual Demos =  <br/>
 Bugs <br/>
 [ac_ant](ac_ant) - Special in some way <br/>
 [ac_bee](ac_bee) - Special in some way (Getting stung by bee?) <br/>
+m_cockroach
 [ac_insect](ac_insect) =  <br/>
 [ac_ins_amenbo](ac_ins_amenbo) = Water Striders <br/>
 [ac_ins_batta](ac_ins_batta) =  <br/>
@@ -299,6 +387,19 @@ Debug Code = <br/>
 [m_debug_display](m_debug_display) = <br/>
 [m_debug_hayakawa](m_debug_hayakawa) = Kenzo Hayakawa was a developer on Animal Crossing <br/>
 [zurumode](zurumode) = Debug (or Cheat) mode (reference from tcrf.net) <br/>
+
+Misc System/OS code
+PreRender
+THA_GA
+TwoHeadArena
+padmgr
+sys_math
+sys_math3d
+sys_math_atan
+sys_matrix
+sys_romcheck
+sys_ucode
+sys_vimgr
 
 Unused content based on 
 * https://nookipedia.com/wiki/Prerelease_and_unused_content_in_Animal_Crossing<br/>
