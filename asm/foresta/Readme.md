@@ -180,7 +180,7 @@ Bugs <br/>
 
 Events - Calendar? <br/>
 [ac_event_manager](ac_event_manager)  = Event Controller <br/>
-[ac_ev_angler](ac_ev_angler) = Fishing Tournament <br/>
+[ac_ev_angler](ac_ev_angler) = Fishing Tournament ?? <br/>
 [ac_ev_artist](ac_ev_artist) = Red?? <br/>
 [ac_ev_broker](ac_ev_broker) = Redd?? Wendell Wallpaper seller?? <br/>
 [ac_ev_broker2](ac_ev_broker2) =  <br/>
@@ -190,19 +190,19 @@ Events - Calendar? <br/>
 [ac_ev_designer](ac_ev_designer) = Gracie clothing designer, wash her car <br/>
 [ac_ev_dozaemon](ac_ev_dozaemon) = Drowned body of a person - is this the Seagull on the beach ?? <br/>
 [ac_ev_ghost](ac_ev_ghost) = Wisp preform tasks and be rewarded from 12AM - 4AM <br/>
-[ac_ev_gypsy](ac_ev_gypsy) =  <br/>
+[ac_ev_gypsy](ac_ev_gypsy) = Katrina the fortune teller <br/>
 [ac_ev_kabuPeddler](ac_ev_kabuPeddler) = Stock Peddler - Joan sells Turnips on Sundays?? <br/>
 [ac_ev_majin](ac_ev_majin) =  <br/>
 [ac_ev_miko](ac_ev_miko) = Priestess ??  <br/>
 [ac_ev_pumpkin](ac_ev_pumpkin) = Jack arrives on Halloween <br/>
 [ac_ev_santa](ac_ev_santa) = Toy Day i.e. Christmas <br/>
-[ac_ev_soncho](ac_ev_soncho) =  <br/>
-[ac_ev_soncho2](ac_ev_soncho2) =  <br/>
-[ac_ev_speech_soncho](ac_ev_speech_soncho) =  <br/>
+[ac_ev_soncho](ac_ev_soncho) = Tortimer <br/>
+[ac_ev_soncho2](ac_ev_soncho2) = Tortimer <br/>
+[ac_ev_speech_soncho](ac_ev_speech_soncho) = Tortimer Speech <br/>
 [ac_ev_turkey](ac_ev_turkey) = Thanksgiving? <br/> 
 [ac_ev_yomise](ac_ev_yomise) = Night Shop <br/>
 
-Ground Hog <br/>
+Ground Hog aka Mr. Resetti <br/>
 [ac_groundhog_control](ac_groundhog_control) =  <br/>
 [ac_groundhog_npc0](ac_groundhog_npc0) =  <br/>
 [ac_ghog](ac_ghog) =  <br/>
@@ -248,7 +248,7 @@ Other buildings <br/>
 [ac_police_box](ac_police_box) = The outside of the Police Station <br/>
 [ac_post_office](ac_post_office) = The Post Office <br/>
 [ac_shrine](ac_shrine) = The Wishing Well <br/>
-[ac_station](ac_station) = train Station <br/>
+[ac_station](ac_station) = Train Station <br/>
 
 Other Objects <br/>
 [ac_shop_manekin](ac_shop_manekin) = The dress dummy left after purchasing a shirt. <br/>
@@ -295,7 +295,7 @@ Effects - Animations <br/>
 [ef_car_blight](ef_car_blight) = related to Gracie's car wash? <br/>
 [ef_car_light](ef_car_light) = related to Gracie's car wash? <br/>
 [ef_clacker](ef_clacker) =  <br/>
-[ef_coin](ef_coin) =  <br/>
+[ef_coin](ef_coin) = Maybe when a money bag is placed on the money area in "your pocket" <br/>
 [ef_dash_asimoto](ef_dash_asimoto) = Dash Feet (Running??) <br/>
 [ef_dig_hole](ef_dig_hole) =  <br/>
 [ef_dig_mud](ef_dig_mud) =  <br/>
@@ -353,8 +353,8 @@ Effects - Animations <br/>
 [ef_neboke](ef_neboke) = Sleeping <br/>
 [ef_neboke_akubi](ef_neboke_akubi) = Sleepy yawn <br/>
 [ef_neboke_awa](ef_neboke_awa) = Sleeping bubbles <br/>
-[ef_night13_moon](ef_night13_moon) = <br/>
-[ef_night15_moon](ef_night15_moon) = <br/>
+[ef_night13_moon](ef_night13_moon) = Meteor Shower <br/>
+[ef_night15_moon](ef_night15_moon) = Autumn Moon <br/>
 [ef_ongen](ef_ongen) = <br/>
 [ef_otikomi](ef_otikomi) = Depression <br/>
 [ef_otosiana](ef_otosiana) = <br/>
@@ -372,17 +372,17 @@ Effects - Animations <br/>
 [ef_shooting](ef_shooting) = <br/>
 [ef_shooting_kira](ef_shooting_kira) = <br/>
 [ef_shooting_set](ef_shooting_set) = <br/>
-[ef_siawase_hana](ef_siawase_hana) = <br/>
+[ef_siawase_hana](ef_siawase_hana) = Happy flower <br/>
 [ef_siawase_hana_ch](ef_siawase_hana_ch) = Happy Flower <br/>
 [ef_siawase_hikari](ef_siawase_hikari) = Happiness Light <br/>
-[ef_sibuki](ef_sibuki) = <br/>
-[ef_situren](ef_situren) = <br/>
+[ef_sibuki](ef_sibuki) = Splash ?? maybe from fishing, or walking in the water <br/>
+[ef_situren](ef_situren) = Broken Heart ?? <br/>
 [ef_slip](ef_slip) = <br/>
 [ef_slip_footprint](ef_slip_footprint) = <br/>
-[ef_soba_yuge](ef_soba_yuge) = <br/>
+[ef_soba_yuge](ef_soba_yuge) = Soba Stream <br/>
 [ef_steam](ef_steam) = <br/>
 [ef_string](ef_string) = <br/>
-[ef_suisou_awa](ef_suisou_awa) = <br/>
+[ef_suisou_awa](ef_suisou_awa) = Aquarium foam ?? Water view in the fish tanks in the museum, or when a fish is Dropped in your house <br/>
 [ef_swing_axe](ef_swing_axe) = <br/>
 [ef_swing_net](ef_swing_net) = <br/>
 [ef_swing_rod](ef_swing_rod) = <br/>
