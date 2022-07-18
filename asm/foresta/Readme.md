@@ -1,6 +1,12 @@
 ?? Guesses, nothing more. I've played the game for 1,000's of hours and done additional research, so educated, but still guesses. <br/>
 Game Core  <br/>
 [main](main) = ?? <br/>
+[audio](audio) = ?? <br/>
+[c_keyframe](c_keyframe) = ?? <br/>
+[evw_anime](evw_anime) = ?? <br/>
+[famicom_emu](famicom_emu) = ?? <br/>
+[first_game](first_game) = ?? <br/>
+[game](game) = ?? <br/>
 [player_select](player_select) = ?? <br/>
 [save_menu](save_menu) = ?? <br/>
 [second_game](second_game) = ?? <br/>
@@ -86,6 +92,15 @@ Game Core  <br/>
 [m_view](m_view) = Graphics / Camera Control ?? <br/>
 [m_vibctl](m_vibctl) = Vibration Control ?? <br/>
 
+Graphics <br/>
+[gfxalloc](gfxalloc) = ?? <br/>
+[graph](graph) = ?? <br/>
+
+Libraries <br/>
+[irqmgr](irqmgr) = ?? <br/>
+[lb_reki](lb_reki) = ?? <br/>
+[lb_rtc](lb_rtc) = Real Time Clock functions <br/>
+
 ovl = Oval windows that show text and other user interface elements, including sending mail, paying the debt <br/>
 [ac_set_ovl_gyoei](ac_set_ovl_gyoei) = Fish Shadow Overlay ?? <br/>
 [ac_set_ovl_insect](ac_set_ovl_insect) = Insect Overlay ?? <br/>
@@ -146,7 +161,7 @@ Actual Demos =  <br/>
 Bugs <br/>
 [ac_ant](ac_ant) - Special in some way <br/>
 [ac_bee](ac_bee) - Special in some way (Getting stung by bee?) <br/>
-m_cockroach
+[m_cockroach](m_cockroach) = Possibly the ones in your house, that can be walked on and become ghosts ?? <br/>
 [ac_insect](ac_insect) =  <br/>
 [ac_ins_amenbo](ac_ins_amenbo) = Water Striders <br/>
 [ac_ins_batta](ac_ins_batta) =  <br/>
@@ -238,12 +253,28 @@ Other buildings <br/>
 Other Objects <br/>
 [ac_shop_manekin](ac_shop_manekin) = The dress dummy left after purchasing a shirt. <br/>
 [ac_sign](ac_sign) = The signboard that can be bought at Tom Nooks and setup anywhere outside <br/>
-[ac_s_car](ac_s_car) = Gracie's car that must be washed?
+[ac_s_car](ac_s_car) = Gracie's car that must be washed ?? <br/>
+[ac_windmill](ac_windmill) =  ?? <br/>
+[ac_yatai](ac_yatai) = Stall ?? <br/>
+[f_furniture](f_furniture) = ?? <br/>
+[bg_cherry_item](bg_cherry_item) = ?? <br/>
+[bg_item](bg_item) = ?? <br/>
+[bg_police_item](bg_police_item) = ?? <br/>
+[bg_post_item](bg_post_item) = ?? <br/>
+[bg_winter_item](bg_winter_item) = ?? <br/>
+[bg_xmas_item](bg_xmas_item) = ?? <br/>
+
+Weather <br/>
+[ac_weather](ac_weather) = ?? <br/>
+[ac_weather_leaf](ac_weather_leaf) = ?? <br/>
+[ac_weather_rain](ac_weather_rain) = ?? <br/>
+[ac_weather_sakura](ac_weather_sakura) = ?? <br/>
+[ac_weather_snow](ac_weather_snow) = ?? <br/>
 
 Tug Of War <br/>
-[ac_tunahiki_control](ac_tunahiki_control) =  <br/>
-[ac_tunahiki_npc0](ac_tunahiki_npc0) =  <br/>
-[ac_tunahiki_npc1](ac_tunahiki_npc1) = 
+[ac_tunahiki_control](ac_tunahiki_control) = ?? <br/>
+[ac_tunahiki_npc0](ac_tunahiki_npc0) = ?? <br/>
+[ac_tunahiki_npc1](ac_tunahiki_npc1) = ?? <br/>
 
 Fishing <br/>
 [ac_turi](ac_turi) =  <br/>
@@ -392,6 +423,7 @@ Misc System/OS code <br/>
 [PreRender](PreRender) = ?? <br/>
 [THA_GA](THA_GA) = ?? <br/>
 [TwoHeadArena](TwoHeadArena) = ?? <br/>
+[gamealloc](gamealloc) = ?? <br/>
 [padmgr](padmgr) = ?? <br/>
 [sys_math](sys_math) = ?? <br/>
 [sys_math3d](sys_math3d) = ?? <br/>
