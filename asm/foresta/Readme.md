@@ -1,93 +1,93 @@
-?? Guesses, nothing more. <br/>
-Game Core
-main
-player_select
-save_menu
-second_game
-m_actor
-m_actor_dlftbls
-m_actor_shadow
-m_all_grow
-m_banti
-m_bg_item
-m_bgm
-m_calendar
-m_camera2
-m_card
-m_choice
-m_clip
-m_collision_bg
-m_collision_obj
-m_common_data
-m_controller
-m_cpak
-m_diary
-m_eappli
-m_event
-m_event_map_npc
-m_field_assessment
-m_field_info
-m_field_make
-m_fishrecord
-m_flashrom
-m_font
-m_fuusen
-m_handbill = Message board?? <br/>
-m_home
-m_house
-m_huusui_room
-m_island
-m_item_name
-m_kabu_manager
-m_kankyo
-m_land
-m_lib
-m_lights
-m_mail
-m_mail_check
-m_mail_password_check
-m_malloc
-m_mark_room
-m_melody
-m_msg
-m_museum
-m_museum_display
-m_mushroom
-m_name_table
-m_needlework
-m_notice
-m_npc
-m_npc_schedule
-m_npc_walk
-m_olib
-m_passwordChk_ovl
-m_passwordMake_ovl
-m_pause
-m_play
-m_player
-m_player_call
-m_player_lib
-m_prenmi
-m_private
-m_quest
-m_random_field
-m_rcp
-m_roll_lib
-m_room_type
-m_scene
-m_scene_ftr
-m_select
-m_string
-m_submenu
-m_time
-m_trademark
-m_train_control
-m_watch_my_step = Camera + more
-m_view = Graphics / Camera Control ?? <br/>
-m_vibctl = Vibration Control ?? <br/>
+?? Guesses, nothing more. I've played the game for 1,000's of hours and done additional research, so educated, but still guesses. <br/>
+Game Core  <br/>
+[main](main) = ?? <br/>
+[player_select](player_select) = ?? <br/>
+[save_menu](save_menu) = ?? <br/>
+[second_game](second_game) = ?? <br/>
+[m_actor](m_actor) = ?? <br/>
+[m_actor_dlftbls](m_actor_dlftbls) = ?? <br/>
+[m_actor_shadow](m_actor_shadow) = ?? <br/>
+[m_all_grow](m_all_grow) = ?? <br/>
+[m_banti](m_banti) = ?? <br/>
+[m_bg_item](m_bg_item) = ?? <br/>
+[m_bgm](m_bgm) = ?? <br/>
+[m_calendar](m_calendar) = ?? <br/>
+[m_camera2](m_camera2) = ?? <br/>
+[m_card](m_card) = ?? <br/>
+[m_choice](m_choice) = ?? <br/>
+[m_clip](m_clip) = ?? <br/>
+[m_collision_bg](m_collision_bg) = ?? <br/>
+[m_collision_obj](m_collision_obj) = ?? <br/>
+[m_common_data](m_common_data) = ?? <br/>
+[m_controller](m_controller) = ?? <br/>
+[m_cpak](m_cpak) = ?? <br/>
+[m_diary](m_diary) = ?? <br/>
+[m_eappli](m_eappli) = ?? <br/>
+[m_event](m_event) = ?? <br/>
+[m_event_map_npc](m_event_map_npc) = ?? <br/>
+[m_field_assessment](m_field_assessment) = ?? <br/>
+[m_field_info](m_field_info) = ?? <br/>
+[m_field_make](m_field_make) = ?? <br/>
+[m_fishrecord](m_fishrecord) = ?? <br/>
+[m_flashrom](m_flashrom) = ?? <br/>
+[m_font](m_font) = ?? <br/>
+[m_fuusen](m_fuusen) = ?? <br/>
+[m_handbill](m_handbill) = Message board?? <br/>
+[m_home](m_home) = ?? <br/>
+[m_house](m_house) = ?? <br/>
+[m_huusui_room](m_huusui_room) = ?? <br/>
+[m_island](m_island) = ?? <br/>
+[m_item_name](m_item_name) = ?? <br/>
+[m_kabu_manager](m_kabu_manager) = ?? <br/>
+[m_kankyo](m_kankyo) = ?? <br/>
+[m_land](m_land) = ?? <br/>
+[m_lib](m_lib) = ?? <br/>
+[m_lights](m_lights) = ?? <br/>
+[m_mail](m_mail) = ?? <br/>
+[m_mail_check](m_mail_check) = ?? <br/>
+[m_mail_password_check](m_mail_password_check) = ?? <br/>
+[m_malloc](m_malloc) = ?? <br/>
+[m_mark_room](m_mark_room) = ?? <br/>
+[m_melody](m_melody) = ?? <br/>
+[m_msg](m_msg) = ?? <br/>
+[m_museum](m_museum) = ?? <br/>
+[m_museum_display](m_museum_display) = ?? <br/>
+[m_mushroom](m_mushroom) = ?? <br/>
+[m_name_table](m_name_table) = ?? <br/>
+[m_needlework](m_needlework) = ?? <br/>
+[m_notice](m_notice) = ?? <br/>
+[m_npc](m_npc) = ?? <br/>
+[m_npc_schedule](m_npc_schedule) = ?? <br/>
+[m_npc_walk](m_npc_walk) = ?? <br/>
+[m_olib](m_olib) = ?? <br/>
+[m_passwordChk_ovl](m_passwordChk_ovl) = ?? <br/>
+[m_passwordMake_ovl](m_passwordMake_ovl) = ?? <br/>
+[m_pause](m_pause) = ?? <br/>
+[m_play](m_play) = ?? <br/>
+[m_player](m_player) = ?? <br/>
+[m_player_call](m_player_call) = ?? <br/>
+[m_player_lib](m_player_lib) = ?? <br/>
+[m_prenmi](m_prenmi) = ?? <br/>
+[m_private](m_private) = ?? <br/>
+[m_quest](m_quest) = ?? <br/>
+[m_random_field](m_random_field) = ?? <br/>
+[m_rcp](m_rcp) = ?? <br/>
+[m_roll_lib](m_roll_lib) = ?? <br/>
+[m_room_type](m_room_type) = ?? <br/>
+[m_scene](m_scene) = ?? <br/>
+[m_scene_ftr](m_scene_ftr) = ?? <br/>
+[m_select](m_select) = ?? <br/>
+[m_string](m_string) = ?? <br/>
+[m_submenu](m_submenu) = ?? <br/>
+[m_time](m_time) = ?? <br/>
+[m_trademark](m_trademark) = ?? <br/>
+[m_train_control](m_train_control) = ?? <br/>
+[m_watch_my_step](m_watch_my_step) = Camera + more = ?? <br/>
+[m_view](m_view) = Graphics / Camera Control ?? <br/>
+[m_vibctl](m_vibctl) = Vibration Control ?? <br/>
 
 ovl = Oval windows that show text and other user interface elements, including sending mail, paying the debt <br/>
-[ac_set_ovl_gyoei](ac_set_ovl_gyoei) = Fish Shadown Overlay ?? <br/>
+[ac_set_ovl_gyoei](ac_set_ovl_gyoei) = Fish Shadow Overlay ?? <br/>
 [ac_set_ovl_insect](ac_set_ovl_insect) = Insect Overlay ?? <br/>
 [m_address_ovl](m_address_ovl) = probably the lists for Museum, Players, and Animal Residents ?? <br/>
 [m_all_grow_ovl](m_all_grow_ovl) = ?? <br/>
@@ -388,18 +388,18 @@ Debug Code = <br/>
 [m_debug_hayakawa](m_debug_hayakawa) = Kenzo Hayakawa was a developer on Animal Crossing <br/>
 [zurumode](zurumode) = Debug (or Cheat) mode (reference from tcrf.net) <br/>
 
-Misc System/OS code
-PreRender
-THA_GA
-TwoHeadArena
-padmgr
-sys_math
-sys_math3d
-sys_math_atan
-sys_matrix
-sys_romcheck
-sys_ucode
-sys_vimgr
+Misc System/OS code <br/>
+[PreRender](PreRender) = ?? <br/>
+[THA_GA](THA_GA) = ?? <br/>
+[TwoHeadArena](TwoHeadArena) = ?? <br/>
+[padmgr](padmgr) = ?? <br/>
+[sys_math](sys_math) = ?? <br/>
+[sys_math3d](sys_math3d) = ?? <br/>
+[sys_math_atan](sys_math_atan) = ?? <br/>
+[sys_matrix](sys_matrix) = ?? <br/>
+[sys_romcheck](sys_romcheck) = ?? <br/>
+[sys_ucode](sys_ucode) = ?? <br/>
+[sys_vimgr](sys_vimgr) = ?? <br/>
 
 Unused content based on 
 * https://nookipedia.com/wiki/Prerelease_and_unused_content_in_Animal_Crossing<br/>
